@@ -13,11 +13,11 @@ import '../../../../shared/widgets/app_scaffold.dart';
 import '../../../../shared/widgets/primary_button.dart';
 import '../cubit/otp_cubit.dart';
 import '../cubit/otp_state.dart';
-import 'widgets/change_number_bar_widget.dart';
-import 'widgets/otp_blocked_banner_widget.dart';
-import 'widgets/otp_error_row_widget.dart';
-import 'widgets/otp_resend_row_widget.dart';
-import 'widgets/otp_row_widget.dart';
+import 'widgets/otp/change_number_bar_widget.dart';
+import 'widgets/otp/otp_blocked_banner_widget.dart';
+import 'widgets/otp/otp_error_row_widget.dart';
+import 'widgets/otp/otp_resend_row_widget.dart';
+import 'widgets/otp/otp_row_widget.dart';
 
 /// Step 2 — OTP Verification screen.
 ///
@@ -71,7 +71,7 @@ class _OtpVerificationViewState extends State<OtpVerificationView> {
           // When the API is wired up, check user type and branch accordingly:
           //   new user        → Step 3 (Location Permission)
           //   existing user   → passenger home or Mode Selection (Step 7)
-          context.go(RouteNames.home);
+          context.go(RouteNames.modeSelection);
         }
       },
       builder: (context, state) {

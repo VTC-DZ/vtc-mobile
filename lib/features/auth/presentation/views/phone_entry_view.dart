@@ -12,7 +12,7 @@ import '../../../../shared/widgets/app_scaffold.dart';
 import '../../../../shared/widgets/primary_button.dart';
 import '../cubit/phone_cubit.dart';
 import '../cubit/phone_state.dart';
-import 'widgets/phone_input_field.dart';
+import 'widgets/entry/phone_input_field.dart';
 
 /// The first screen users see — they enter their Algerian mobile number here.
 class PhoneEntryView extends StatefulWidget {

@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../../features/auth/data/repo/auth_repository.dart';
 import '../../features/auth/presentation/cubit/otp_cubit.dart';
 import '../../features/auth/presentation/cubit/phone_cubit.dart';
+import '../../features/auth/presentation/views/mode_selection_view.dart';
 import '../../features/auth/presentation/views/otp_verification_view.dart';
 import '../../features/auth/presentation/views/phone_entry_view.dart';
 import 'route_names.dart';
@@ -48,6 +49,30 @@ final class AppRouter {
           // Placeholder — replaced in Story 3+.
           return const Scaffold(
             body: Center(child: Text('Home — Story 3+')),
+          );
+        },
+      ),
+      GoRoute(
+        path: RouteNames.modeSelection,
+        builder: (BuildContext context, GoRouterState state) {
+          return const ModeSelectionView();
+        },
+      ),
+      GoRoute(
+        path: RouteNames.passengerProfile,
+        builder: (BuildContext context, GoRouterState state) {
+          return Scaffold(
+            appBar: AppBar(title: const Text('Passenger Profile (Step 5)')),
+            body: const Center(child: Text('Complete Passenger Profile Here')),
+          );
+        },
+      ),
+      GoRoute(
+        path: RouteNames.driverProfile,
+        builder: (BuildContext context, GoRouterState state) {
+          return Scaffold(
+            appBar: AppBar(title: const Text('Driver Profile (Step 6)')),
+            body: const Center(child: Text('Complete Driver Profile Here')),
           );
         },
       ),
