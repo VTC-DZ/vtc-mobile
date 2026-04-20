@@ -1,4 +1,6 @@
-// lib/features/auth/data/auth_repository.dart
+// lib/features/auth/data/repo/auth_repository.dart
+
+import '../models/gender.dart';
 
 /// Simple mock repository for the auth feature.
 ///
@@ -33,6 +35,22 @@ final class AuthRepository {
 
     // ── Mock: treat "000000" as always-wrong, everything else succeeds ────
     if (otp == '000000') throw 'Wrong OTP';
+    // ─────────────────────────────────────────────────────────────────────
+  }
+
+  /// Saves the new passenger's basic profile information.
+  ///
+  /// [email] is optional (nullable).
+  /// Replace the mock body with a real API call when ready.
+  Future<void> savePassengerProfile({
+    required String fullName,
+    required Gender gender,
+    String? email,
+  }) async {
+    await Future<void>.delayed(const Duration(milliseconds: 1000));
+
+    // ── Uncomment to test the error path ──────────────────────────────────
+    // throw 'Failed to save profile. Please try again.';
     // ─────────────────────────────────────────────────────────────────────
   }
 }

@@ -6,10 +6,13 @@ import 'package:go_router/go_router.dart';
 
 import '../../features/auth/data/repo/auth_repository.dart';
 import '../../features/auth/presentation/cubit/otp_cubit.dart';
+import '../../features/auth/presentation/cubit/passenger_profile_cubit.dart';
 import '../../features/auth/presentation/cubit/phone_cubit.dart';
 import '../../features/auth/presentation/views/mode_selection_view.dart';
 import '../../features/auth/presentation/views/otp_verification_view.dart';
+import '../../features/auth/presentation/views/passenger_profile_view.dart';
 import '../../features/auth/presentation/views/phone_entry_view.dart';
+import '../../features/passenger/presentation/views/passenger_home_view.dart';
 import 'route_names.dart';
 
 /// Builds and owns the app's [GoRouter] instance.
@@ -46,9 +49,9 @@ final class AppRouter {
       GoRoute(
         path: RouteNames.home,
         builder: (BuildContext context, GoRouterState state) {
-          // Placeholder — replaced in Story 3+.
+          // Generic home placeholder — replaced per user type in Story 7+.
           return const Scaffold(
-            body: Center(child: Text('Home — Story 3+')),
+            body: Center(child: Text('Home — Story 7+')),
           );
         },
       ),
@@ -61,10 +64,16 @@ final class AppRouter {
       GoRoute(
         path: RouteNames.passengerProfile,
         builder: (BuildContext context, GoRouterState state) {
-          return Scaffold(
-            appBar: AppBar(title: const Text('Passenger Profile (Step 5)')),
-            body: const Center(child: Text('Complete Passenger Profile Here')),
+          return BlocProvider<PassengerProfileCubit>(
+            create: (_) => PassengerProfileCubit(authRepository),
+            child: const PassengerProfileView(),
           );
+        },
+      ),
+      GoRoute(
+        path: RouteNames.passengerHome,
+        builder: (BuildContext context, GoRouterState state) {
+          return const PassengerHomeView();
         },
       ),
       GoRoute(

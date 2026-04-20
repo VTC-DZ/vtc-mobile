@@ -9,5 +9,6 @@ abstract final class RouteNames {
   static const String home = '/home';
   static const String modeSelection = '/mode-selection';
   static const String passengerProfile = '/passenger-profile';
+  static const String passengerHome = '/passenger-home';
   static const String driverProfile = '/driver-profile';
 }
