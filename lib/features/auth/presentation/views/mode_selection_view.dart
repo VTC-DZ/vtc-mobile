@@ -27,9 +27,9 @@ class _ModeSelectionViewState extends State<ModeSelectionView> {
 
   void _handleContinue() {
     if (_selectedMode == UserMode.passenger) {
-      context.go(RouteNames.passengerProfile); // Step 5 stub
+      context.push(RouteNames.passengerProfile); // Step 5 stub
     } else if (_selectedMode == UserMode.driver) {
-      context.go(RouteNames.driverProfile); // Step 6 stub
+      context.push(RouteNames.driverProfile); // Step 6 stub
     }
   }
 
