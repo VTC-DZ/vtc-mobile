@@ -46,4 +46,18 @@ abstract final class Validators {
     }
     return null;
   }
+
+  /// Validates a formatted Algerian plate number (NNNNN-NNN-NN).
+  static String plate(String value) {
+    if (value.isEmpty) return AppStrings.plateRequired;
+    if (!ValidationPatterns.dzPlate.hasMatch(value)) return AppStrings.plateInvalid;
+    return '';
+  }
+
+  /// Validates vehicle text fields (make, model, color). Min 2 chars.
+  static String vehicleText(String value, String fieldName) {
+    if (value.trim().isEmpty) return '$fieldName is required';
+    if (value.trim().length < 2) return '$fieldName must be at least 2 characters';
+    return '';
+  }
 }

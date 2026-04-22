@@ -1,5 +1,3 @@
-// lib/core/router/app_router.dart
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -13,6 +11,10 @@ import '../../features/auth/presentation/views/mode_selection_view.dart';
 import '../../features/auth/presentation/views/otp_verification_view.dart';
 import '../../features/auth/presentation/views/passenger_profile_view.dart';
 import '../../features/auth/presentation/views/phone_entry_view.dart';
+import '../../features/driver/presentation/cubit/driver_registration_cubit/driver_registration_cubit.dart';
+import '../../features/driver/presentation/views/driver_pending_review_view.dart';
+import '../../features/driver/presentation/views/driver_registration_view.dart';
+import '../../features/driver/presentation/views/driver_rejection_view.dart';
 import '../../features/passenger/presentation/views/passenger_home_view.dart';
 import 'route_names.dart';
 
@@ -80,10 +82,24 @@ final class AppRouter {
       GoRoute(
         path: RouteNames.driverProfile,
         builder: (BuildContext context, GoRouterState state) {
-          return Scaffold(
-            appBar: AppBar(title: const Text('Driver Profile (Step 6)')),
-            body: const Center(child: Text('Complete Driver Profile Here')),
+          return BlocProvider<DriverRegistrationCubit>(
+            create: (_) => DriverRegistrationCubit(_repository),
+            child: const DriverRegistrationView(),
           );
+        },
+      ),
+      GoRoute(
+        path: RouteNames.driverPendingReview,
+        builder: (BuildContext context, GoRouterState state) {
+          return const DriverPendingReviewView();
+        },
+      ),
+      GoRoute(
+        path: RouteNames.driverRejection,
+        builder: (BuildContext context, GoRouterState state) {
+          final reason =
+              state.extra is String ? state.extra as String : '';
+          return DriverRejectionView(rejectionReason: reason);
         },
       ),
     ],

@@ -31,6 +31,12 @@ dependencies:
 
   cupertino_icons: ^1.0.8
 
+  # Media picking (photos from gallery/camera)
+  image_picker: ^1.1.2
+
+  # File picking (supports PDF for vehicle registration)
+  file_picker: ^8.1.2
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
