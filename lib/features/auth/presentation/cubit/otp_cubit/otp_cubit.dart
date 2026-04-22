@@ -103,7 +103,8 @@ final class OtpCubit extends Cubit<OtpState> {
     } catch (e) {
       emit(state.copyWith(
         status: OtpStatus.wrongCode,
-        errorMessage: e is String ? e : 'Could not resend OTP. Please try again.',
+        errorMessage:
+            e is String ? e : 'Could not resend OTP. Please try again.',
       ));
     }
   }

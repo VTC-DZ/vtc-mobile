@@ -6,25 +6,17 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'core/constants/app_constants.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
-import 'features/auth/data/repo/auth_repository.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-
-  const authRepository = AuthRepository();
-
-  runApp(const MyApp(authRepository: authRepository));
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key, required this.authRepository});
-
-  final AuthRepository authRepository;
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final appRouter = AppRouter(authRepository: authRepository);
-
     return ScreenUtilInit(
       designSize: const Size(
         AppConstants.designWidth,
@@ -39,7 +31,7 @@ class MyApp extends StatelessWidget {
           theme: AppTheme.light,
           darkTheme: AppTheme.dark,
           themeMode: ThemeMode.dark,
-          routerConfig: appRouter.router,
+          routerConfig: AppRouter.router,
         );
       },
     );

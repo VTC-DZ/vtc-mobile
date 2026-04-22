@@ -16,15 +16,12 @@ import '../../features/auth/presentation/views/phone_entry_view.dart';
 import '../../features/passenger/presentation/views/passenger_home_view.dart';
 import 'route_names.dart';
 
-/// Builds and owns the app's [GoRouter] instance.
-///
-/// Receives [AuthRepository] via constructor — no service locator.
 final class AppRouter {
-  AppRouter({required this.authRepository});
+  AppRouter._();
 
-  final AuthRepository authRepository;
+  static const _repository = AuthRepository();
 
-  late final GoRouter router = GoRouter(
+  static final GoRouter router = GoRouter(
     initialLocation: RouteNames.phone,
     debugLogDiagnostics: kDebugMode,
     errorBuilder: (context, state) => const Scaffold(
@@ -35,7 +32,7 @@ final class AppRouter {
         path: RouteNames.phone,
         builder: (BuildContext context, GoRouterState state) {
           return BlocProvider<PhoneCubit>(
-            create: (_) => PhoneCubit(authRepository),
+            create: (_) => PhoneCubit(_repository),
             child: const PhoneEntryView(),
           );
         },
@@ -45,7 +42,7 @@ final class AppRouter {
         builder: (BuildContext context, GoRouterState state) {
           final phone = state.extra is String ? state.extra as String : '';
           return BlocProvider<OtpCubit>(
-            create: (_) => OtpCubit(authRepository, phoneNumber: phone),
+            create: (_) => OtpCubit(_repository, phoneNumber: phone),
             child: const OtpVerificationView(),
           );
         },
@@ -69,7 +66,7 @@ final class AppRouter {
         path: RouteNames.passengerProfile,
         builder: (BuildContext context, GoRouterState state) {
           return BlocProvider<PassengerProfileCubit>(
-            create: (_) => PassengerProfileCubit(authRepository),
+            create: (_) => PassengerProfileCubit(_repository),
             child: const PassengerProfileView(),
           );
         },
