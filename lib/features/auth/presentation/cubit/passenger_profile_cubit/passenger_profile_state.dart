@@ -1,10 +1,7 @@
-// lib/features/auth/presentation/cubit/passenger_profile_state.dart
-
 import '../../../data/models/gender.dart';
 
 enum ProfileStatus { idle, submitting, success, failure }
 
-/// Immutable state for the passenger profile form (Step 5).
 final class PassengerProfileState {
   const PassengerProfileState({
     this.fullName = '',
@@ -22,30 +19,16 @@ final class PassengerProfileState {
   final Gender? gender;
   final String email;
   final ProfileStatus status;
-
-  /// Inline error for the full name field (empty = no error).
   final String nameError;
-
-  /// Inline error for the email field (empty = no error).
   final String emailError;
-
-  /// General submission error message.
   final String errorMessage;
-
-  /// Whether the name field has been touched (to avoid showing errors before
-  /// the user has interacted with the field).
   final bool nameTouched;
-
-  /// Whether the email field has been touched.
   final bool emailTouched;
-
-  // ── Derived helpers ────────────────────────────────────────────────────────
 
   bool get isNameValid => nameError.isEmpty && fullName.trim().length >= 2;
   bool get isGenderSelected => gender != null;
   bool get isEmailValid => email.isEmpty || emailError.isEmpty;
 
-  /// The Continue button is only active when all required fields are valid.
   bool get canSubmit =>
       isNameValid &&
       isGenderSelected &&

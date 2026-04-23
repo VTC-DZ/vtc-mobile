@@ -44,8 +44,6 @@ class DriverStep1PersonalInfo extends StatelessWidget {
         SizedBox(height: 8.h),
         ProfileNameFieldWidget(
           controller: firstNameController,
-          focusNode: firstNameFocus,
-          emailFocus: lastNameFocus,
           onChanged: cubit.firstNameChanged,
           error: state.firstNameTouched ? state.firstNameError : '',
           enabled: !isSubmitting,
@@ -58,8 +56,6 @@ class DriverStep1PersonalInfo extends StatelessWidget {
         SizedBox(height: 8.h),
         ProfileNameFieldWidget(
           controller: lastNameController,
-          focusNode: lastNameFocus,
-          emailFocus: noopFocus,
           onChanged: cubit.lastNameChanged,
           error: state.lastNameTouched ? state.lastNameError : '',
           enabled: !isSubmitting,

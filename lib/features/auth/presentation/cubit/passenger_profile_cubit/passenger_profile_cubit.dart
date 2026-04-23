@@ -1,5 +1,3 @@
-// lib/features/auth/presentation/cubit/passenger_profile_cubit.dart
-
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../../core/utils/validators.dart';
@@ -7,62 +5,39 @@ import '../../../data/models/gender.dart';
 import '../../../data/repo/auth_repository.dart';
 import 'passenger_profile_state.dart';
 
-/// Drives the Passenger Profile screen (Step 5).
-///
-/// Validates Full Name (letters-only, min 2 chars), Gender (required),
-/// and Email (optional, basic format). Calls [AuthRepository.savePassengerProfile]
-/// on submit and emits [ProfileStatus.success] to trigger navigation.
 final class PassengerProfileCubit extends Cubit<PassengerProfileState> {
   PassengerProfileCubit(this._repository)
       : super(const PassengerProfileState());
 
   final AuthRepository _repository;
 
-  // ── Name ──────────────────────────────────────────────────────────────────
-
   void nameChanged(String value) {
-    final trimmed = value.trim();
-    final error = Validators.name(trimmed);
     emit(state.copyWith(
       fullName: value,
-      nameError: error,
+      nameError: Validators.name(value.trim()),
       nameTouched: true,
       status: ProfileStatus.idle,
       errorMessage: '',
     ));
   }
 
-  void nameFocusLost() {
-    if (!state.nameTouched) return;
-    emit(state.copyWith(nameError: Validators.name(state.fullName.trim())));
-  }
-
-  // ── Gender ────────────────────────────────────────────────────────────────
-
   void genderChanged(Gender gender) {
     emit(state.copyWith(
-        gender: gender, status: ProfileStatus.idle, errorMessage: ''));
-  }
-
-  // ── Email ─────────────────────────────────────────────────────────────────
-
-  void emailChanged(String value) {
-    final error = Validators.email(value.trim());
-    emit(state.copyWith(
-      email: value,
-      emailError: error,
-      emailTouched: true,
+      gender: gender,
       status: ProfileStatus.idle,
       errorMessage: '',
     ));
   }
 
-  void emailFocusLost() {
-    if (!state.emailTouched || state.email.isEmpty) return;
-    emit(state.copyWith(emailError: Validators.email(state.email.trim())));
+  void emailChanged(String value) {
+    emit(state.copyWith(
+      email: value,
+      emailError: Validators.email(value.trim()),
+      emailTouched: true,
+      status: ProfileStatus.idle,
+      errorMessage: '',
+    ));
   }
-
-  // ── Submit ────────────────────────────────────────────────────────────────
 
   Future<void> submit() async {
     if (!state.canSubmit) return;
