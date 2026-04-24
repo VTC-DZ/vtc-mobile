@@ -8,12 +8,15 @@ import '../../../../../../core/theme/app_text_styles.dart';
 import '../../../../../../shared/widgets/primary_button.dart';
 import '../../../cubit/otp_cubit/otp_cubit.dart';
 import '../../../cubit/otp_cubit/otp_state.dart';
+import 'change_number_bar_widget.dart';
 import 'otp_blocked_banner_widget.dart';
 import 'otp_error_row_widget.dart';
 import 'otp_resend_row_widget.dart';
 
 class OtpVerificationFormSection extends StatefulWidget {
-  const OtpVerificationFormSection({super.key});
+  const OtpVerificationFormSection({super.key, required this.onChangeNumber});
+
+  final VoidCallback onChangeNumber;
 
   @override
   State<OtpVerificationFormSection> createState() =>
@@ -170,6 +173,8 @@ class _OtpVerificationFormSectionState
                     cubit.resendOtp();
                   },
                 ),
+              SizedBox(height: 16.h),
+              ChangeNumberBarWidget(onTap: widget.onChangeNumber),
               SizedBox(height: 24.h),
             ],
           );

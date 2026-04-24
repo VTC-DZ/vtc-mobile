@@ -19,9 +19,9 @@ class AppScaffold extends StatelessWidget {
     this.backgroundColor,
     this.resizeToAvoidBottomInset = true,
     this.safeAreaBottom = true,
-    this.showChangeNumberBar = false,
     this.onLeadingTap,
     this.appBarTitle,
+    this.showAppBar = false,
   });
 
   final Widget body;
@@ -29,9 +29,9 @@ class AppScaffold extends StatelessWidget {
   final Color? backgroundColor;
   final bool resizeToAvoidBottomInset;
   final bool safeAreaBottom;
-  final bool showChangeNumberBar;
   final VoidCallback? onLeadingTap;
   final String? appBarTitle;
+  final bool showAppBar;
 
   @override
   Widget build(BuildContext context) {
@@ -45,7 +45,7 @@ class AppScaffold extends StatelessWidget {
       ),
       child: Scaffold(
         backgroundColor: backgroundColor ?? AppColors.background(context),
-        appBar: showChangeNumberBar
+        appBar: showAppBar
             ? AppAppBar(
                 title: appBarTitle,
                 onLeadingTap: onLeadingTap,
