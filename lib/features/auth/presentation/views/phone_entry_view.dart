@@ -30,43 +30,40 @@ class PhoneEntryView extends StatelessWidget {
         }
       },
       child: AppScaffold(
-        body: GestureDetector(
-          onTap: () => FocusScope.of(context).unfocus(),
-          behavior: HitTestBehavior.translucent,
-          child: SingleChildScrollView(
-            physics: const ClampingScrollPhysics(),
-            padding: EdgeInsets.symmetric(horizontal: 24.w),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                SizedBox(height: 80.h),
-                const AppLogoWidget(),
-                SizedBox(height: 48.h),
-                Text(
-                  'Enter your phone number',
-                  style: AppTextStyles.displayMedium(context),
-                  textAlign: TextAlign.center,
-                ),
-                SizedBox(height: 8.h),
-                Text(
-                  "We'll send you a verification code",
-                  style: AppTextStyles.bodyMedium(context),
-                  textAlign: TextAlign.center,
-                ),
-                SizedBox(height: 32.h),
-                const PhoneFormSection(),
-                SizedBox(height: 24.h),
-                Text(
-                  'By continuing you agree to our Terms & Privacy',
-                  style: AppTextStyles.labelSmall(context),
-                  textAlign: TextAlign.center,
-                ),
-                SizedBox(height: 24.h),
-              ],
-            ),
+        body: SingleChildScrollView(
+          physics: const ClampingScrollPhysics(),
+          padding: EdgeInsets.symmetric(horizontal: 24.w),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              SizedBox(height: 80.h),
+              const AppLogoWidget(),
+              SizedBox(height: 48.h),
+              Text(
+                'Enter your phone number',
+                style: AppTextStyles.displayMedium(context),
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: 8.h),
+              Text(
+                "We'll send you a verification code",
+                style: AppTextStyles.bodyMedium(context),
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: 32.h),
+              const PhoneFormSection(),
+              SizedBox(height: 24.h),
+              Text(
+                'By continuing you agree to our Terms & Privacy',
+                style: AppTextStyles.labelSmall(context),
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: 24.h),
+            ],
           ),
         ),
       ),
     );
   }
 }
+

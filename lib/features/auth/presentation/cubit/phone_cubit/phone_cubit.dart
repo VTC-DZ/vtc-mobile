@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../../core/constants/validation_patterns.dart';
 import '../../../../../core/utils/phone_formatter.dart';
+import '../../../../../core/utils/validators.dart';
 import '../../../data/repo/auth_repository.dart';
 import 'phone_state.dart';
 
@@ -22,7 +23,7 @@ final class PhoneCubit extends Cubit<PhoneState> {
         phoneNumber: value,
         isValid: ValidationPatterns.dzPhone.hasMatch(value),
         status: PhoneStatus.initial,
-        errorMessage: '',
+        errorMessage: Validators.dzPhonePartial(value) ?? '',
       ),
     );
   }

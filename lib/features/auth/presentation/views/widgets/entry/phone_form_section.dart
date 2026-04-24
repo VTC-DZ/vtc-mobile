@@ -1,13 +1,13 @@
-// lib/features/auth/presentation/views/widgets/entry/phone_form_section.dart
-
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import '../../../../../../core/constants/app_constants.dart';
+import '../../../../../../shared/widgets/app_text_field.dart';
 import '../../../../../../shared/widgets/primary_button.dart';
 import '../../../cubit/phone_cubit/phone_cubit.dart';
 import '../../../cubit/phone_cubit/phone_state.dart';
-import 'phone_input_field.dart';
 
 class PhoneFormSection extends StatefulWidget {
   const PhoneFormSection({super.key});
@@ -27,24 +27,31 @@ class _PhoneFormSectionState extends State<PhoneFormSection> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        PhoneInputField(
-          controller: _phoneController,
-          onChanged: context.read<PhoneCubit>().phoneChanged,
-        ),
-        SizedBox(height: 24.h),
-        BlocBuilder<PhoneCubit, PhoneState>(
-          builder: (context, state) {
-            return PrimaryButton(
+    return BlocBuilder<PhoneCubit, PhoneState>(
+      builder: (context, state) {
+        return Column(
+          children: [
+            AppTextField(
+              controller: _phoneController,
+              hintText: AppConstants.phoneHint,
+              keyboardType: TextInputType.phone,
+              inputFormatters: [
+                FilteringTextInputFormatter.digitsOnly,
+                LengthLimitingTextInputFormatter(AppConstants.phoneMaxLength),
+              ],
+              onChanged: context.read<PhoneCubit>().phoneChanged,
+              error: state.errorMessage,
+            ),
+            SizedBox(height: 24.h),
+            PrimaryButton(
               label: 'Continue',
               isEnabled: state.isValid,
               isLoading: state.status == PhoneStatus.loading,
               onPressed: context.read<PhoneCubit>().sendOtp,
-            );
-          },
-        ),
-      ],
+            ),
+          ],
+        );
+      },
     );
   }
 }

@@ -20,6 +20,7 @@ class AppTextField extends StatelessWidget {
     this.onTapOutside,
     this.error = '',
     this.enabled = true,
+    this.unfocusOnTapOutside = true,
   });
 
   final TextEditingController controller;
@@ -32,6 +33,7 @@ class AppTextField extends StatelessWidget {
   final ValueChanged<String>? onChanged;
   final ValueChanged<String>? onSubmitted;
   final VoidCallback? onTapOutside;
+  final bool unfocusOnTapOutside;
   final String error;
   final bool enabled;
 
@@ -62,6 +64,10 @@ class AppTextField extends StatelessWidget {
             inputFormatters: inputFormatters,
             onChanged: onChanged,
             onFieldSubmitted: onSubmitted,
+            onTapOutside: (_) {
+              if (unfocusOnTapOutside) FocusManager.instance.primaryFocus?.unfocus();
+              onTapOutside?.call();
+            },
             style: AppTextStyles.inputText(context),
             decoration: InputDecoration(
               hintText: hintText,
