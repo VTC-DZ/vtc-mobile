@@ -93,86 +93,90 @@ class _OtpVerificationFormSectionState
           final isBlocked = state.status == OtpStatus.blocked;
           final isLoading = state.status == OtpStatus.loading;
           final hasWrongCode = state.status == OtpStatus.failure;
+          if (isBlocked) {
+            return Column(
+              children: [
+                OtpBlockedBannerWidget(seconds: state.blockSecondsRemaining),
+                SizedBox(height: 36.h),
+                ChangeNumberBarWidget(onTap: widget.onChangeNumber),
+                SizedBox(height: 24.h),
+              ],
+            );
+          }
 
           return Column(
             children: [
-              if (isBlocked)
-                OtpBlockedBannerWidget(seconds: state.blockSecondsRemaining),
-              if (!isBlocked)
-                Pinput(
-                  controller: _controller,
-                  length: _digitCount,
-                  autofocus: true,
-                  enabled: !isLoading,
-                  forceErrorState: hasWrongCode,
-                  hapticFeedbackType: HapticFeedbackType.lightImpact,
-                  onTapOutside: (_) => FocusScope.of(context).unfocus(),
-                  defaultPinTheme: defaultTheme,
-                  focusedPinTheme: defaultTheme.copyWith(
-                    decoration: defaultTheme.decoration!.copyWith(
-                      border: Border.all(
-                        color: AppColors.primary,
-                        width: 2.w,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.primary.withValues(alpha: 0.15),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
+              Pinput(
+                controller: _controller,
+                length: _digitCount,
+                autofocus: true,
+                enabled: !isLoading,
+                forceErrorState: hasWrongCode,
+                hapticFeedbackType: HapticFeedbackType.lightImpact,
+                onTapOutside: (_) => FocusScope.of(context).unfocus(),
+                defaultPinTheme: defaultTheme,
+                focusedPinTheme: defaultTheme.copyWith(
+                  decoration: defaultTheme.decoration!.copyWith(
+                    border: Border.all(
+                      color: AppColors.primary,
+                      width: 2.w,
                     ),
-                  ),
-                  submittedPinTheme: defaultTheme.copyWith(
-                    decoration: defaultTheme.decoration!.copyWith(
-                      border: Border.all(
-                        color: AppColors.primary.withValues(alpha: 0.4),
-                        width: 1.5.w,
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.primary.withValues(alpha: 0.15),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
                       ),
-                    ),
+                    ],
                   ),
-                  errorPinTheme: defaultTheme.copyWith(
-                    decoration: defaultTheme.decoration!.copyWith(
-                      border: Border.all(
-                        color: AppColors.error,
-                        width: 1.5.w,
-                      ),
-                    ),
-                  ),
-                  onChanged: (value) {
-                    cubit.otpChanged(value);
-                    setState(() => _isComplete = value.length == _digitCount);
-                  },
                 ),
-              if (!isBlocked)
-                AnimatedSize(
-                  duration: const Duration(milliseconds: 160),
-                  curve: Curves.easeOut,
-                  child: hasWrongCode && state.errorMessage.isNotEmpty
-                      ? Padding(
-                          padding: EdgeInsets.only(top: 12.h),
-                          child: OtpErrorRowWidget(message: state.errorMessage),
-                        )
-                      : const SizedBox.shrink(),
+                submittedPinTheme: defaultTheme.copyWith(
+                  decoration: defaultTheme.decoration!.copyWith(
+                    border: Border.all(
+                      color: AppColors.primary.withValues(alpha: 0.4),
+                      width: 1.5.w,
+                    ),
+                  ),
                 ),
+                errorPinTheme: defaultTheme.copyWith(
+                  decoration: defaultTheme.decoration!.copyWith(
+                    border: Border.all(
+                      color: AppColors.error,
+                      width: 1.5.w,
+                    ),
+                  ),
+                ),
+                onChanged: (value) {
+                  cubit.otpChanged(value);
+                  setState(() => _isComplete = value.length == _digitCount);
+                },
+              ),
+              AnimatedSize(
+                duration: const Duration(milliseconds: 160),
+                curve: Curves.easeOut,
+                child: hasWrongCode && state.errorMessage.isNotEmpty
+                    ? Padding(
+                        padding: EdgeInsets.only(top: 12.h),
+                        child: OtpErrorRowWidget(message: state.errorMessage),
+                      )
+                    : const SizedBox.shrink(),
+              ),
               SizedBox(height: 36.h),
-              if (!isBlocked)
-                PrimaryButton(
-                  label: 'Verify',
-                  isEnabled: _isComplete && !isLoading,
-                  isLoading: isLoading,
-                  onPressed: cubit.verifyOtp,
-                ),
+              PrimaryButton(
+                label: 'Verify',
+                isEnabled: _isComplete && !isLoading,
+                isLoading: isLoading,
+                onPressed: cubit.verifyOtp,
+              ),
               SizedBox(height: 28.h),
-              if (!isBlocked)
-                OtpResendRowWidget(
-                  state: state,
-                  onResend: () {
-                    _controller.clear();
-                    setState(() => _isComplete = false);
-                    cubit.resendOtp();
-                  },
-                ),
+              OtpResendRowWidget(
+                state: state,
+                onResend: () {
+                  _controller.clear();
+                  setState(() => _isComplete = false);
+                  cubit.resendOtp();
+                },
+              ),
               SizedBox(height: 16.h),
               ChangeNumberBarWidget(onTap: widget.onChangeNumber),
               SizedBox(height: 24.h),

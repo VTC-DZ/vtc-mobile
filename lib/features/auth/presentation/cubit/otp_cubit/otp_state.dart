@@ -5,6 +5,14 @@ import '../../../../../core/constants/app_constants.dart';
 enum OtpStatus { initial, loading, success, failure, blocked }
 
 final class OtpState extends Equatable {
+  final String phoneNumber;
+  final OtpStatus status;
+  final String otpValue;
+  final int secondsRemaining;
+  final int resendCount;
+  final int blockSecondsRemaining;
+  final String errorMessage;
+
   const OtpState({
     required this.phoneNumber,
     this.status = OtpStatus.initial,
@@ -14,14 +22,6 @@ final class OtpState extends Equatable {
     this.blockSecondsRemaining = 0,
     this.errorMessage = '',
   });
-
-  final String phoneNumber;
-  final OtpStatus status;
-  final String otpValue;
-  final int secondsRemaining;
-  final int resendCount;
-  final int blockSecondsRemaining;
-  final String errorMessage;
 
   bool get isComplete => otpValue.length == 6;
   bool get canResend =>
