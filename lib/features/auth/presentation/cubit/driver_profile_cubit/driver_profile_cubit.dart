@@ -1,62 +1,26 @@
-import 'dart:io';
-
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:image_picker/image_picker.dart';
 
-import '../../../../../core/constants/app_constants.dart';
 import '../../../../../core/constants/app_strings.dart';
 import '../../../../../core/utils/validators.dart';
 import '../../../data/models/gender.dart';
 import '../../../data/repo/auth_repository.dart';
 import '../../../data/models/driver_document.dart';
+import 'document_pick_result.dart';
+import 'driver_document_picker_service.dart';
 import 'driver_profile_state.dart';
 
 final class DriverProfileCubit extends Cubit<DriverProfileState> {
   DriverProfileCubit(this._repository) : super(const DriverProfileState());
 
   final AuthRepository _repository;
-  final _imagePicker = ImagePicker();
+  final _picker = DriverDocumentPickerService();
 
   // ── Step 1: Personal Info ─────────────────────────────────────────────────
 
-  void firstNameChanged(String value) {
-    emit(state.copyWith(
-      status: DriverRegistrationStatus.initial,
-      errorMessage: '',
-      personalInfo: state.personalInfo.copyWith(
-        firstName: value,
-        firstNameError: Validators.name(value.trim()),
-      ),
-    ));
-  }
-
-  void lastNameChanged(String value) {
-    emit(state.copyWith(
-      status: DriverRegistrationStatus.initial,
-      errorMessage: '',
-      personalInfo: state.personalInfo.copyWith(
-        lastName: value,
-        lastNameError: Validators.name(value.trim()),
-      ),
-    ));
-  }
-
-  void dateOfBirthSelected(DateTime date) {
-    emit(state.copyWith(
-      status: DriverRegistrationStatus.initial,
-      errorMessage: '',
-      personalInfo: state.personalInfo.copyWith(dateOfBirth: date),
-    ));
-  }
-
-  void genderChanged(Gender gender) {
-    emit(state.copyWith(
-      status: DriverRegistrationStatus.initial,
-      errorMessage: '',
-      personalInfo: state.personalInfo.copyWith(gender: gender),
-    ));
-  }
+  void firstNameChanged(String v) => _emitPersonal(state.personalInfo.copyWith(firstName: v, firstNameError: Validators.name(v.trim())));
+  void lastNameChanged(String v)  => _emitPersonal(state.personalInfo.copyWith(lastName: v,  lastNameError:  Validators.name(v.trim())));
+  void dateOfBirthSelected(DateTime date) => _emitPersonal(state.personalInfo.copyWith(dateOfBirth: date));
+  void genderChanged(Gender gender)       => _emitPersonal(state.personalInfo.copyWith(gender: gender));
 
   Future<void> submitStep1() async {
     if (!state.canProceedStep1) return;
@@ -85,70 +49,18 @@ final class DriverProfileCubit extends Cubit<DriverProfileState> {
 
   // ── Step 2: Vehicle Info ──────────────────────────────────────────────────
 
-  void vehicleMakeChanged(String value) {
-    emit(state.copyWith(
-      status: DriverRegistrationStatus.initial,
-      errorMessage: '',
-      vehicleInfo: state.vehicleInfo.copyWith(
-        vehicleMake: value,
-        vehicleMakeError: Validators.vehicleText(value, AppStrings.fieldCarMake),
-      ),
-    ));
-  }
-
-  void vehicleModelChanged(String value) {
-    emit(state.copyWith(
-      status: DriverRegistrationStatus.initial,
-      errorMessage: '',
-      vehicleInfo: state.vehicleInfo.copyWith(
-        vehicleModel: value,
-        vehicleModelError:
-            Validators.vehicleText(value, AppStrings.fieldCarModel),
-      ),
-    ));
-  }
-
-  void vehicleYearChanged(int year) {
-    emit(state.copyWith(
-      vehicleInfo: state.vehicleInfo.copyWith(vehicleYear: year),
-    ));
-  }
-
-  void vehicleColorChanged(String value) {
-    emit(state.copyWith(
-      status: DriverRegistrationStatus.initial,
-      errorMessage: '',
-      vehicleInfo: state.vehicleInfo.copyWith(
-        vehicleColor: value,
-        vehicleColorError: Validators.vehicleText(value, AppStrings.fieldColor),
-      ),
-    ));
-  }
-
-  void plateNumberChanged(String value) {
-    emit(state.copyWith(
-      status: DriverRegistrationStatus.initial,
-      errorMessage: '',
-      vehicleInfo: state.vehicleInfo.copyWith(
-        plateNumber: value,
-        plateNumberError: Validators.plate(value),
-      ),
-    ));
-  }
+  void vehicleMakeChanged(String v)  => _emitVehicle(state.vehicleInfo.copyWith(vehicleMake:  v, vehicleMakeError:  Validators.vehicleText(v, AppStrings.fieldCarMake)));
+  void vehicleModelChanged(String v) => _emitVehicle(state.vehicleInfo.copyWith(vehicleModel: v, vehicleModelError: Validators.vehicleText(v, AppStrings.fieldCarModel)));
+  void vehicleColorChanged(String v) => _emitVehicle(state.vehicleInfo.copyWith(vehicleColor: v, vehicleColorError: Validators.vehicleText(v, AppStrings.fieldColor)));
+  void plateNumberChanged(String v)  => _emitVehicle(state.vehicleInfo.copyWith(plateNumber:  v, plateNumberError:  Validators.plate(v)));
+  void vehicleYearChanged(int year)  => _emitVehicle(state.vehicleInfo.copyWith(vehicleYear: year));
 
   Future<void> pickVehiclePhoto() async {
-    try {
-      final file = await _imagePicker.pickImage(
-        source: ImageSource.gallery,
-        imageQuality: 85,
-      );
-      if (file != null) {
-        emit(state.copyWith(
-          vehicleInfo: state.vehicleInfo.copyWith(vehiclePhotoPath: file.path),
-        ));
-      }
-    } catch (_) {
-      // User cancelled or permission denied — no state change needed
+    final path = await _picker.pickVehiclePhoto();
+    if (path != null) {
+      emit(state.copyWith(
+        vehicleInfo: state.vehicleInfo.copyWith(vehiclePhotoPath: path),
+      ));
     }
   }
 
@@ -164,62 +76,23 @@ final class DriverProfileCubit extends Cubit<DriverProfileState> {
   // ── Step 3: Documents ─────────────────────────────────────────────────────
 
   Future<void> pickDocument(DriverDocumentType type) async {
-    emit(_setDocument(
-        type, const DriverDocument(status: UploadStatus.uploading)));
+    emit(_setDocument(type, const DriverDocument(status: UploadStatus.uploading)));
 
-    try {
-      String? path;
-      String? name;
+    final result = await _picker.pickDocument(type);
 
-      if (type == DriverDocumentType.vehicleRegistration) {
-        final result = await FilePicker.platform.pickFiles(
-          type: FileType.custom,
-          allowedExtensions: ['jpg', 'jpeg', 'png', 'pdf'],
-        );
-        if (result != null && result.files.isNotEmpty) {
-          path = result.files.first.path;
-          name = result.files.first.name;
-        }
-      } else {
-        final file = await _imagePicker.pickImage(
-          source: ImageSource.gallery,
-          imageQuality: 85,
-        );
-        path = file?.path;
-        name = file?.name;
-      }
-
-      if (path == null) {
+    switch (result) {
+      case DocumentPickCancelled():
         emit(_setDocument(type, const DriverDocument()));
-        return;
-      }
-
-      final fileSize = await File(path).length();
-      if (fileSize > AppConstants.maxDocumentSizeBytes) {
+      case DocumentPickSuccess(:final path, :final name):
         emit(_setDocument(
           type,
-          const DriverDocument(
-            status: UploadStatus.error,
-            errorMessage: AppStrings.fileTooLarge,
-          ),
+          DriverDocument(filePath: path, fileName: name, status: UploadStatus.uploaded),
         ));
-        return;
-      }
-
-      await Future<void>.delayed(const Duration(milliseconds: 800));
-
-      emit(_setDocument(
-        type,
-        DriverDocument(filePath: path, fileName: name, status: UploadStatus.uploaded),
-      ));
-    } catch (_) {
-      emit(_setDocument(
-        type,
-        const DriverDocument(
-          status: UploadStatus.error,
-          errorMessage: 'Upload failed. Tap to retry.',
-        ),
-      ));
+      case DocumentPickFailure(:final errorMessage):
+        emit(_setDocument(
+          type,
+          DriverDocument(status: UploadStatus.error, errorMessage: errorMessage),
+        ));
     }
   }
 
@@ -286,6 +159,18 @@ final class DriverProfileCubit extends Cubit<DriverProfileState> {
   }
 
   // ── Helpers ───────────────────────────────────────────────────────────────
+
+  void _emitPersonal(DriverPersonalInfo info) => emit(state.copyWith(
+        status: DriverRegistrationStatus.initial,
+        errorMessage: '',
+        personalInfo: info,
+      ));
+
+  void _emitVehicle(DriverVehicleInfo info) => emit(state.copyWith(
+        status: DriverRegistrationStatus.initial,
+        errorMessage: '',
+        vehicleInfo: info,
+      ));
 
   DriverProfileState _setDocument(DriverDocumentType type, DriverDocument doc) {
     return state.copyWith(

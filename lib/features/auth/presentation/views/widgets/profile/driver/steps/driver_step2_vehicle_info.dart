@@ -129,6 +129,8 @@ class _DriverStep2VehicleInfoState extends State<DriverStep2VehicleInfo> {
               photoPath: vehicle.vehiclePhotoPath,
               onTap: isSubmitting ? null : cubit.pickVehiclePhoto,
             ),
+
+            SizedBox(height: 12.h),
           ],
         );
       },
