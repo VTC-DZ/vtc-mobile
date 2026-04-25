@@ -31,8 +31,8 @@ abstract final class AppTextStyles {
 
   static TextStyle displaySmall(BuildContext context) =>
       GoogleFonts.plusJakartaSans(
-        fontSize: 24.sp,
-        fontWeight: FontWeight.w700,
+        fontSize: 18.sp,
+        fontWeight: FontWeight.w300,
         color: Theme.of(context).colorScheme.onSurface,
         height: 1.3,
       );

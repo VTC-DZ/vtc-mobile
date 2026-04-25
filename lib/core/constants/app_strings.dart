@@ -9,14 +9,6 @@ abstract final class AppStrings {
 
   // ── Driver Registration ──────────────────────────────────────────────────
 
-  // Step headers
-  static const String driverStep1Title = 'Tell us about\nyourself';
-  static const String driverStep1Subtitle = 'Start with your basic personal details';
-  static const String driverStep2Title = 'Your vehicle\ndetails';
-  static const String driverStep2Subtitle = 'Share your vehicle information';
-  static const String driverStep3Title = 'Upload your\ndocuments';
-  static const String driverStep3Subtitle = 'We need to verify your identity and vehicle';
-
   // Field labels
   static const String fieldFirstName = 'First Name';
   static const String fieldLastName = 'Last Name';

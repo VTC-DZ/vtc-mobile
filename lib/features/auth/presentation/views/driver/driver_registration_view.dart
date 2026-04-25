@@ -3,9 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../../core/constants/app_strings.dart';
 import '../../../../../core/router/route_names.dart';
-import '../../../../../core/theme/app_text_styles.dart';
 import '../../../../../shared/widgets/app_scaffold.dart';
 import '../../../../../shared/widgets/primary_button.dart';
 import '../widgets/profile/passenger/profile_error_banner_widget.dart';
@@ -41,10 +39,10 @@ class DriverRegistrationView extends StatelessWidget {
                   stepLabels: const ['Personal', 'Vehicle', 'Documents'],
                   onStepTap: cubit.goToStep,
                 ),
-                SizedBox(height: 32.h),
-                _StepHeader(step: state.currentStep),
-                SizedBox(height: 40.h),
-                const Expanded(child: _StepContent()),
+                SizedBox(height: 20.h),
+                const Expanded(
+                  child: SingleChildScrollView(child: _StepContent()),
+                ),
                 _ErrorBanner(message: state.errorMessage),
               ],
             ),
@@ -61,35 +59,6 @@ class DriverRegistrationView extends StatelessWidget {
 }
 
 // ── Private components ────────────────────────────────────────────────────────
-
-class _StepHeader extends StatelessWidget {
-  const _StepHeader({required this.step});
-  final DriverStep step;
-
-  static const _titles = {
-    DriverStep.personalInfo: AppStrings.driverStep1Title,
-    DriverStep.vehicleInfo: AppStrings.driverStep2Title,
-    DriverStep.documents: AppStrings.driverStep3Title,
-  };
-
-  static const _subtitles = {
-    DriverStep.personalInfo: AppStrings.driverStep1Subtitle,
-    DriverStep.vehicleInfo: AppStrings.driverStep2Subtitle,
-    DriverStep.documents: AppStrings.driverStep3Subtitle,
-  };
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(_titles[step]!, style: AppTextStyles.displayMedium(context)),
-        SizedBox(height: 8.h),
-        Text(_subtitles[step]!, style: AppTextStyles.bodyMedium(context)),
-      ],
-    );
-  }
-}
 
 class _StepContent extends StatelessWidget {
   const _StepContent();
