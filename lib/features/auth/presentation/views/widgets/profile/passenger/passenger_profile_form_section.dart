@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-import '../../../cubit/passenger_profile_cubit/passenger_profile_cubit.dart';
-import '../../../cubit/passenger_profile_cubit/passenger_profile_state.dart';
+import '../../../../cubit/passenger_profile_cubit/passenger_profile_cubit.dart';
+import '../../../../cubit/passenger_profile_cubit/passenger_profile_state.dart';
 import 'profile_email_field_widget.dart';
 import 'profile_error_banner_widget.dart';
-import 'profile_field_label_widget.dart';
-import 'profile_gender_toggle_widget.dart';
-import 'profile_name_field_widget.dart';
+import '../profile_field_label_widget.dart';
+import '../profile_gender_toggle_widget.dart';
+import '../profile_name_field_widget.dart';
 
 class PassengerProfileFormSection extends StatelessWidget {
   const PassengerProfileFormSection({

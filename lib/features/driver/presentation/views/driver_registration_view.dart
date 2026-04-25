@@ -10,8 +10,8 @@ import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../shared/widgets/app_scaffold.dart';
 import '../../../../shared/widgets/primary_button.dart';
-import '../../../auth/presentation/views/widgets/profile/profile_error_banner_widget.dart';
-import '../../../auth/presentation/views/widgets/profile/profile_step_progress_bar_widget.dart';
+import '../../../auth/presentation/views/widgets/profile/passenger/profile_error_banner_widget.dart';
+import '../../../auth/presentation/views/widgets/profile/driver/profile_step_progress_bar_widget.dart';
 import '../cubit/driver_registration_cubit/driver_registration_cubit.dart';
 import '../cubit/driver_registration_cubit/driver_registration_state.dart';
 import 'widgets/steps/driver_step1_personal_info.dart';
@@ -26,8 +26,7 @@ class DriverRegistrationView extends StatefulWidget {
   const DriverRegistrationView({super.key});
 
   @override
-  State<DriverRegistrationView> createState() =>
-      _DriverRegistrationViewState();
+  State<DriverRegistrationView> createState() => _DriverRegistrationViewState();
 }
 
 class _DriverRegistrationViewState extends State<DriverRegistrationView> {
@@ -151,8 +150,7 @@ class _DriverRegistrationViewState extends State<DriverRegistrationView> {
     }
   }
 
-  VoidCallback _buttonAction(
-      DriverRegistrationCubit cubit, DriverStep step) {
+  VoidCallback _buttonAction(DriverRegistrationCubit cubit, DriverStep step) {
     switch (step) {
       case DriverStep.personalInfo:
         return cubit.submitStep1;

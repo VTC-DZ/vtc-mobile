@@ -164,9 +164,8 @@ class _VehiclePhotoButton extends StatelessWidget {
           color: AppColors.surface(context),
           borderRadius: BorderRadius.circular(12.r),
           border: Border.all(
-            color: hasPhoto
-                ? AppColors.primary
-                : AppColors.borderDefault(context),
+            color:
+                hasPhoto ? AppColors.primary : AppColors.borderDefault(context),
             width: 1.5.w,
           ),
         ),
@@ -177,13 +176,16 @@ class _VehiclePhotoButton extends StatelessWidget {
                   ? Icons.check_circle_rounded
                   : Icons.add_photo_alternate_outlined,
               size: 22.w,
-              color:
-                  hasPhoto ? AppColors.primary : AppColors.textSecondary(context),
+              color: hasPhoto
+                  ? AppColors.primary
+                  : AppColors.textSecondary(context),
             ),
             SizedBox(width: 12.w),
             Expanded(
               child: Text(
-                hasPhoto ? 'Photo selected — tap to change' : 'Tap to add vehicle photo',
+                hasPhoto
+                    ? 'Photo selected — tap to change'
+                    : 'Tap to add vehicle photo',
                 style: AppTextStyles.bodyMedium(context).copyWith(
                   color: hasPhoto
                       ? AppColors.text(context)
