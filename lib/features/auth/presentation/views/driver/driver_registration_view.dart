@@ -1,5 +1,3 @@
-// lib/features/driver/presentation/views/driver_registration_view.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -173,7 +171,7 @@ class _DriverRegistrationViewState extends State<DriverRegistrationView> {
   }
 
   bool _buttonLoading(DriverProfileState state) {
-    return state.status == DriverRegistrationStatus.submitting &&
+    return state.status == DriverRegistrationStatus.loading &&
         state.currentStep != DriverStep.vehicleInfo;
   }
 

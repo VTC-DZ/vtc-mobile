@@ -1,30 +1,62 @@
-// lib/features/driver/presentation/cubit/driver_registration_cubit/driver_registration_state.dart
-
 import '../../../data/models/gender.dart';
 import '../../../data/models/driver_document.dart';
 
-enum DriverRegistrationStatus { idle, submitting, success, failure }
+enum DriverRegistrationStatus { initial, loading, success, failure }
 
 enum DriverStep { personalInfo, vehicleInfo, documents }
 
-final class DriverProfileState {
-  const DriverProfileState({
-    // ── Step tracking ────────────────────────────────────────────────────────
-    this.currentStep = DriverStep.personalInfo,
-    this.status = DriverRegistrationStatus.idle,
-    this.errorMessage = '',
+// ── Step data classes ─────────────────────────────────────────────────────────
 
-    // ── Step 1: Personal Info ────────────────────────────────────────────────
+final class DriverPersonalInfo {
+  const DriverPersonalInfo({
     this.firstName = '',
     this.lastName = '',
     this.dateOfBirth,
     this.gender,
     this.firstNameError = '',
     this.lastNameError = '',
-    this.firstNameTouched = false,
-    this.lastNameTouched = false,
+  });
 
-    // ── Step 2: Vehicle Info ─────────────────────────────────────────────────
+  final String firstName;
+  final String lastName;
+  final DateTime? dateOfBirth;
+  final Gender? gender;
+  final String firstNameError;
+  final String lastNameError;
+
+  String get fullName => '${firstName.trim()} ${lastName.trim()}'.trim();
+
+  bool get isFirstNameValid =>
+      firstNameError.isEmpty && firstName.trim().length >= 2;
+  bool get isLastNameValid =>
+      lastNameError.isEmpty && lastName.trim().length >= 2;
+  bool get canProceed =>
+      isFirstNameValid &&
+      isLastNameValid &&
+      dateOfBirth != null &&
+      gender != null;
+
+  DriverPersonalInfo copyWith({
+    String? firstName,
+    String? lastName,
+    DateTime? dateOfBirth,
+    Gender? gender,
+    String? firstNameError,
+    String? lastNameError,
+  }) {
+    return DriverPersonalInfo(
+      firstName: firstName ?? this.firstName,
+      lastName: lastName ?? this.lastName,
+      dateOfBirth: dateOfBirth ?? this.dateOfBirth,
+      gender: gender ?? this.gender,
+      firstNameError: firstNameError ?? this.firstNameError,
+      lastNameError: lastNameError ?? this.lastNameError,
+    );
+  }
+}
+
+final class DriverVehicleInfo {
+  const DriverVehicleInfo({
     this.vehicleMake = '',
     this.vehicleModel = '',
     this.vehicleYear,
@@ -35,31 +67,7 @@ final class DriverProfileState {
     this.vehicleModelError = '',
     this.vehicleColorError = '',
     this.plateNumberError = '',
-    this.vehicleMakeTouched = false,
-    this.vehicleModelTouched = false,
-    this.vehicleColorTouched = false,
-    this.plateNumberTouched = false,
-
-    // ── Step 3: Documents ────────────────────────────────────────────────────
-    this.nationalIdFront = const DriverDocument(),
-    this.nationalIdBack = const DriverDocument(),
-    this.licenseFront = const DriverDocument(),
-    this.licenseBack = const DriverDocument(),
-    this.vehicleRegistration = const DriverDocument(),
   });
-
-  final DriverStep currentStep;
-  final DriverRegistrationStatus status;
-  final String errorMessage;
-
-  final String firstName;
-  final String lastName;
-  final DateTime? dateOfBirth;
-  final Gender? gender;
-  final String firstNameError;
-  final String lastNameError;
-  final bool firstNameTouched;
-  final bool lastNameTouched;
 
   final String vehicleMake;
   final String vehicleModel;
@@ -71,83 +79,24 @@ final class DriverProfileState {
   final String vehicleModelError;
   final String vehicleColorError;
   final String plateNumberError;
-  final bool vehicleMakeTouched;
-  final bool vehicleModelTouched;
-  final bool vehicleColorTouched;
-  final bool plateNumberTouched;
-
-  final DriverDocument nationalIdFront;
-  final DriverDocument nationalIdBack;
-  final DriverDocument licenseFront;
-  final DriverDocument licenseBack;
-  final DriverDocument vehicleRegistration;
-
-  // ── Step 1 derived ────────────────────────────────────────────────────────
-
-  String get fullName => '${firstName.trim()} ${lastName.trim()}'.trim();
-
-  bool get isFirstNameValid =>
-      firstNameError.isEmpty && firstName.trim().length >= 2;
-  bool get isLastNameValid =>
-      lastNameError.isEmpty && lastName.trim().length >= 2;
-  bool get isDobSelected => dateOfBirth != null;
-  bool get isGenderSelected => gender != null;
-
-  bool get canProceedStep1 =>
-      isFirstNameValid &&
-      isLastNameValid &&
-      isDobSelected &&
-      isGenderSelected &&
-      status != DriverRegistrationStatus.submitting;
-
-  // ── Step 2 derived ────────────────────────────────────────────────────────
 
   bool get isVehicleMakeValid =>
       vehicleMakeError.isEmpty && vehicleMake.trim().length >= 2;
   bool get isVehicleModelValid =>
       vehicleModelError.isEmpty && vehicleModel.trim().length >= 2;
-  bool get isVehicleYearSelected => vehicleYear != null;
   bool get isVehicleColorValid =>
       vehicleColorError.isEmpty && vehicleColor.trim().length >= 2;
   bool get isPlateNumberValid =>
       plateNumberError.isEmpty && plateNumber.isNotEmpty;
-  bool get isVehiclePhotoUploaded => vehiclePhotoPath != null;
-
-  bool get canProceedStep2 =>
+  bool get canProceed =>
       isVehicleMakeValid &&
       isVehicleModelValid &&
-      isVehicleYearSelected &&
+      vehicleYear != null &&
       isVehicleColorValid &&
       isPlateNumberValid &&
-      isVehiclePhotoUploaded &&
-      status != DriverRegistrationStatus.submitting;
+      vehiclePhotoPath != null;
 
-  // ── Step 3 derived ────────────────────────────────────────────────────────
-
-  bool get allDocumentsUploaded =>
-      nationalIdFront.isUploaded &&
-      nationalIdBack.isUploaded &&
-      licenseFront.isUploaded &&
-      licenseBack.isUploaded &&
-      vehicleRegistration.isUploaded;
-
-  bool get canSubmitStep3 =>
-      allDocumentsUploaded && status != DriverRegistrationStatus.submitting;
-
-  // ── copyWith ──────────────────────────────────────────────────────────────
-
-  DriverProfileState copyWith({
-    DriverStep? currentStep,
-    DriverRegistrationStatus? status,
-    String? errorMessage,
-    String? firstName,
-    String? lastName,
-    DateTime? dateOfBirth,
-    Gender? gender,
-    String? firstNameError,
-    String? lastNameError,
-    bool? firstNameTouched,
-    bool? lastNameTouched,
+  DriverVehicleInfo copyWith({
     String? vehicleMake,
     String? vehicleModel,
     int? vehicleYear,
@@ -158,28 +107,8 @@ final class DriverProfileState {
     String? vehicleModelError,
     String? vehicleColorError,
     String? plateNumberError,
-    bool? vehicleMakeTouched,
-    bool? vehicleModelTouched,
-    bool? vehicleColorTouched,
-    bool? plateNumberTouched,
-    DriverDocument? nationalIdFront,
-    DriverDocument? nationalIdBack,
-    DriverDocument? licenseFront,
-    DriverDocument? licenseBack,
-    DriverDocument? vehicleRegistration,
   }) {
-    return DriverProfileState(
-      currentStep: currentStep ?? this.currentStep,
-      status: status ?? this.status,
-      errorMessage: errorMessage ?? this.errorMessage,
-      firstName: firstName ?? this.firstName,
-      lastName: lastName ?? this.lastName,
-      dateOfBirth: dateOfBirth ?? this.dateOfBirth,
-      gender: gender ?? this.gender,
-      firstNameError: firstNameError ?? this.firstNameError,
-      lastNameError: lastNameError ?? this.lastNameError,
-      firstNameTouched: firstNameTouched ?? this.firstNameTouched,
-      lastNameTouched: lastNameTouched ?? this.lastNameTouched,
+    return DriverVehicleInfo(
       vehicleMake: vehicleMake ?? this.vehicleMake,
       vehicleModel: vehicleModel ?? this.vehicleModel,
       vehicleYear: vehicleYear ?? this.vehicleYear,
@@ -190,15 +119,92 @@ final class DriverProfileState {
       vehicleModelError: vehicleModelError ?? this.vehicleModelError,
       vehicleColorError: vehicleColorError ?? this.vehicleColorError,
       plateNumberError: plateNumberError ?? this.plateNumberError,
-      vehicleMakeTouched: vehicleMakeTouched ?? this.vehicleMakeTouched,
-      vehicleModelTouched: vehicleModelTouched ?? this.vehicleModelTouched,
-      vehicleColorTouched: vehicleColorTouched ?? this.vehicleColorTouched,
-      plateNumberTouched: plateNumberTouched ?? this.plateNumberTouched,
+    );
+  }
+}
+
+final class DriverDocuments {
+  const DriverDocuments({
+    this.nationalIdFront = const DriverDocument(),
+    this.nationalIdBack = const DriverDocument(),
+    this.licenseFront = const DriverDocument(),
+    this.licenseBack = const DriverDocument(),
+    this.vehicleRegistration = const DriverDocument(),
+  });
+
+  final DriverDocument nationalIdFront;
+  final DriverDocument nationalIdBack;
+  final DriverDocument licenseFront;
+  final DriverDocument licenseBack;
+  final DriverDocument vehicleRegistration;
+
+  bool get allUploaded =>
+      nationalIdFront.isUploaded &&
+      nationalIdBack.isUploaded &&
+      licenseFront.isUploaded &&
+      licenseBack.isUploaded &&
+      vehicleRegistration.isUploaded;
+
+  DriverDocuments copyWith({
+    DriverDocument? nationalIdFront,
+    DriverDocument? nationalIdBack,
+    DriverDocument? licenseFront,
+    DriverDocument? licenseBack,
+    DriverDocument? vehicleRegistration,
+  }) {
+    return DriverDocuments(
       nationalIdFront: nationalIdFront ?? this.nationalIdFront,
       nationalIdBack: nationalIdBack ?? this.nationalIdBack,
       licenseFront: licenseFront ?? this.licenseFront,
       licenseBack: licenseBack ?? this.licenseBack,
       vehicleRegistration: vehicleRegistration ?? this.vehicleRegistration,
+    );
+  }
+}
+
+// ── Root state ────────────────────────────────────────────────────────────────
+
+final class DriverProfileState {
+  const DriverProfileState({
+    this.currentStep = DriverStep.personalInfo,
+    this.status = DriverRegistrationStatus.initial,
+    this.errorMessage = '',
+    this.personalInfo = const DriverPersonalInfo(),
+    this.vehicleInfo = const DriverVehicleInfo(),
+    this.documents = const DriverDocuments(),
+  });
+
+  final DriverStep currentStep;
+  final DriverRegistrationStatus status;
+  final String errorMessage;
+  final DriverPersonalInfo personalInfo;
+  final DriverVehicleInfo vehicleInfo;
+  final DriverDocuments documents;
+
+  bool get canProceedStep1 =>
+      personalInfo.canProceed && status != DriverRegistrationStatus.loading;
+
+  bool get canProceedStep2 =>
+      vehicleInfo.canProceed && status != DriverRegistrationStatus.loading;
+
+  bool get canSubmitStep3 =>
+      documents.allUploaded && status != DriverRegistrationStatus.loading;
+
+  DriverProfileState copyWith({
+    DriverStep? currentStep,
+    DriverRegistrationStatus? status,
+    String? errorMessage,
+    DriverPersonalInfo? personalInfo,
+    DriverVehicleInfo? vehicleInfo,
+    DriverDocuments? documents,
+  }) {
+    return DriverProfileState(
+      currentStep: currentStep ?? this.currentStep,
+      status: status ?? this.status,
+      errorMessage: errorMessage ?? this.errorMessage,
+      personalInfo: personalInfo ?? this.personalInfo,
+      vehicleInfo: vehicleInfo ?? this.vehicleInfo,
+      documents: documents ?? this.documents,
     );
   }
 }

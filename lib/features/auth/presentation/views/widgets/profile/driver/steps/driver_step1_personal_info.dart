@@ -1,5 +1,3 @@
-// lib/features/driver/presentation/views/widgets/steps/driver_step1_personal_info.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
@@ -34,7 +32,8 @@ class DriverStep1PersonalInfo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isSubmitting = state.status == DriverRegistrationStatus.submitting;
+    final info = state.personalInfo;
+    final isSubmitting = state.status == DriverRegistrationStatus.loading;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -45,7 +44,7 @@ class DriverStep1PersonalInfo extends StatelessWidget {
         ProfileNameFieldWidget(
           controller: firstNameController,
           onChanged: cubit.firstNameChanged,
-          error: state.firstNameTouched ? state.firstNameError : '',
+          error: info.firstNameError,
           enabled: !isSubmitting,
         ),
 
@@ -57,7 +56,7 @@ class DriverStep1PersonalInfo extends StatelessWidget {
         ProfileNameFieldWidget(
           controller: lastNameController,
           onChanged: cubit.lastNameChanged,
-          error: state.lastNameTouched ? state.lastNameError : '',
+          error: info.lastNameError,
           enabled: !isSubmitting,
         ),
 
@@ -67,7 +66,7 @@ class DriverStep1PersonalInfo extends StatelessWidget {
         const ProfileFieldLabelWidget(label: AppStrings.fieldDateOfBirth),
         SizedBox(height: 8.h),
         DriverDatePickerFieldWidget(
-          selectedDate: state.dateOfBirth,
+          selectedDate: info.dateOfBirth,
           onDateSelected: cubit.dateOfBirthSelected,
           enabled: !isSubmitting,
         ),
@@ -78,7 +77,7 @@ class DriverStep1PersonalInfo extends StatelessWidget {
         const ProfileFieldLabelWidget(label: AppStrings.fieldGender),
         SizedBox(height: 8.h),
         ProfileGenderToggleWidget(
-          selected: state.gender,
+          selected: info.gender,
           onChanged: (Gender g) => cubit.genderChanged(g),
           enabled: !isSubmitting,
         ),

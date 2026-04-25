@@ -21,68 +21,73 @@ final class DriverProfileCubit extends Cubit<DriverProfileState> {
   // ── Step 1: Personal Info ─────────────────────────────────────────────────
 
   void firstNameChanged(String value) {
-    final error = Validators.name(value.trim());
     emit(state.copyWith(
-      firstName: value,
-      firstNameError: error,
-      firstNameTouched: true,
-      status: DriverRegistrationStatus.idle,
+      status: DriverRegistrationStatus.initial,
       errorMessage: '',
+      personalInfo: state.personalInfo.copyWith(
+        firstName: value,
+        firstNameError: Validators.name(value.trim()),
+      ),
     ));
   }
 
   void firstNameFocusLost() {
-    if (!state.firstNameTouched) return;
     emit(state.copyWith(
-        firstNameError: Validators.name(state.firstName.trim())));
+      personalInfo: state.personalInfo.copyWith(
+        firstNameError: Validators.name(state.personalInfo.firstName.trim()),
+      ),
+    ));
   }
 
   void lastNameChanged(String value) {
-    final error = Validators.name(value.trim());
     emit(state.copyWith(
-      lastName: value,
-      lastNameError: error,
-      lastNameTouched: true,
-      status: DriverRegistrationStatus.idle,
+      status: DriverRegistrationStatus.initial,
       errorMessage: '',
+      personalInfo: state.personalInfo.copyWith(
+        lastName: value,
+        lastNameError: Validators.name(value.trim()),
+      ),
     ));
   }
 
   void lastNameFocusLost() {
-    if (!state.lastNameTouched) return;
-    emit(state.copyWith(lastNameError: Validators.name(state.lastName.trim())));
+    emit(state.copyWith(
+      personalInfo: state.personalInfo.copyWith(
+        lastNameError: Validators.name(state.personalInfo.lastName.trim()),
+      ),
+    ));
   }
 
   void dateOfBirthSelected(DateTime date) {
     emit(state.copyWith(
-      dateOfBirth: date,
-      status: DriverRegistrationStatus.idle,
+      status: DriverRegistrationStatus.initial,
       errorMessage: '',
+      personalInfo: state.personalInfo.copyWith(dateOfBirth: date),
     ));
   }
 
   void genderChanged(Gender gender) {
     emit(state.copyWith(
-      gender: gender,
-      status: DriverRegistrationStatus.idle,
+      status: DriverRegistrationStatus.initial,
       errorMessage: '',
+      personalInfo: state.personalInfo.copyWith(gender: gender),
     ));
   }
 
   Future<void> submitStep1() async {
     if (!state.canProceedStep1) return;
     emit(state.copyWith(
-      status: DriverRegistrationStatus.submitting,
+      status: DriverRegistrationStatus.loading,
       errorMessage: '',
     ));
     try {
       await _repository.saveDriverPersonalInfo(
-        fullName: state.fullName,
-        gender: state.gender!,
-        dateOfBirth: state.dateOfBirth!,
+        fullName: state.personalInfo.fullName,
+        gender: state.personalInfo.gender!,
+        dateOfBirth: state.personalInfo.dateOfBirth!,
       );
       emit(state.copyWith(
-        status: DriverRegistrationStatus.idle,
+        status: DriverRegistrationStatus.initial,
         currentStep: DriverStep.vehicleInfo,
       ));
     } catch (e) {
@@ -98,76 +103,88 @@ final class DriverProfileCubit extends Cubit<DriverProfileState> {
 
   void vehicleMakeChanged(String value) {
     emit(state.copyWith(
-      vehicleMake: value,
-      vehicleMakeError: Validators.vehicleText(value, AppStrings.fieldCarMake),
-      vehicleMakeTouched: true,
-      status: DriverRegistrationStatus.idle,
+      status: DriverRegistrationStatus.initial,
       errorMessage: '',
+      vehicleInfo: state.vehicleInfo.copyWith(
+        vehicleMake: value,
+        vehicleMakeError: Validators.vehicleText(value, AppStrings.fieldCarMake),
+      ),
     ));
   }
 
   void vehicleMakeFocusLost() {
-    if (!state.vehicleMakeTouched) return;
     emit(state.copyWith(
-      vehicleMakeError:
-          Validators.vehicleText(state.vehicleMake, AppStrings.fieldCarMake),
+      vehicleInfo: state.vehicleInfo.copyWith(
+        vehicleMakeError: Validators.vehicleText(
+            state.vehicleInfo.vehicleMake, AppStrings.fieldCarMake),
+      ),
     ));
   }
 
   void vehicleModelChanged(String value) {
     emit(state.copyWith(
-      vehicleModel: value,
-      vehicleModelError:
-          Validators.vehicleText(value, AppStrings.fieldCarModel),
-      vehicleModelTouched: true,
-      status: DriverRegistrationStatus.idle,
+      status: DriverRegistrationStatus.initial,
       errorMessage: '',
+      vehicleInfo: state.vehicleInfo.copyWith(
+        vehicleModel: value,
+        vehicleModelError:
+            Validators.vehicleText(value, AppStrings.fieldCarModel),
+      ),
     ));
   }
 
   void vehicleModelFocusLost() {
-    if (!state.vehicleModelTouched) return;
     emit(state.copyWith(
-      vehicleModelError:
-          Validators.vehicleText(state.vehicleModel, AppStrings.fieldCarModel),
+      vehicleInfo: state.vehicleInfo.copyWith(
+        vehicleModelError: Validators.vehicleText(
+            state.vehicleInfo.vehicleModel, AppStrings.fieldCarModel),
+      ),
     ));
   }
 
   void vehicleYearChanged(int year) {
-    emit(state.copyWith(vehicleYear: year));
+    emit(state.copyWith(
+      vehicleInfo: state.vehicleInfo.copyWith(vehicleYear: year),
+    ));
   }
 
   void vehicleColorChanged(String value) {
     emit(state.copyWith(
-      vehicleColor: value,
-      vehicleColorError: Validators.vehicleText(value, AppStrings.fieldColor),
-      vehicleColorTouched: true,
-      status: DriverRegistrationStatus.idle,
+      status: DriverRegistrationStatus.initial,
       errorMessage: '',
+      vehicleInfo: state.vehicleInfo.copyWith(
+        vehicleColor: value,
+        vehicleColorError: Validators.vehicleText(value, AppStrings.fieldColor),
+      ),
     ));
   }
 
   void vehicleColorFocusLost() {
-    if (!state.vehicleColorTouched) return;
     emit(state.copyWith(
-      vehicleColorError:
-          Validators.vehicleText(state.vehicleColor, AppStrings.fieldColor),
+      vehicleInfo: state.vehicleInfo.copyWith(
+        vehicleColorError: Validators.vehicleText(
+            state.vehicleInfo.vehicleColor, AppStrings.fieldColor),
+      ),
     ));
   }
 
   void plateNumberChanged(String value) {
     emit(state.copyWith(
-      plateNumber: value,
-      plateNumberError: Validators.plate(value),
-      plateNumberTouched: true,
-      status: DriverRegistrationStatus.idle,
+      status: DriverRegistrationStatus.initial,
       errorMessage: '',
+      vehicleInfo: state.vehicleInfo.copyWith(
+        plateNumber: value,
+        plateNumberError: Validators.plate(value),
+      ),
     ));
   }
 
   void plateNumberFocusLost() {
-    if (!state.plateNumberTouched) return;
-    emit(state.copyWith(plateNumberError: Validators.plate(state.plateNumber)));
+    emit(state.copyWith(
+      vehicleInfo: state.vehicleInfo.copyWith(
+        plateNumberError: Validators.plate(state.vehicleInfo.plateNumber),
+      ),
+    ));
   }
 
   Future<void> pickVehiclePhoto() async {
@@ -177,7 +194,9 @@ final class DriverProfileCubit extends Cubit<DriverProfileState> {
         imageQuality: 85,
       );
       if (file != null) {
-        emit(state.copyWith(vehiclePhotoPath: file.path));
+        emit(state.copyWith(
+          vehicleInfo: state.vehicleInfo.copyWith(vehiclePhotoPath: file.path),
+        ));
       }
     } catch (_) {
       // User cancelled or permission denied — no state change needed
@@ -188,7 +207,7 @@ final class DriverProfileCubit extends Cubit<DriverProfileState> {
     if (!state.canProceedStep2) return;
     emit(state.copyWith(
       currentStep: DriverStep.documents,
-      status: DriverRegistrationStatus.idle,
+      status: DriverRegistrationStatus.initial,
       errorMessage: '',
     ));
   }
@@ -222,7 +241,6 @@ final class DriverProfileCubit extends Cubit<DriverProfileState> {
       }
 
       if (path == null) {
-        // User cancelled — revert to idle
         emit(_setDocument(type, const DriverDocument()));
         return;
       }
@@ -239,16 +257,11 @@ final class DriverProfileCubit extends Cubit<DriverProfileState> {
         return;
       }
 
-      // Simulate upload latency
       await Future<void>.delayed(const Duration(milliseconds: 800));
 
       emit(_setDocument(
         type,
-        DriverDocument(
-          filePath: path,
-          fileName: name,
-          status: UploadStatus.uploaded,
-        ),
+        DriverDocument(filePath: path, fileName: name, status: UploadStatus.uploaded),
       ));
     } catch (_) {
       emit(_setDocument(
@@ -264,22 +277,24 @@ final class DriverProfileCubit extends Cubit<DriverProfileState> {
   Future<void> submitStep3() async {
     if (!state.canSubmitStep3) return;
     emit(state.copyWith(
-      status: DriverRegistrationStatus.submitting,
+      status: DriverRegistrationStatus.loading,
       errorMessage: '',
     ));
     try {
+      final v = state.vehicleInfo;
+      final d = state.documents;
       await _repository.submitDriverDocuments(
-        nationalIdFrontPath: state.nationalIdFront.filePath!,
-        nationalIdBackPath: state.nationalIdBack.filePath!,
-        licenseFrontPath: state.licenseFront.filePath!,
-        licenseBackPath: state.licenseBack.filePath!,
-        vehicleRegistrationPath: state.vehicleRegistration.filePath!,
-        vehiclePhotoPath: state.vehiclePhotoPath!,
-        vehicleMake: state.vehicleMake.trim(),
-        vehicleModel: state.vehicleModel.trim(),
-        vehicleYear: state.vehicleYear!,
-        vehicleColor: state.vehicleColor.trim(),
-        plateNumber: state.plateNumber,
+        nationalIdFrontPath: d.nationalIdFront.filePath!,
+        nationalIdBackPath: d.nationalIdBack.filePath!,
+        licenseFrontPath: d.licenseFront.filePath!,
+        licenseBackPath: d.licenseBack.filePath!,
+        vehicleRegistrationPath: d.vehicleRegistration.filePath!,
+        vehiclePhotoPath: v.vehiclePhotoPath!,
+        vehicleMake: v.vehicleMake.trim(),
+        vehicleModel: v.vehicleModel.trim(),
+        vehicleYear: v.vehicleYear!,
+        vehicleColor: v.vehicleColor.trim(),
+        plateNumber: v.plateNumber,
       );
       emit(state.copyWith(status: DriverRegistrationStatus.success));
     } catch (e) {
@@ -297,17 +312,16 @@ final class DriverProfileCubit extends Cubit<DriverProfileState> {
       case DriverStep.vehicleInfo:
         emit(state.copyWith(
           currentStep: DriverStep.personalInfo,
-          status: DriverRegistrationStatus.idle,
+          status: DriverRegistrationStatus.initial,
           errorMessage: '',
         ));
       case DriverStep.documents:
         emit(state.copyWith(
           currentStep: DriverStep.vehicleInfo,
-          status: DriverRegistrationStatus.idle,
+          status: DriverRegistrationStatus.initial,
           errorMessage: '',
         ));
       case DriverStep.personalInfo:
-        // Handled by the view via context.pop()
         break;
     }
   }
@@ -316,12 +330,14 @@ final class DriverProfileCubit extends Cubit<DriverProfileState> {
 
   DriverProfileState _setDocument(DriverDocumentType type, DriverDocument doc) {
     return state.copyWith(
-      nationalIdFront: type == DriverDocumentType.nationalIdFront ? doc : null,
-      nationalIdBack: type == DriverDocumentType.nationalIdBack ? doc : null,
-      licenseFront: type == DriverDocumentType.licenseFront ? doc : null,
-      licenseBack: type == DriverDocumentType.licenseBack ? doc : null,
-      vehicleRegistration:
-          type == DriverDocumentType.vehicleRegistration ? doc : null,
+      documents: state.documents.copyWith(
+        nationalIdFront: type == DriverDocumentType.nationalIdFront ? doc : null,
+        nationalIdBack: type == DriverDocumentType.nationalIdBack ? doc : null,
+        licenseFront: type == DriverDocumentType.licenseFront ? doc : null,
+        licenseBack: type == DriverDocumentType.licenseBack ? doc : null,
+        vehicleRegistration:
+            type == DriverDocumentType.vehicleRegistration ? doc : null,
+      ),
     );
   }
 }

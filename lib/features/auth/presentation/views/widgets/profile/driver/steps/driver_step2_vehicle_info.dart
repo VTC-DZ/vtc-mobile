@@ -1,5 +1,3 @@
-// lib/features/driver/presentation/views/widgets/steps/driver_step2_vehicle_info.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -42,7 +40,8 @@ class DriverStep2VehicleInfo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isSubmitting = state.status == DriverRegistrationStatus.submitting;
+    final vehicle = state.vehicleInfo;
+    final isSubmitting = state.status == DriverRegistrationStatus.loading;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -58,7 +57,7 @@ class DriverStep2VehicleInfo extends StatelessWidget {
           icon: Icons.directions_car_outlined,
           onChanged: cubit.vehicleMakeChanged,
           onFocusLost: cubit.vehicleMakeFocusLost,
-          error: state.vehicleMakeTouched ? state.vehicleMakeError : '',
+          error: vehicle.vehicleMakeError,
           enabled: !isSubmitting,
           inputFormatters: [
             FilteringTextInputFormatter.allow(RegExp(r"[a-zA-ZÀ-ÿ '\-]")),
@@ -78,7 +77,7 @@ class DriverStep2VehicleInfo extends StatelessWidget {
           icon: Icons.drive_eta_outlined,
           onChanged: cubit.vehicleModelChanged,
           onFocusLost: cubit.vehicleModelFocusLost,
-          error: state.vehicleModelTouched ? state.vehicleModelError : '',
+          error: vehicle.vehicleModelError,
           enabled: !isSubmitting,
           inputFormatters: [
             FilteringTextInputFormatter.allow(RegExp(r"[a-zA-ZÀ-ÿ0-9 '\-]")),
@@ -91,7 +90,7 @@ class DriverStep2VehicleInfo extends StatelessWidget {
         const ProfileFieldLabelWidget(label: AppStrings.fieldYear),
         SizedBox(height: 8.h),
         DriverYearDropdownWidget(
-          selectedYear: state.vehicleYear,
+          selectedYear: vehicle.vehicleYear,
           onChanged: cubit.vehicleYearChanged,
           enabled: !isSubmitting,
         ),
@@ -109,7 +108,7 @@ class DriverStep2VehicleInfo extends StatelessWidget {
           icon: Icons.color_lens_outlined,
           onChanged: cubit.vehicleColorChanged,
           onFocusLost: cubit.vehicleColorFocusLost,
-          error: state.vehicleColorTouched ? state.vehicleColorError : '',
+          error: vehicle.vehicleColorError,
           enabled: !isSubmitting,
           inputFormatters: [
             FilteringTextInputFormatter.allow(RegExp(r"[a-zA-ZÀ-ÿ ]")),
@@ -126,7 +125,7 @@ class DriverStep2VehicleInfo extends StatelessWidget {
           focusNode: plateFocus,
           onChanged: cubit.plateNumberChanged,
           onFocusLost: cubit.plateNumberFocusLost,
-          error: state.plateNumberTouched ? state.plateNumberError : '',
+          error: vehicle.plateNumberError,
           enabled: !isSubmitting,
         ),
 
@@ -136,7 +135,7 @@ class DriverStep2VehicleInfo extends StatelessWidget {
         const ProfileFieldLabelWidget(label: AppStrings.fieldVehiclePhoto),
         SizedBox(height: 8.h),
         _VehiclePhotoButton(
-          photoPath: state.vehiclePhotoPath,
+          photoPath: vehicle.vehiclePhotoPath,
           onTap: isSubmitting ? null : cubit.pickVehiclePhoto,
         ),
       ],

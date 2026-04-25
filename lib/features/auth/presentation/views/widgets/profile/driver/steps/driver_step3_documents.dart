@@ -1,5 +1,3 @@
-// lib/features/driver/presentation/views/widgets/steps/driver_step3_documents.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
@@ -23,7 +21,8 @@ class DriverStep3Documents extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isSubmitting = state.status == DriverRegistrationStatus.submitting;
+    final docs = state.documents;
+    final isSubmitting = state.status == DriverRegistrationStatus.loading;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -66,14 +65,14 @@ class DriverStep3Documents extends StatelessWidget {
         SizedBox(height: 8.h),
         DriverDocumentUploadTileWidget(
           label: AppStrings.docNationalIdFront,
-          document: state.nationalIdFront,
+          document: docs.nationalIdFront,
           onTap: () => cubit.pickDocument(DriverDocumentType.nationalIdFront),
           enabled: !isSubmitting,
         ),
         SizedBox(height: 8.h),
         DriverDocumentUploadTileWidget(
           label: AppStrings.docNationalIdBack,
-          document: state.nationalIdBack,
+          document: docs.nationalIdBack,
           onTap: () => cubit.pickDocument(DriverDocumentType.nationalIdBack),
           enabled: !isSubmitting,
         ),
@@ -89,14 +88,14 @@ class DriverStep3Documents extends StatelessWidget {
         SizedBox(height: 8.h),
         DriverDocumentUploadTileWidget(
           label: AppStrings.docLicenseFront,
-          document: state.licenseFront,
+          document: docs.licenseFront,
           onTap: () => cubit.pickDocument(DriverDocumentType.licenseFront),
           enabled: !isSubmitting,
         ),
         SizedBox(height: 8.h),
         DriverDocumentUploadTileWidget(
           label: AppStrings.docLicenseBack,
-          document: state.licenseBack,
+          document: docs.licenseBack,
           onTap: () => cubit.pickDocument(DriverDocumentType.licenseBack),
           enabled: !isSubmitting,
         ),
@@ -112,7 +111,7 @@ class DriverStep3Documents extends StatelessWidget {
         SizedBox(height: 8.h),
         DriverDocumentUploadTileWidget(
           label: AppStrings.docVehicleRegistration,
-          document: state.vehicleRegistration,
+          document: docs.vehicleRegistration,
           onTap: () =>
               cubit.pickDocument(DriverDocumentType.vehicleRegistration),
           enabled: !isSubmitting,
