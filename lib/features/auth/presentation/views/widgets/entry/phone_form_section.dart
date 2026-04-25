@@ -30,6 +30,7 @@ class _PhoneFormSectionState extends State<PhoneFormSection> {
     return BlocBuilder<PhoneCubit, PhoneState>(
       builder: (context, state) {
         return Column(
+          mainAxisSize: MainAxisSize.max,
           children: [
             AppTextField(
               controller: _phoneController,
@@ -49,6 +50,7 @@ class _PhoneFormSectionState extends State<PhoneFormSection> {
               isLoading: state.status == PhoneStatus.loading,
               onPressed: context.read<PhoneCubit>().sendOtp,
             ),
+            SizedBox(height: 24.h),
           ],
         );
       },

@@ -1,6 +1,6 @@
 name: khfif_drif
 description: "inDrive-style ride-hailing app for Algeria."
-publish_to: 'none'
+publish_to: "none"
 
 version: 1.0.0+1
 
@@ -46,3 +46,6 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+
+  assets:
+    - assets/images/logo/

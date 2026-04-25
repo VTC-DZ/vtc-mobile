@@ -3,9 +3,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_text_styles.dart';
-import '../../../../shared/widgets/app_scaffold.dart';
+import '../../../../../core/theme/app_colors.dart';
+import '../../../../../core/theme/app_text_styles.dart';
+import '../../../../../shared/widgets/app_scaffold.dart';
 
 /// Step 5 — Passenger Home screen.
 ///
@@ -266,7 +266,8 @@ class _HomeContent extends StatelessWidget {
           decoration: BoxDecoration(
             color: AppColors.surface(context),
             borderRadius: BorderRadius.circular(16.r),
-            border: Border.all(color: AppColors.borderDefault(context), width: 1.5.w),
+            border: Border.all(
+                color: AppColors.borderDefault(context), width: 1.5.w),
             boxShadow: [
               BoxShadow(
                 color: AppColors.black.withValues(alpha: 0.06),
@@ -428,9 +429,8 @@ class _MapGridPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final lineColor = isDark
-        ? const Color(0xFF2A2A2A)
-        : const Color(0xFFE8EAED);
+    final lineColor =
+        isDark ? const Color(0xFF2A2A2A) : const Color(0xFFE8EAED);
 
     final paint = Paint()
       ..color = lineColor

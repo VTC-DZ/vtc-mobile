@@ -7,7 +7,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_text_styles.dart';
-import '../../../../shared/widgets/app_logo_widget.dart';
+
 import '../../../../shared/widgets/app_scaffold.dart';
 import '../cubit/phone_cubit/phone_cubit.dart';
 import '../cubit/phone_cubit/phone_state.dart';
@@ -30,15 +30,11 @@ class PhoneEntryView extends StatelessWidget {
         }
       },
       child: AppScaffold(
-        body: SingleChildScrollView(
-          physics: const ClampingScrollPhysics(),
+        body: Padding(
           padding: EdgeInsets.symmetric(horizontal: 24.w),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               SizedBox(height: 80.h),
-              const AppLogoWidget(),
-              SizedBox(height: 48.h),
               Text(
                 'Enter your phone number',
                 style: AppTextStyles.displayMedium(context),
@@ -50,9 +46,8 @@ class PhoneEntryView extends StatelessWidget {
                 style: AppTextStyles.bodyMedium(context),
                 textAlign: TextAlign.center,
               ),
-              SizedBox(height: 32.h),
+              const Spacer(),
               const PhoneFormSection(),
-              SizedBox(height: 24.h),
               Text(
                 'By continuing you agree to our Terms & Privacy',
                 style: AppTextStyles.labelSmall(context),
@@ -66,4 +61,3 @@ class PhoneEntryView extends StatelessWidget {
     );
   }
 }
-

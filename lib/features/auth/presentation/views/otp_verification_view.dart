@@ -8,7 +8,6 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
-import '../../../../shared/widgets/app_logo_widget.dart';
 import '../../../../shared/widgets/app_scaffold.dart';
 import '../cubit/otp_cubit/otp_cubit.dart';
 import '../cubit/otp_cubit/otp_state.dart';
@@ -48,7 +47,7 @@ class OtpVerificationView extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               SizedBox(height: 40.h),
-              const AppLogoWidget(),
+              // const AppLogoWidget(),
               SizedBox(height: 32.h),
               Text(
                 'Verify your number',
