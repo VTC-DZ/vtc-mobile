@@ -15,7 +15,7 @@ import '../../features/driver/presentation/cubit/driver_registration_cubit/drive
 import '../../features/driver/presentation/views/driver_pending_review_view.dart';
 import '../../features/driver/presentation/views/driver_registration_view.dart';
 import '../../features/driver/presentation/views/driver_rejection_view.dart';
-import '../../features/passenger/presentation/views/passenger_home_view.dart';
+import '../../features/home/passenger/presentation/views/passenger_home_view.dart';
 import 'route_names.dart';
 
 final class AppRouter {
@@ -97,8 +97,7 @@ final class AppRouter {
       GoRoute(
         path: RouteNames.driverRejection,
         builder: (BuildContext context, GoRouterState state) {
-          final reason =
-              state.extra is String ? state.extra as String : '';
+          final reason = state.extra is String ? state.extra as String : '';
           return DriverRejectionView(rejectionReason: reason);
         },
       ),
