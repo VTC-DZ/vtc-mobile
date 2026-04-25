@@ -42,7 +42,7 @@ class _DriverStep1PersonalInfoState extends State<DriverStep1PersonalInfo> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // ── First Name ─────────────────────────────────────────────────────
+            //  ── First Name ─────────────────────────────────────────────────────
             const ProfileFieldLabelWidget(label: AppStrings.fieldFirstName),
             SizedBox(height: 8.h),
             ProfileNameFieldWidget(

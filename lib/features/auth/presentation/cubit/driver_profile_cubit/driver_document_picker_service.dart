@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../../../core/constants/app_constants.dart';
@@ -47,21 +46,10 @@ final class DriverDocumentPickerService {
   }
 
   Future<(String?, String?)> _selectFile(DriverDocumentType type) async {
-    if (type == DriverDocumentType.vehicleRegistration) {
-      final result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['jpg', 'jpeg', 'png', 'pdf'],
-      );
-      if (result != null && result.files.isNotEmpty) {
-        return (result.files.first.path, result.files.first.name);
-      }
-      return (null, null);
-    } else {
-      final file = await _imagePicker.pickImage(
-        source: ImageSource.gallery,
-        imageQuality: 85,
-      );
-      return (file?.path, file?.name);
-    }
+    final file = await _imagePicker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 85,
+    );
+    return (file?.path, file?.name);
   }
 }

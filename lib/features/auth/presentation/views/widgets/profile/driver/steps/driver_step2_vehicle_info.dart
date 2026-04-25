@@ -4,11 +4,12 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../../../../../../../../core/constants/app_strings.dart';
-import '../../../../../../../../core/theme/app_colors.dart';
-import '../../../../../../../../core/theme/app_text_styles.dart';
+
+import '../../../../../../data/models/driver_document.dart';
 import '../../profile_field_label_widget.dart';
 import '../../../../../cubit/driver_profile_cubit/driver_profile_cubit.dart';
 import '../../../../../cubit/driver_profile_cubit/driver_profile_state.dart';
+import '../fields/driver_document_single_card_widget.dart';
 import '../fields/driver_plate_field_widget.dart';
 import '../fields/driver_text_field_widget.dart';
 import '../fields/driver_year_dropdown_widget.dart';
@@ -125,77 +126,23 @@ class _DriverStep2VehicleInfoState extends State<DriverStep2VehicleInfo> {
             // ── Vehicle Photo ──────────────────────────────────────────────────
             const ProfileFieldLabelWidget(label: AppStrings.fieldVehiclePhoto),
             SizedBox(height: 8.h),
-            _VehiclePhotoButton(
-              photoPath: vehicle.vehiclePhotoPath,
-              onTap: isSubmitting ? null : cubit.pickVehiclePhoto,
+            DriverDocumentSingleCardWidget(
+              label: AppStrings.fieldVehiclePhoto,
+              badgeLabel: 'PHOTO',
+              document: DriverDocument(
+                status: vehicle.vehiclePhotoPath != null
+                    ? UploadStatus.uploaded
+                    : UploadStatus.idle,
+                filePath: vehicle.vehiclePhotoPath,
+              ),
+              onTap: () => cubit.pickVehiclePhoto(),
+              enabled: !isSubmitting,
             ),
 
             SizedBox(height: 12.h),
           ],
         );
       },
-    );
-  }
-}
-
-class _VehiclePhotoButton extends StatelessWidget {
-  const _VehiclePhotoButton({required this.photoPath, required this.onTap});
-
-  final String? photoPath;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final hasPhoto = photoPath != null;
-
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        height: 64.h,
-        padding: EdgeInsets.symmetric(horizontal: 16.w),
-        decoration: BoxDecoration(
-          color: AppColors.surface(context),
-          borderRadius: BorderRadius.circular(12.r),
-          border: Border.all(
-            color:
-                hasPhoto ? AppColors.primary : AppColors.borderDefault(context),
-            width: 1.5.w,
-          ),
-        ),
-        child: Row(
-          children: [
-            Icon(
-              hasPhoto
-                  ? Icons.check_circle_rounded
-                  : Icons.add_photo_alternate_outlined,
-              size: 22.w,
-              color: hasPhoto
-                  ? AppColors.primary
-                  : AppColors.textSecondary(context),
-            ),
-            SizedBox(width: 12.w),
-            Expanded(
-              child: Text(
-                hasPhoto
-                    ? 'Photo selected — tap to change'
-                    : 'Tap to add vehicle photo',
-                style: AppTextStyles.bodyMedium(context).copyWith(
-                  color: hasPhoto
-                      ? AppColors.text(context)
-                      : AppColors.textSecondary(context),
-                ),
-              ),
-            ),
-            if (!hasPhoto)
-              Icon(
-                Icons.chevron_right_rounded,
-                size: 20.w,
-                color: AppColors.textSecondary(context),
-              ),
-          ],
-        ),
-      ),
     );
   }
 }

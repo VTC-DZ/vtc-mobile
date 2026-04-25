@@ -17,10 +17,14 @@ final class DriverProfileCubit extends Cubit<DriverProfileState> {
 
   // ── Step 1: Personal Info ─────────────────────────────────────────────────
 
-  void firstNameChanged(String v) => _emitPersonal(state.personalInfo.copyWith(firstName: v, firstNameError: Validators.name(v.trim())));
-  void lastNameChanged(String v)  => _emitPersonal(state.personalInfo.copyWith(lastName: v,  lastNameError:  Validators.name(v.trim())));
-  void dateOfBirthSelected(DateTime date) => _emitPersonal(state.personalInfo.copyWith(dateOfBirth: date));
-  void genderChanged(Gender gender)       => _emitPersonal(state.personalInfo.copyWith(gender: gender));
+  void firstNameChanged(String v) => _emitPersonal(state.personalInfo
+      .copyWith(firstName: v, firstNameError: Validators.name(v.trim())));
+  void lastNameChanged(String v) => _emitPersonal(state.personalInfo
+      .copyWith(lastName: v, lastNameError: Validators.name(v.trim())));
+  void dateOfBirthSelected(DateTime date) =>
+      _emitPersonal(state.personalInfo.copyWith(dateOfBirth: date));
+  void genderChanged(Gender gender) =>
+      _emitPersonal(state.personalInfo.copyWith(gender: gender));
 
   Future<void> submitStep1() async {
     if (!state.canProceedStep1) return;
@@ -49,11 +53,19 @@ final class DriverProfileCubit extends Cubit<DriverProfileState> {
 
   // ── Step 2: Vehicle Info ──────────────────────────────────────────────────
 
-  void vehicleMakeChanged(String v)  => _emitVehicle(state.vehicleInfo.copyWith(vehicleMake:  v, vehicleMakeError:  Validators.vehicleText(v, AppStrings.fieldCarMake)));
-  void vehicleModelChanged(String v) => _emitVehicle(state.vehicleInfo.copyWith(vehicleModel: v, vehicleModelError: Validators.vehicleText(v, AppStrings.fieldCarModel)));
-  void vehicleColorChanged(String v) => _emitVehicle(state.vehicleInfo.copyWith(vehicleColor: v, vehicleColorError: Validators.vehicleText(v, AppStrings.fieldColor)));
-  void plateNumberChanged(String v)  => _emitVehicle(state.vehicleInfo.copyWith(plateNumber:  v, plateNumberError:  Validators.plate(v)));
-  void vehicleYearChanged(int year)  => _emitVehicle(state.vehicleInfo.copyWith(vehicleYear: year));
+  void vehicleMakeChanged(String v) => _emitVehicle(state.vehicleInfo.copyWith(
+      vehicleMake: v,
+      vehicleMakeError: Validators.vehicleText(v, AppStrings.fieldCarMake)));
+  void vehicleModelChanged(String v) => _emitVehicle(state.vehicleInfo.copyWith(
+      vehicleModel: v,
+      vehicleModelError: Validators.vehicleText(v, AppStrings.fieldCarModel)));
+  void vehicleColorChanged(String v) => _emitVehicle(state.vehicleInfo.copyWith(
+      vehicleColor: v,
+      vehicleColorError: Validators.vehicleText(v, AppStrings.fieldColor)));
+  void plateNumberChanged(String v) => _emitVehicle(state.vehicleInfo
+      .copyWith(plateNumber: v, plateNumberError: Validators.plate(v)));
+  void vehicleYearChanged(int year) =>
+      _emitVehicle(state.vehicleInfo.copyWith(vehicleYear: year));
 
   Future<void> pickVehiclePhoto() async {
     final path = await _picker.pickVehiclePhoto();
@@ -76,7 +88,8 @@ final class DriverProfileCubit extends Cubit<DriverProfileState> {
   // ── Step 3: Documents ─────────────────────────────────────────────────────
 
   Future<void> pickDocument(DriverDocumentType type) async {
-    emit(_setDocument(type, const DriverDocument(status: UploadStatus.uploading)));
+    emit(_setDocument(
+        type, const DriverDocument(status: UploadStatus.uploading)));
 
     final result = await _picker.pickDocument(type);
 
@@ -86,12 +99,14 @@ final class DriverProfileCubit extends Cubit<DriverProfileState> {
       case DocumentPickSuccess(:final path, :final name):
         emit(_setDocument(
           type,
-          DriverDocument(filePath: path, fileName: name, status: UploadStatus.uploaded),
+          DriverDocument(
+              filePath: path, fileName: name, status: UploadStatus.uploaded),
         ));
       case DocumentPickFailure(:final errorMessage):
         emit(_setDocument(
           type,
-          DriverDocument(status: UploadStatus.error, errorMessage: errorMessage),
+          DriverDocument(
+              status: UploadStatus.error, errorMessage: errorMessage),
         ));
     }
   }
@@ -175,7 +190,8 @@ final class DriverProfileCubit extends Cubit<DriverProfileState> {
   DriverProfileState _setDocument(DriverDocumentType type, DriverDocument doc) {
     return state.copyWith(
       documents: state.documents.copyWith(
-        nationalIdFront: type == DriverDocumentType.nationalIdFront ? doc : null,
+        nationalIdFront:
+            type == DriverDocumentType.nationalIdFront ? doc : null,
         nationalIdBack: type == DriverDocumentType.nationalIdBack ? doc : null,
         licenseFront: type == DriverDocumentType.licenseFront ? doc : null,
         licenseBack: type == DriverDocumentType.licenseBack ? doc : null,
