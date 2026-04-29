@@ -44,50 +44,40 @@ class AppTextField extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          decoration: BoxDecoration(
-            color: AppColors.surface(context),
-            borderRadius: BorderRadius.circular(12.r),
-            border: Border.all(
-              color:
-                  hasError ? AppColors.error : AppColors.borderDefault(context),
-              width: 1.5.w,
-            ),
-          ),
-          child: TextFormField(
-            controller: controller,
-            enabled: enabled,
-            textInputAction: textInputAction,
-            keyboardType: keyboardType,
-            textCapitalization: textCapitalization,
-            inputFormatters: inputFormatters,
-            onChanged: onChanged,
-            onFieldSubmitted: onSubmitted,
-            onTapOutside: (_) {
-              if (unfocusOnTapOutside) FocusManager.instance.primaryFocus?.unfocus();
-              onTapOutside?.call();
-            },
-            style: AppTextStyles.inputText(context),
-            decoration: InputDecoration(
-              hintText: hintText,
-              hintStyle: AppTextStyles.inputHint(context),
-              prefixIcon: prefixIcon != null
-                  ? IconTheme(
-                      data: IconThemeData(
-                        color: hasError
-                            ? AppColors.error
-                            : AppColors.textSecondary(context),
-                        size: 20.w,
-                      ),
-                      child: prefixIcon!,
-                    )
-                  : null,
-              border: InputBorder.none,
-              contentPadding: EdgeInsets.symmetric(
-                horizontal: 16.w,
-                vertical: 16.h,
-              ),
+        TextFormField(
+          controller: controller,
+          enabled: enabled,
+          textInputAction: textInputAction,
+          keyboardType: keyboardType,
+          textCapitalization: textCapitalization,
+          inputFormatters: inputFormatters,
+          onChanged: onChanged,
+          onFieldSubmitted: onSubmitted,
+          onTapOutside: (_) {
+            if (unfocusOnTapOutside) {
+              FocusManager.instance.primaryFocus?.unfocus();
+            }
+            onTapOutside?.call();
+          },
+          style: AppTextStyles.inputText(context),
+          decoration: InputDecoration(
+            hintText: hintText,
+            hintStyle: AppTextStyles.inputHint(context),
+            prefixIcon: prefixIcon != null
+                ? IconTheme(
+                    data: IconThemeData(
+                      color: hasError
+                          ? AppColors.error
+                          : AppColors.textSecondary(context),
+                      size: 20.w,
+                    ),
+                    child: prefixIcon!,
+                  )
+                : null,
+            border: InputBorder.none,
+            contentPadding: EdgeInsets.symmetric(
+              horizontal: 16.w,
+              vertical: 16.h,
             ),
           ),
         ),

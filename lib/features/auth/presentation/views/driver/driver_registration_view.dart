@@ -28,7 +28,7 @@ class DriverRegistrationView extends StatelessWidget {
 
         return AppScaffold(
           body: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 24.w),
+            padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 16.h),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -41,17 +41,14 @@ class DriverRegistrationView extends StatelessWidget {
                 ),
                 SizedBox(height: 20.h),
                 const Expanded(
-                  child: SingleChildScrollView(child: _StepContent()),
+                  child: SingleChildScrollView(
+                      physics: ClampingScrollPhysics(), child: _StepContent()),
                 ),
                 _ErrorBanner(message: state.errorMessage),
               ],
             ),
           ),
-          bottomNavigationBar: SafeArea(
-              child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 24.w),
-            child: _ActionButton(cubit: cubit, state: state),
-          )),
+          bottomNavigationBar: _ActionButton(cubit: cubit, state: state),
         );
       },
     );

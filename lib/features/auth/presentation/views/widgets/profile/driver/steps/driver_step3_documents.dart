@@ -25,55 +25,59 @@ class DriverStep3Documents extends StatelessWidget {
         final docs = state.documents;
         final isSubmitting = state.status == DriverRegistrationStatus.loading;
 
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // ── Info hint ───────────────────────────────────────────────────
-            _InfoHint(),
-            SizedBox(height: 24.h),
+        return GestureDetector(
+          onTap: () => FocusScope.of(context).unfocus(),
+          behavior: HitTestBehavior.translucent,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // ── Info hint ───────────────────────────────────────────────────
+              _InfoHint(),
+              SizedBox(height: 24.h),
 
-            // ── National ID ─────────────────────────────────────────────────
-            DriverDocumentFlipCardWidget(
-              label: 'National ID',
-              frontDocument: docs.nationalIdFront,
-              backDocument: docs.nationalIdBack,
-              onFrontTap: () =>
-                  cubit.pickDocument(DriverDocumentType.nationalIdFront),
-              onBackTap: () =>
-                  cubit.pickDocument(DriverDocumentType.nationalIdBack),
-              icon: Icons.badge_outlined,
-              enabled: !isSubmitting,
-            ),
+              // ── National ID ─────────────────────────────────────────────────
+              DriverDocumentFlipCardWidget(
+                label: 'National ID',
+                frontDocument: docs.nationalIdFront,
+                backDocument: docs.nationalIdBack,
+                onFrontTap: () =>
+                    cubit.pickDocument(DriverDocumentType.nationalIdFront),
+                onBackTap: () =>
+                    cubit.pickDocument(DriverDocumentType.nationalIdBack),
+                icon: Icons.badge_outlined,
+                enabled: !isSubmitting,
+              ),
 
-            SizedBox(height: 20.h),
+              SizedBox(height: 20.h),
 
-            // ── Driver's License ────────────────────────────────────────────
-            DriverDocumentFlipCardWidget(
-              label: "Driver's License",
-              frontDocument: docs.licenseFront,
-              backDocument: docs.licenseBack,
-              onFrontTap: () =>
-                  cubit.pickDocument(DriverDocumentType.licenseFront),
-              onBackTap: () =>
-                  cubit.pickDocument(DriverDocumentType.licenseBack),
-              icon: Icons.credit_card_outlined,
-              enabled: !isSubmitting,
-            ),
+              // ── Driver's License ────────────────────────────────────────────
+              DriverDocumentFlipCardWidget(
+                label: "Driver's License",
+                frontDocument: docs.licenseFront,
+                backDocument: docs.licenseBack,
+                onFrontTap: () =>
+                    cubit.pickDocument(DriverDocumentType.licenseFront),
+                onBackTap: () =>
+                    cubit.pickDocument(DriverDocumentType.licenseBack),
+                icon: Icons.credit_card_outlined,
+                enabled: !isSubmitting,
+              ),
 
-            SizedBox(height: 20.h),
+              SizedBox(height: 20.h),
 
-            // ── Vehicle Registration ────────────────────────────────────────
-            const _SectionLabel(text: 'Vehicle Registration'),
-            SizedBox(height: 8.h),
-            DriverDocumentSingleCardWidget(
-              label: 'Vehicle Registration',
-              badgeLabel: 'REG',
-              document: docs.vehicleRegistration,
-              onTap: () =>
-                  cubit.pickDocument(DriverDocumentType.vehicleRegistration),
-              enabled: !isSubmitting,
-            ),
-          ],
+              // ── Vehicle Registration ────────────────────────────────────────
+              const _SectionLabel(text: 'Vehicle Registration'),
+              SizedBox(height: 8.h),
+              DriverDocumentSingleCardWidget(
+                label: 'Vehicle Registration',
+                badgeLabel: 'REG',
+                document: docs.vehicleRegistration,
+                onTap: () =>
+                    cubit.pickDocument(DriverDocumentType.vehicleRegistration),
+                enabled: !isSubmitting,
+              ),
+            ],
+          ),
         );
       },
     );

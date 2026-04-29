@@ -27,6 +27,9 @@ abstract final class AppColors {
   static Color surface(BuildContext context) =>
       isDark(context) ? const Color(0xFF1A1A1A) : const Color(0xFFF7F8FA);
 
+  static Color bottomBarSurface(BuildContext context) =>
+      isDark(context) ? const Color(0xFF202327) : const Color(0xFFE5E7EB);
+
   static Color text(BuildContext context) => isDark(context) ? white : black;
 
   static Color textSecondary(BuildContext context) => isDark(context)

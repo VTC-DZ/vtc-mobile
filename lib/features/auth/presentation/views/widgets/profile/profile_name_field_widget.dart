@@ -21,6 +21,7 @@ class ProfileNameFieldWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AppTextField(
+      unfocusOnTapOutside: false,
       controller: controller,
       hintText: 'e.g. Youcef Benali',
       prefixIcon: const Icon(Icons.person_outline_rounded),

@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../../core/theme/app_colors.dart';
 import 'app_app_bar.dart';
@@ -17,9 +18,9 @@ class AppScaffold extends StatelessWidget {
     required this.body,
     this.appBar,
     this.bottomNavigationBar,
+    this.bottomNavigationBarBackgroundColor,
     this.backgroundColor,
     this.resizeToAvoidBottomInset = true,
-    this.safeAreaBottom = true,
     this.onLeadingTap,
     this.appBarTitle,
     this.showAppBar = false,
@@ -28,9 +29,9 @@ class AppScaffold extends StatelessWidget {
   final Widget body;
   final PreferredSizeWidget? appBar;
   final Widget? bottomNavigationBar;
+  final Color? bottomNavigationBarBackgroundColor;
   final Color? backgroundColor;
   final bool resizeToAvoidBottomInset;
-  final bool safeAreaBottom;
   final VoidCallback? onLeadingTap;
   final String? appBarTitle;
   final bool showAppBar;
@@ -53,12 +54,37 @@ class AppScaffold extends StatelessWidget {
                 onLeadingTap: onLeadingTap,
               )
             : appBar,
-        bottomNavigationBar: bottomNavigationBar,
+        bottomNavigationBar: bottomNavigationBar == null
+            ? null
+            : DecoratedBox(
+                decoration: BoxDecoration(
+                  color: bottomNavigationBarBackgroundColor ??
+                      AppColors.bottomBarSurface(context),
+                  border: Border(
+                    top: BorderSide(
+                      color: AppColors.borderDefault(context),
+                      width: 1,
+                    ),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.black.withValues(alpha: 0.04),
+                      blurRadius: 16.r,
+                      offset: Offset(0, -4.h),
+                    ),
+                  ],
+                ),
+                child: SafeArea(
+                  top: false,
+                  child: Padding(
+                    padding:
+                        EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
+                    child: bottomNavigationBar,
+                  ),
+                ),
+              ),
         resizeToAvoidBottomInset: resizeToAvoidBottomInset,
-        body: SafeArea(
-          bottom: safeAreaBottom,
-          child: body,
-        ),
+        body: showAppBar ? SafeArea(child: body) : body,
       ),
     );
   }
