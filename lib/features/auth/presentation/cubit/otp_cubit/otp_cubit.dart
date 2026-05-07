@@ -28,7 +28,7 @@ final class OtpCubit extends Cubit<OtpState> {
     emit(state.copyWith(status: OtpStatus.loading, errorMessage: ''));
 
     try {
-      await _repository.verifyOtp(state.otpValue);
+      await _repository.verifyOtp(state.phoneNumber, state.otpValue);
       _failedAttempts = 0;
       emit(state.copyWith(status: OtpStatus.success));
     } catch (_) {

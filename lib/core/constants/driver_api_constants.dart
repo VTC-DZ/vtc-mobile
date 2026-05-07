@@ -6,8 +6,8 @@ abstract final class DriverApiConstants {
   static const String _base = '/api/driver';
 
   // Auth
-  static const String otpRequest = '$_base/auth/otp/request';
-  static const String otpVerify = '$_base/auth/otp/verify';
+  // static const String otpRequest = '$_base/auth/otp/request'; //! use passenger otp request
+  // static const String otpVerify = '$_base/auth/otp/verify';  //! use passenger otp verify
   static const String refresh = '$_base/auth/refresh';
   static const String logout = '$_base/auth/logout';
 
