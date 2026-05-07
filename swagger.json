@@ -1,0 +1,249 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "VTC API",
+    "description": "VTC platform API — passenger, driver, and admin surfaces.",
+    "version": "0.1.0-SNAPSHOT"
+  },
+  "servers": [
+    { "url": "http://localhost:8080", "description": "Generated server url" }
+  ],
+  "paths": {
+    "/api/passenger/profile": {
+      "get": {
+        "tags": ["profile-controller"],
+        "operationId": "getProfile",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/ProfileResponse" }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": ["profile-controller"],
+        "operationId": "updateProfile",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ProfileUpdateRequest" }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/ProfileResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/passenger/auth/switch-role": {
+      "post": {
+        "tags": ["passenger-auth-controller"],
+        "operationId": "switchRole",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/SwitchRoleRequest" }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/AccessTokenResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/passenger/auth/refresh": {
+      "post": {
+        "tags": ["passenger-auth-controller"],
+        "operationId": "refresh",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/RefreshRequest" }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/AuthTokensResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/passenger/auth/otp/verify": {
+      "post": {
+        "tags": ["passenger-auth-controller"],
+        "operationId": "verifyOtp",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/OtpVerifyRequest" }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/AuthTokensResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/passenger/auth/otp/request": {
+      "post": {
+        "tags": ["passenger-auth-controller"],
+        "operationId": "requestOtp",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/OtpRequestRequest" }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/OtpRequestResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/passenger/auth/logout": {
+      "post": {
+        "tags": ["passenger-auth-controller"],
+        "operationId": "logout",
+        "responses": { "200": { "description": "OK" } }
+      }
+    },
+    "/api/passenger/email": {
+      "patch": {
+        "tags": ["profile-controller"],
+        "operationId": "updateEmail",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/EmailUpdateRequest" }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/ProfileResponse" }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ProfileUpdateRequest": {
+        "type": "object",
+        "properties": {
+          "fullName": { "type": "string", "pattern": "^[\\p{L} '\\-]{2,100}$" },
+          "gender": { "type": "string", "enum": ["MALE", "FEMALE"] },
+          "dateOfBirth": { "type": "string", "format": "date" }
+        }
+      },
+      "ProfileResponse": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "phone": { "type": "string" },
+          "fullName": { "type": "string" },
+          "gender": { "type": "string", "enum": ["MALE", "FEMALE"] },
+          "email": { "type": "string" },
+          "dateOfBirth": { "type": "string", "format": "date" },
+          "status": {
+            "type": "string",
+            "enum": ["ACTIVE", "BLOCKED", "SUSPENDED"]
+          },
+          "driverRegistered": { "type": "boolean" }
+        }
+      },
+      "SwitchRoleRequest": {
+        "type": "object",
+        "properties": { "targetRole": { "type": "string" } },
+        "required": ["targetRole"]
+      },
+      "AccessTokenResponse": {
+        "type": "object",
+        "properties": { "accessToken": { "type": "string" } }
+      },
+      "RefreshRequest": {
+        "type": "object",
+        "properties": { "refreshToken": { "type": "string", "minLength": 1 } },
+        "required": ["refreshToken"]
+      },
+      "AuthTokensResponse": {
+        "type": "object",
+        "properties": {
+          "accessToken": { "type": "string" },
+          "refreshToken": { "type": "string" },
+          "isNewUser": { "type": "boolean" }
+        }
+      },
+      "OtpVerifyRequest": {
+        "type": "object",
+        "properties": {
+          "phone": { "type": "string", "minLength": 1 },
+          "code": { "type": "string", "minLength": 1, "pattern": "^\\d{6}$" }
+        },
+        "required": ["code", "phone"]
+      },
+      "OtpRequestRequest": {
+        "type": "object",
+        "properties": { "phone": { "type": "string", "minLength": 1 } },
+        "required": ["phone"]
+      },
+      "OtpRequestResponse": {
+        "type": "object",
+        "properties": { "expiresIn": { "type": "integer", "format": "int32" } }
+      },
+      "EmailUpdateRequest": {
+        "type": "object",
+        "properties": { "email": { "type": "string" } }
+      }
+    }
+  }
+}
