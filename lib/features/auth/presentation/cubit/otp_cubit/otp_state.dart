@@ -12,6 +12,7 @@ final class OtpState extends Equatable {
   final int resendCount;
   final int blockSecondsRemaining;
   final String errorMessage;
+  final bool isNewUser;
 
   const OtpState({
     required this.phoneNumber,
@@ -21,6 +22,7 @@ final class OtpState extends Equatable {
     this.resendCount = 0,
     this.blockSecondsRemaining = 0,
     this.errorMessage = '',
+    this.isNewUser = false,
   });
 
   bool get isComplete => otpValue.length == 6;
@@ -40,6 +42,7 @@ final class OtpState extends Equatable {
     int? resendCount,
     int? blockSecondsRemaining,
     String? errorMessage,
+    bool? isNewUser,
   }) =>
       OtpState(
         phoneNumber: phoneNumber ?? this.phoneNumber,
@@ -50,6 +53,7 @@ final class OtpState extends Equatable {
         blockSecondsRemaining:
             blockSecondsRemaining ?? this.blockSecondsRemaining,
         errorMessage: errorMessage ?? this.errorMessage,
+        isNewUser: isNewUser ?? this.isNewUser,
       );
 
   @override
@@ -61,5 +65,6 @@ final class OtpState extends Equatable {
         resendCount,
         blockSecondsRemaining,
         errorMessage,
+        isNewUser,
       ];
 }

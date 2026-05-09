@@ -1,14 +1,17 @@
-// lib/core/network/api_client.dart
+// lib/core/network/dio_client.dart
 
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 
 import '../constants/api_constants.dart';
+import '../constants/cache_keys.dart';
+import '../storage/secure_storage_helper.dart';
 
 final class DioClient {
   DioClient._();
 
   static late Dio _dio;
+  static String? _accessToken;
 
   static void init() {
     _dio = Dio(
@@ -25,6 +28,17 @@ final class DioClient {
       ),
     );
 
+    _dio.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) {
+          if (_accessToken != null) {
+            options.headers['Authorization'] = 'Bearer $_accessToken';
+          }
+          handler.next(options);
+        },
+      ),
+    );
+
     if (kDebugMode) {
       _dio.interceptors.add(
         LogInterceptor(
@@ -37,6 +51,32 @@ final class DioClient {
         ),
       );
     }
+  }
+
+  /// Loads any persisted access token into memory. Call once at app startup
+  /// after [init].
+  static Future<void> loadToken() async {
+    _accessToken = await SecureStorageHelper.read(
+      key: CacheKeys.secureStorageKeys.accessTokenKey,
+    );
+  }
+
+  /// Saves the access token in memory and to secure storage. Subsequent
+  /// requests will include `Authorization: Bearer <token>`.
+  static Future<void> updateToken(String token) async {
+    _accessToken = token;
+    await SecureStorageHelper.write(
+      key: CacheKeys.secureStorageKeys.accessTokenKey,
+      value: token,
+    );
+  }
+
+  /// Clears the access token from memory and secure storage.
+  static Future<void> removeToken() async {
+    _accessToken = null;
+    await SecureStorageHelper.remove(
+      key: CacheKeys.secureStorageKeys.accessTokenKey,
+    );
   }
 
   static Future<Response> get({

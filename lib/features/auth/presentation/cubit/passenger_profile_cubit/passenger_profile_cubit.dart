@@ -14,24 +14,32 @@ final class PassengerProfileCubit extends Cubit<PassengerProfileState> {
   void nameChanged(String value) {
     emit(state.copyWith(
       nameError: Validators.name(value.trim()),
-      status: ProfileStatus.initial,
-      errorMessage: '',
+      // status: ProfileStatus.initial,
+      // errorMessage: '',
     ));
   }
 
   void genderChanged(Gender gender) {
     emit(state.copyWith(
       gender: gender,
-      status: ProfileStatus.initial,
-      errorMessage: '',
+      // status: ProfileStatus.initial,
+      // errorMessage: '',
+    ));
+  }
+
+  void dateOfBirthChanged(DateTime date) {
+    emit(state.copyWith(
+      dateOfBirth: date,
+      // status: ProfileStatus.initial,
+      // errorMessage: '',
     ));
   }
 
   void emailChanged(String value) {
     emit(state.copyWith(
       emailError: Validators.email(value.trim()),
-      status: ProfileStatus.initial,
-      errorMessage: '',
+      // status: ProfileStatus.initial,
+      // errorMessage: '',
     ));
   }
 
@@ -44,6 +52,7 @@ final class PassengerProfileCubit extends Cubit<PassengerProfileState> {
       await _repository.savePassengerProfile(
         fullName: fullName.trim(),
         gender: state.gender!,
+        dateOfBirth: state.dateOfBirth!,
         email: email.trim().isEmpty ? null : email.trim(),
       );
       emit(state.copyWith(status: ProfileStatus.success));

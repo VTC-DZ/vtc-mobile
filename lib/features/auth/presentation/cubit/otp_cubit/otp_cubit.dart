@@ -28,9 +28,9 @@ final class OtpCubit extends Cubit<OtpState> {
     emit(state.copyWith(status: OtpStatus.loading, errorMessage: ''));
 
     try {
-      await _repository.verifyOtp(state.phoneNumber, state.otpValue);
+      final tokens = await _repository.verifyOtp(state.phoneNumber, state.otpValue);
       _failedAttempts = 0;
-      emit(state.copyWith(status: OtpStatus.success));
+      emit(state.copyWith(status: OtpStatus.success, isNewUser: tokens.isNewUser));
     } catch (_) {
       _failedAttempts++;
       if (_failedAttempts >= AppConstants.otpMaxFailedAttempts) {

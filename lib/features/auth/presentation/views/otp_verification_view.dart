@@ -30,10 +30,11 @@ class OtpVerificationView extends StatelessWidget {
           current.status == OtpStatus.success,
       listener: (context, state) {
         if (state.status == OtpStatus.success) {
-          // TODO(Story-7): branch on user type returned by API —
-          //   new user      → location permission screen
-          //   existing user → passenger home or mode selection
-          context.go(RouteNames.modeSelection);
+          context.go(
+            state.isNewUser
+                ? RouteNames.modeSelection
+                : RouteNames.passengerHome,
+          );
         }
       },
       child: AppScaffold(

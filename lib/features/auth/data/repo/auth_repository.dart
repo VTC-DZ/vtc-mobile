@@ -1,36 +1,51 @@
 // lib/features/auth/data/repo/auth_repository.dart
 
 import '../../../../core/constants/passenger_api_constants.dart';
-import '../../../../core/network/api_client.dart';
+import '../../../../core/network/dio_client.dart';
+import '../models/auth_tokens_model.dart';
 import '../models/gender.dart';
 
 final class AuthRepository {
   const AuthRepository();
 
   /// Sends an OTP to [phoneE164] (e.g. "+213661234567").
-  Future<void> sendOtp(String phoneE164) =>
-      DioClient.post(
+  Future<void> sendOtp(String phoneE164) => DioClient.post(
         path: PassengerApiConstants.otpRequest,
         data: {'phone': phoneE164},
       );
 
-  /// Verifies [otp] for [phoneE164]. Throws a [String] error on failure.
-  Future<void> verifyOtp(String phoneE164, String otp) =>
-      DioClient.post(
-        path: PassengerApiConstants.otpVerify,
-        data: {'phone': phoneE164, 'code': otp},
-      );
+  /// Verifies [otp] for [phoneE164], persists the access token, and returns
+  /// the parsed tokens (including [AuthTokensModel.isNewUser]).
+  Future<AuthTokensModel> verifyOtp(String phoneE164, String otp) async {
+    final response = await DioClient.post(
+      path: PassengerApiConstants.otpVerify,
+      data: {'phone': phoneE164, 'code': otp},
+    );
+    final tokens =
+        AuthTokensModel.fromJson(response.data as Map<String, dynamic>);
+    await DioClient.updateToken(tokens.accessToken);
+    return tokens;
+  }
 
   /// Saves the new passenger's basic profile information.
+  ///
+  /// Calls PUT /api/passenger/profile, then PATCH /api/passenger/email if
+  /// [email] is provided.
   Future<void> savePassengerProfile({
     required String fullName,
     required Gender gender,
+    required DateTime dateOfBirth,
     String? email,
   }) async {
-    await Future<void>.delayed(const Duration(milliseconds: 1000));
-    if (fullName == "error") {
-      throw 'Failed to save profile. Please try again.';
-    }
+    await DioClient.put(
+      path: PassengerApiConstants.profile,
+      data: {
+        'fullName': fullName,
+        'gender': gender.name.toUpperCase(),
+        'dateOfBirth':
+            '${dateOfBirth.year.toString().padLeft(4, '0')}-${dateOfBirth.month.toString().padLeft(2, '0')}-${dateOfBirth.day.toString().padLeft(2, '0')}',
+      },
+    );
   }
 
   /// Saves the driver's personal info (Step 1 of driver registration).
@@ -58,6 +73,4 @@ final class AuthRepository {
   }) async {
     await Future<void>.delayed(const Duration(milliseconds: 1500));
   }
-
-
 }

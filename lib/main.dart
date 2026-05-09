@@ -4,13 +4,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'core/constants/app_constants.dart';
-import 'core/network/api_client.dart';
+import 'core/network/dio_client.dart';
 import 'core/router/app_router.dart';
+import 'core/storage/secure_storage_helper.dart';
 import 'core/theme/app_theme.dart';
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  SecureStorageHelper.init();
   DioClient.init();
+  await DioClient.loadToken();
   runApp(const MyApp());
 }
 

@@ -9,6 +9,7 @@ import 'profile_error_banner_widget.dart';
 import '../profile_field_label_widget.dart';
 import '../profile_gender_toggle_widget.dart';
 import '../profile_name_field_widget.dart';
+import '../driver/fields/driver_date_picker_field_widget.dart';
 
 class PassengerProfileFormSection extends StatelessWidget {
   const PassengerProfileFormSection({
@@ -27,6 +28,7 @@ class PassengerProfileFormSection extends StatelessWidget {
     return BlocBuilder<PassengerProfileCubit, PassengerProfileState>(
       buildWhen: (previous, current) =>
           previous.gender != current.gender ||
+          previous.dateOfBirth != current.dateOfBirth ||
           previous.nameError != current.nameError ||
           previous.emailError != current.emailError ||
           previous.errorMessage != current.errorMessage ||
@@ -51,6 +53,14 @@ class PassengerProfileFormSection extends StatelessWidget {
             ProfileGenderToggleWidget(
               selected: state.gender,
               onChanged: cubit.genderChanged,
+              enabled: !isSubmitting,
+            ),
+            SizedBox(height: 24.h),
+            const ProfileFieldLabelWidget(label: 'Date of Birth'),
+            SizedBox(height: 8.h),
+            DriverDatePickerFieldWidget(
+              selectedDate: state.dateOfBirth,
+              onDateSelected: cubit.dateOfBirthChanged,
               enabled: !isSubmitting,
             ),
             SizedBox(height: 24.h),
