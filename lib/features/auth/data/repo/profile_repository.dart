@@ -1,0 +1,31 @@
+import '../../../../core/constants/passenger_api_constants.dart';
+import '../../../../core/network/dio_client.dart';
+import '../models/gender.dart';
+import '../models/passenger_profile_model.dart';
+
+final class ProfileRepository {
+  const ProfileRepository();
+
+  Future<PassengerProfileModel> getProfile() async {
+    final response = await DioClient.get(path: PassengerApiConstants.profile);
+    return PassengerProfileModel.fromJson(response.data as Map<String, dynamic>);
+  }
+
+  Future<PassengerProfileModel> saveProfile({
+    required String fullName,
+    required Gender gender,
+    required DateTime dateOfBirth,
+    String? email,
+  }) async {
+    final response = await DioClient.put(
+      path: PassengerApiConstants.profile,
+      data: {
+        'fullName': fullName,
+        'gender': gender.name.toUpperCase(),
+        'dateOfBirth':
+            '${dateOfBirth.year.toString().padLeft(4, '0')}-${dateOfBirth.month.toString().padLeft(2, '0')}-${dateOfBirth.day.toString().padLeft(2, '0')}',
+      },
+    );
+    return PassengerProfileModel.fromJson(response.data as Map<String, dynamic>);
+  }
+}

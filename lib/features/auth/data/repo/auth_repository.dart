@@ -27,27 +27,6 @@ final class AuthRepository {
     return tokens;
   }
 
-  /// Saves the new passenger's basic profile information.
-  ///
-  /// Calls PUT /api/passenger/profile, then PATCH /api/passenger/email if
-  /// [email] is provided.
-  Future<void> savePassengerProfile({
-    required String fullName,
-    required Gender gender,
-    required DateTime dateOfBirth,
-    String? email,
-  }) async {
-    await DioClient.put(
-      path: PassengerApiConstants.profile,
-      data: {
-        'fullName': fullName,
-        'gender': gender.name.toUpperCase(),
-        'dateOfBirth':
-            '${dateOfBirth.year.toString().padLeft(4, '0')}-${dateOfBirth.month.toString().padLeft(2, '0')}-${dateOfBirth.day.toString().padLeft(2, '0')}',
-      },
-    );
-  }
-
   /// Saves the driver's personal info (Step 1 of driver registration).
   Future<void> saveDriverPersonalInfo({
     required String fullName,
