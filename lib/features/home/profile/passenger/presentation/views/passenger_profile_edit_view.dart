@@ -4,16 +4,16 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:khfif_drif/features/home/passenger/presentation/cubit/passenger_home_cubit.dart';
 
-import '../../../../../core/widgets/app_toast.dart';
+import '../../../../../../core/widgets/app_toast.dart';
 import 'widgets/profile_edit_shimmer_widget.dart';
-import '../../../../../features/auth/presentation/views/widgets/profile/driver/fields/driver_date_picker_field_widget.dart';
-import '../../../../../features/auth/presentation/views/widgets/profile/passenger/profile_email_field_widget.dart';
-import '../../../../../features/auth/presentation/views/widgets/profile/passenger/profile_error_banner_widget.dart';
-import '../../../../../features/auth/presentation/views/widgets/profile/profile_field_label_widget.dart';
-import '../../../../../features/auth/presentation/views/widgets/profile/profile_gender_toggle_widget.dart';
-import '../../../../../features/auth/presentation/views/widgets/profile/profile_name_field_widget.dart';
-import '../../../../../shared/widgets/app_scaffold.dart';
-import '../../../../../shared/widgets/primary_button.dart';
+import '../../../../../../features/auth/presentation/views/widgets/profile/driver/fields/driver_date_picker_field_widget.dart';
+import '../../../../../../features/auth/presentation/views/widgets/profile/passenger/profile_email_field_widget.dart';
+import '../../../../../../features/auth/presentation/views/widgets/profile/passenger/profile_error_banner_widget.dart';
+import '../../../../../../features/auth/presentation/views/widgets/profile/profile_field_label_widget.dart';
+import '../../../../../../features/auth/presentation/views/widgets/profile/profile_gender_toggle_widget.dart';
+import '../../../../../../features/auth/presentation/views/widgets/profile/profile_name_field_widget.dart';
+import '../../../../../../shared/widgets/app_scaffold.dart';
+import '../../../../../../shared/widgets/primary_button.dart';
 import '../cubit/passenger_profile_edit_cubit.dart';
 import '../cubit/passenger_profile_edit_state.dart';
 
@@ -122,4 +122,3 @@ class PassengerProfileEditView extends StatelessWidget {
     );
   }
 }
-

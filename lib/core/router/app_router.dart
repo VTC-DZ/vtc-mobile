@@ -17,9 +17,9 @@ import '../../features/auth/presentation/views/driver/driver_pending_review_view
 import '../../features/auth/presentation/views/driver/driver_registration_view.dart';
 import '../../features/auth/presentation/views/driver/driver_rejection_view.dart';
 import '../../features/home/passenger/presentation/cubit/passenger_home_cubit.dart';
-import '../../features/home/passenger/presentation/cubit/passenger_profile_edit_cubit.dart';
 import '../../features/home/passenger/presentation/views/passenger_home_view.dart';
-import '../../features/home/passenger/presentation/views/passenger_profile_edit_view.dart';
+import '../../features/home/profile/passenger/presentation/cubit/passenger_profile_edit_cubit.dart';
+import '../../features/home/profile/passenger/presentation/views/passenger_profile_edit_view.dart';
 import '../network/dio_client.dart';
 import 'route_names.dart';
 

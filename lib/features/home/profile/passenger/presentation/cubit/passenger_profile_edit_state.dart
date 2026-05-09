@@ -1,7 +1,7 @@
 import 'package:equatable/equatable.dart';
 
-import '../../../../../features/auth/data/models/gender.dart';
-import '../../../../../features/auth/data/models/passenger_profile_model.dart';
+import '../../../../../../../features/auth/data/models/gender.dart';
+import '../../../../../../../features/auth/data/models/passenger_profile_model.dart';
 
 enum ProfileEditStatus { loading, loaded, saving, success, failure }
 
