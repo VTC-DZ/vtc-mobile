@@ -34,7 +34,8 @@ class PassengerEmailEditCubit extends Cubit<PassengerEmailEditState> {
     emit(state.copyWith(status: EmailEditStatus.saving, errorMessage: ''));
     try {
       await _repository.updateEmail(email: emailController.text.trim());
-      emit(state.copyWith(status: EmailEditStatus.success));
+      emit(state.copyWith(
+          status: EmailEditStatus.success, email: emailController.text.trim()));
     } catch (e) {
       emit(state.copyWith(
         status: EmailEditStatus.failure,

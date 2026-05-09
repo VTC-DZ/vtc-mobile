@@ -32,7 +32,8 @@ final class AppRouter {
   static const _profileRepository = ProfileRepository();
 
   static final GoRouter router = GoRouter(
-    initialLocation: DioClient.isLoggedIn ? RouteNames.passengerHome : RouteNames.phone,
+    initialLocation:
+        DioClient.isLoggedIn ? RouteNames.passengerHome : RouteNames.phone,
     debugLogDiagnostics: kDebugMode,
     errorBuilder: (context, state) => const Scaffold(
       body: Center(child: Text('Page not found')),
@@ -98,9 +99,7 @@ final class AppRouter {
               path: RouteNames.passengerProfileEdit,
               builder: (context, state) {
                 return BlocProvider<PassengerProfileEditCubit>(
-                  create: (_) =>
-                      PassengerProfileEditCubit(_profileRepository)
-                        ..getProfile(),
+                  create: (_) => PassengerProfileEditCubit(_profileRepository),
                   child: const PassengerProfileEditView(),
                 );
               },

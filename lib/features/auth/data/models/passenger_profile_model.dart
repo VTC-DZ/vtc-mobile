@@ -1,6 +1,8 @@
+import 'package:equatable/equatable.dart';
+
 import 'gender.dart';
 
-class PassengerProfileModel {
+class PassengerProfileModel extends Equatable {
   const PassengerProfileModel({
     required this.fullName,
     required this.gender,
@@ -41,4 +43,7 @@ class PassengerProfileModel {
         email: email ?? this.email,
         phone: phone ?? this.phone,
       );
+
+  @override
+  List<Object?> get props => [fullName, gender, dateOfBirth, email, phone];
 }

@@ -21,19 +21,6 @@ class PassengerProfileEditCubit extends Cubit<PassengerProfileEditState> {
     return super.close();
   }
 
-  Future<void> getProfile() async {
-    emit(state.copyWith(status: ProfileEditStatus.loading));
-    try {
-      final profile = await _repository.getProfile();
-      initData(profile);
-    } catch (e) {
-      emit(state.copyWith(
-        status: ProfileEditStatus.failure,
-        errorMessage: e is String ? e : 'Failed to load profile.',
-      ));
-    }
-  }
-
   void initData(PassengerProfileModel profile) {
     nameController.text = profile.fullName;
     emit(PassengerProfileEditState(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'package:khfif_drif/features/home/passenger/presentation/cubit/passenger_home_cubit.dart';
 
 import '../../../../../../core/widgets/app_toast.dart';
 import '../../../../../../features/auth/presentation/views/widgets/profile/passenger/profile_email_field_widget.dart';
@@ -23,6 +24,7 @@ class PassengerEmailEditView extends StatelessWidget {
       listenWhen: (prev, curr) => curr.status == EmailEditStatus.success,
       listener: (context, state) {
         AppToast.success('Email updated successfully');
+        context.read<PassengerHomeCubit>().updateEmail(state.email);
         context.pop();
       },
       child: AppScaffold(
