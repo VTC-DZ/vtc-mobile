@@ -10,8 +10,8 @@ final class PassengerProfileEditState extends Equatable {
     this.status = ProfileEditStatus.loading,
     this.gender,
     this.dateOfBirth,
+    this.email,
     this.nameError = '',
-    this.emailError = '',
     this.errorMessage = '',
     this.savedProfile,
   });
@@ -19,14 +19,13 @@ final class PassengerProfileEditState extends Equatable {
   final ProfileEditStatus status;
   final Gender? gender;
   final DateTime? dateOfBirth;
+  final String? email;
   final String nameError;
-  final String emailError;
   final String errorMessage;
   final PassengerProfileModel? savedProfile;
 
   bool get canSave =>
       nameError.isEmpty &&
-      emailError.isEmpty &&
       gender != null &&
       dateOfBirth != null &&
       status != ProfileEditStatus.saving;
@@ -35,8 +34,8 @@ final class PassengerProfileEditState extends Equatable {
     ProfileEditStatus? status,
     Gender? gender,
     DateTime? dateOfBirth,
+    String? email,
     String? nameError,
-    String? emailError,
     String? errorMessage,
     PassengerProfileModel? savedProfile,
   }) {
@@ -44,8 +43,8 @@ final class PassengerProfileEditState extends Equatable {
       status: status ?? this.status,
       gender: gender ?? this.gender,
       dateOfBirth: dateOfBirth ?? this.dateOfBirth,
+      email: email ?? this.email,
       nameError: nameError ?? this.nameError,
-      emailError: emailError ?? this.emailError,
       errorMessage: errorMessage ?? this.errorMessage,
       savedProfile: savedProfile ?? this.savedProfile,
     );
@@ -56,8 +55,8 @@ final class PassengerProfileEditState extends Equatable {
         status,
         gender,
         dateOfBirth,
+        email,
         nameError,
-        emailError,
         errorMessage,
         savedProfile,
       ];

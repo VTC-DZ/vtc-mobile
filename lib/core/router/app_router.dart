@@ -18,7 +18,9 @@ import '../../features/auth/presentation/views/driver/driver_registration_view.d
 import '../../features/auth/presentation/views/driver/driver_rejection_view.dart';
 import '../../features/home/passenger/presentation/cubit/passenger_home_cubit.dart';
 import '../../features/home/passenger/presentation/views/passenger_home_view.dart';
+import '../../features/home/profile/passenger/presentation/cubit/passenger_email_edit_cubit.dart';
 import '../../features/home/profile/passenger/presentation/cubit/passenger_profile_edit_cubit.dart';
+import '../../features/home/profile/passenger/presentation/views/passenger_email_edit_view.dart';
 import '../../features/home/profile/passenger/presentation/views/passenger_profile_edit_view.dart';
 import '../network/dio_client.dart';
 import 'route_names.dart';
@@ -100,6 +102,20 @@ final class AppRouter {
                       PassengerProfileEditCubit(_profileRepository)
                         ..getProfile(),
                   child: const PassengerProfileEditView(),
+                );
+              },
+            ),
+            GoRoute(
+              path: RouteNames.passengerEmailEdit,
+              builder: (context, state) {
+                final currentEmail =
+                    state.extra is String ? state.extra as String : '';
+                return BlocProvider<PassengerEmailEditCubit>(
+                  create: (_) => PassengerEmailEditCubit(
+                    _profileRepository,
+                    initialEmail: currentEmail,
+                  ),
+                  child: const PassengerEmailEditView(),
                 );
               },
             ),

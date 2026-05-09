@@ -1,7 +1,9 @@
 // lib/main.dart
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:khfif_drif/core/helper/observer.dart';
 
 import 'core/constants/app_constants.dart';
 import 'core/network/dio_client.dart';
@@ -11,6 +13,7 @@ import 'core/theme/app_theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  Bloc.observer = MyBlocObserver();
   SecureStorageHelper.init();
   DioClient.init();
   await DioClient.loadToken();

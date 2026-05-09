@@ -37,7 +37,6 @@ final class PassengerProfileCubit extends Cubit<PassengerProfileState> {
         fullName: fullName.trim(),
         gender: state.gender!,
         dateOfBirth: state.dateOfBirth!,
-        email: email.trim().isEmpty ? null : email.trim(),
       );
       emit(state.copyWith(status: ProfileStatus.success));
     } catch (e) {

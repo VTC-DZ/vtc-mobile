@@ -14,12 +14,10 @@ class PassengerProfileEditCubit extends Cubit<PassengerProfileEditState> {
   final ProfileRepository _repository;
 
   final nameController = TextEditingController();
-  final emailController = TextEditingController();
 
   @override
   Future<void> close() {
     nameController.dispose();
-    emailController.dispose();
     return super.close();
   }
 
@@ -38,13 +36,12 @@ class PassengerProfileEditCubit extends Cubit<PassengerProfileEditState> {
 
   void initData(PassengerProfileModel profile) {
     nameController.text = profile.fullName;
-    emailController.text = profile.email ?? '';
     emit(PassengerProfileEditState(
       status: ProfileEditStatus.loaded,
       gender: profile.gender,
       dateOfBirth: profile.dateOfBirth,
+      email: profile.email,
       nameError: Validators.name(profile.fullName),
-      emailError: Validators.email(profile.email ?? ''),
     ));
   }
 
@@ -63,13 +60,6 @@ class PassengerProfileEditCubit extends Cubit<PassengerProfileEditState> {
     emit(state.copyWith(dateOfBirth: date, errorMessage: ''));
   }
 
-  void emailChanged(String value) {
-    emit(state.copyWith(
-      emailError: Validators.email(value.trim()),
-      errorMessage: '',
-    ));
-  }
-
   Future<void> updateProfile() async {
     if (!state.canSave) return;
     emit(state.copyWith(status: ProfileEditStatus.saving, errorMessage: ''));
@@ -78,9 +68,6 @@ class PassengerProfileEditCubit extends Cubit<PassengerProfileEditState> {
         fullName: nameController.text.trim(),
         gender: state.gender!,
         dateOfBirth: state.dateOfBirth!,
-        email: emailController.text.trim().isEmpty
-            ? null
-            : emailController.text.trim(),
       );
       emit(state.copyWith(
         status: ProfileEditStatus.success,

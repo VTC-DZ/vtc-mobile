@@ -11,11 +11,18 @@ final class ProfileRepository {
     return PassengerProfileModel.fromJson(response.data as Map<String, dynamic>);
   }
 
+  Future<PassengerProfileModel> updateEmail({required String email}) async {
+    final response = await DioClient.patch(
+      path: PassengerApiConstants.updateEmail,
+      data: {'email': email},
+    );
+    return PassengerProfileModel.fromJson(response.data as Map<String, dynamic>);
+  }
+
   Future<PassengerProfileModel> saveProfile({
     required String fullName,
     required Gender gender,
     required DateTime dateOfBirth,
-    String? email,
   }) async {
     final response = await DioClient.put(
       path: PassengerApiConstants.profile,
