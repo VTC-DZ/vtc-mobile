@@ -20,6 +20,7 @@ import '../../features/home/passenger/presentation/cubit/passenger_home_cubit.da
 import '../../features/home/passenger/presentation/cubit/passenger_profile_edit_cubit.dart';
 import '../../features/home/passenger/presentation/views/passenger_home_view.dart';
 import '../../features/home/passenger/presentation/views/passenger_profile_edit_view.dart';
+import '../network/dio_client.dart';
 import 'route_names.dart';
 
 final class AppRouter {
@@ -29,7 +30,7 @@ final class AppRouter {
   static const _profileRepository = ProfileRepository();
 
   static final GoRouter router = GoRouter(
-    initialLocation: RouteNames.phone,
+    initialLocation: DioClient.isLoggedIn ? RouteNames.passengerHome : RouteNames.phone,
     debugLogDiagnostics: kDebugMode,
     errorBuilder: (context, state) => const Scaffold(
       body: Center(child: Text('Page not found')),

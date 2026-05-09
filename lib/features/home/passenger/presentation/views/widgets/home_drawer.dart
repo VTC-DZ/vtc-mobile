@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../../../core/router/route_names.dart';
 import '../../../../../../core/theme/app_colors.dart';
 import '../../../../../../core/theme/app_text_styles.dart';
+import '../../../../../auth/data/repo/auth_repository.dart';
 
 class HomeDrawer extends StatelessWidget {
   const HomeDrawer({super.key});
@@ -79,7 +80,10 @@ class HomeDrawer extends StatelessWidget {
                 icon: Icons.logout_rounded,
                 label: 'Logout',
                 color: AppColors.error,
-                onTap: () => Navigator.pop(context),
+                onTap: () {
+                  Navigator.pop(context);
+                  const AuthRepository().logout();
+                },
               ),
             ),
           ],

@@ -5,13 +5,21 @@ import 'package:flutter/foundation.dart';
 
 import '../constants/api_constants.dart';
 import '../constants/cache_keys.dart';
+import '../constants/passenger_api_constants.dart';
+import '../router/app_router.dart';
+import '../router/route_names.dart';
 import '../storage/secure_storage_helper.dart';
+import '../../features/auth/data/models/auth_tokens_model.dart';
 
 final class DioClient {
   DioClient._();
 
   static late Dio _dio;
   static String? _accessToken;
+  static String? _refreshToken;
+  static bool _isRefreshing = false;
+
+  static bool get isLoggedIn => _accessToken != null;
 
   static void init() {
     _dio = Dio(
@@ -39,6 +47,45 @@ final class DioClient {
       ),
     );
 
+    _dio.interceptors.add(
+      InterceptorsWrapper(
+        onError: (error, handler) async {
+          if (error.response?.statusCode != 401 ||
+              _isRefreshing ||
+              _refreshToken == null) {
+            return handler.next(error);
+          }
+
+          _isRefreshing = true;
+          try {
+            final response = await _dio.post(
+              PassengerApiConstants.refresh,
+              data: {'refreshToken': _refreshToken},
+              options: Options(
+                headers: {'Authorization': null},
+              ),
+            );
+            final tokens = AuthTokensModel.fromJson(
+              response.data as Map<String, dynamic>,
+            );
+            await updateToken(tokens.accessToken);
+            await updateRefreshToken(tokens.refreshToken);
+
+            final retryOptions = error.requestOptions;
+            retryOptions.headers['Authorization'] = 'Bearer ${tokens.accessToken}';
+            final retried = await _dio.fetch(retryOptions);
+            handler.resolve(retried);
+          } catch (_) {
+            await removeToken();
+            AppRouter.router.go(RouteNames.phone);
+            handler.next(error);
+          } finally {
+            _isRefreshing = false;
+          }
+        },
+      ),
+    );
+
     if (kDebugMode) {
       _dio.interceptors.add(
         LogInterceptor(
@@ -53,16 +100,17 @@ final class DioClient {
     }
   }
 
-  /// Loads any persisted access token into memory. Call once at app startup
-  /// after [init].
+  /// Loads persisted tokens into memory. Call once at app startup after [init].
   static Future<void> loadToken() async {
     _accessToken = await SecureStorageHelper.read(
       key: CacheKeys.secureStorageKeys.accessTokenKey,
     );
+    _refreshToken = await SecureStorageHelper.read(
+      key: CacheKeys.secureStorageKeys.refreshTokenKey,
+    );
   }
 
-  /// Saves the access token in memory and to secure storage. Subsequent
-  /// requests will include `Authorization: Bearer <token>`.
+  /// Saves the access token in memory and to secure storage.
   static Future<void> updateToken(String token) async {
     _accessToken = token;
     await SecureStorageHelper.write(
@@ -71,11 +119,24 @@ final class DioClient {
     );
   }
 
-  /// Clears the access token from memory and secure storage.
+  /// Saves the refresh token in memory and to secure storage.
+  static Future<void> updateRefreshToken(String token) async {
+    _refreshToken = token;
+    await SecureStorageHelper.write(
+      key: CacheKeys.secureStorageKeys.refreshTokenKey,
+      value: token,
+    );
+  }
+
+  /// Clears both tokens from memory and secure storage.
   static Future<void> removeToken() async {
     _accessToken = null;
+    _refreshToken = null;
     await SecureStorageHelper.remove(
       key: CacheKeys.secureStorageKeys.accessTokenKey,
+    );
+    await SecureStorageHelper.remove(
+      key: CacheKeys.secureStorageKeys.refreshTokenKey,
     );
   }
 
