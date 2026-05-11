@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:khfif_drif/features/home/passenger/presentation/cubit/passenger_home_cubit.dart';
 import 'package:khfif_drif/features/home/passenger/presentation/cubit/passenger_home_state.dart';
+import 'package:khfif_drif/features/home/passenger/presentation/views/widgets/top_bar.dart';
 
 import '../../../../../../core/router/route_names.dart';
 import '../../../../../../core/widgets/app_toast.dart';
@@ -34,9 +35,6 @@ class PassengerProfileEditView extends StatelessWidget {
         context.pop();
       },
       child: AppScaffold(
-        showAppBar: true,
-        appBarTitle: 'Edit Profile',
-        onLeadingTap: () => context.pop(),
         bottomNavigationBar:
             BlocBuilder<PassengerProfileEditCubit, PassengerProfileEditState>(
           buildWhen: (prev, curr) =>
@@ -51,92 +49,112 @@ class PassengerProfileEditView extends StatelessWidget {
             ),
           ),
         ),
-        body: BlocBuilder<PassengerHomeCubit, PassengerHomeState>(
-          buildWhen: (previous, current) {
-            return (previous.status != current.status ||
-                previous.profile != current.profile);
-          },
-          builder: (context, state) {
-            if (state.status == PassengerHomeStatus.loading) {
-              return const ProfileEditShimmerWidget();
-            } else if (state.status == PassengerHomeStatus.loaded) {
-              context
-                  .read<PassengerProfileEditCubit>()
-                  .initData(state.profile!);
-            }
-            return BlocBuilder<PassengerProfileEditCubit,
-                PassengerProfileEditState>(
-              buildWhen: (prev, curr) => prev.status != curr.status,
-              builder: (context, state) {
-                return SingleChildScrollView(
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 24.w),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        SizedBox(height: 40.h),
-                        const ProfileFieldLabelWidget(label: 'Full Name'),
-                        SizedBox(height: 8.h),
-                        ProfileNameFieldWidget(
-                          controller: cubit.nameController,
-                          onChanged: cubit.nameChanged,
-                          error: state.nameError,
-                          enabled: state.status != ProfileEditStatus.saving,
-                        ),
-                        SizedBox(height: 24.h),
-                        const ProfileFieldLabelWidget(label: 'Gender'),
-                        SizedBox(height: 8.h),
-                        ProfileGenderToggleWidget(
-                          selected: state.gender,
-                          onChanged: cubit.genderChanged,
-                          enabled: state.status != ProfileEditStatus.saving,
-                        ),
-                        SizedBox(height: 24.h),
-                        const ProfileFieldLabelWidget(label: 'Date of Birth'),
-                        SizedBox(height: 8.h),
-                        DriverDatePickerFieldWidget(
-                          selectedDate: state.dateOfBirth,
-                          onDateSelected: cubit.dateOfBirthChanged,
-                          enabled: state.status != ProfileEditStatus.saving,
-                        ),
-                        SizedBox(height: 24.h),
-                        const ProfileFieldLabelWidget(
-                          label: 'Email',
-                          badge: 'Optional',
-                        ),
-                        SizedBox(height: 8.h),
-                        BlocBuilder<PassengerProfileEditCubit,
-                            PassengerProfileEditState>(
-                          buildWhen: (prev, curr) => prev.email != curr.email,
-                          builder: (context, state) =>
-                              ProfileEmailEditRowWidget(
-                            email: state.email,
-                            onTap: () => context.push(
-                              RouteNames.passengerEmailEdit,
-                              extra: state.email ?? '',
+        body: SafeArea(
+          child: Column(
+            children: [
+              const TopBar(
+                title: 'Edit Profile',
+                subtitle: 'Profile',
+                leadingIcon: Icons.menu_rounded,
+                trailingIcon: null,
+              ),
+              Expanded(
+                child: BlocBuilder<PassengerHomeCubit, PassengerHomeState>(
+                  buildWhen: (previous, current) {
+                    return (previous.status != current.status ||
+                        previous.profile != current.profile);
+                  },
+                  builder: (context, state) {
+                    if (state.status == PassengerHomeStatus.loading) {
+                      return const ProfileEditShimmerWidget();
+                    } else if (state.status == PassengerHomeStatus.loaded) {
+                      context
+                          .read<PassengerProfileEditCubit>()
+                          .initData(state.profile!);
+                    }
+                    return BlocBuilder<PassengerProfileEditCubit,
+                        PassengerProfileEditState>(
+                      buildWhen: (prev, curr) => prev.status != curr.status,
+                      builder: (context, state) {
+                        return SingleChildScrollView(
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 24.w),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                SizedBox(height: 24.h),
+                                const ProfileFieldLabelWidget(
+                                    label: 'Full Name'),
+                                SizedBox(height: 8.h),
+                                ProfileNameFieldWidget(
+                                  controller: cubit.nameController,
+                                  onChanged: cubit.nameChanged,
+                                  error: state.nameError,
+                                  enabled:
+                                      state.status != ProfileEditStatus.saving,
+                                ),
+                                SizedBox(height: 24.h),
+                                const ProfileFieldLabelWidget(label: 'Gender'),
+                                SizedBox(height: 8.h),
+                                ProfileGenderToggleWidget(
+                                  selected: state.gender,
+                                  onChanged: cubit.genderChanged,
+                                  enabled:
+                                      state.status != ProfileEditStatus.saving,
+                                ),
+                                SizedBox(height: 24.h),
+                                const ProfileFieldLabelWidget(
+                                    label: 'Date of Birth'),
+                                SizedBox(height: 8.h),
+                                DriverDatePickerFieldWidget(
+                                  selectedDate: state.dateOfBirth,
+                                  onDateSelected: cubit.dateOfBirthChanged,
+                                  enabled:
+                                      state.status != ProfileEditStatus.saving,
+                                ),
+                                SizedBox(height: 24.h),
+                                const ProfileFieldLabelWidget(
+                                  label: 'Email',
+                                  badge: 'Optional',
+                                ),
+                                SizedBox(height: 8.h),
+                                BlocBuilder<PassengerProfileEditCubit,
+                                    PassengerProfileEditState>(
+                                  buildWhen: (prev, curr) =>
+                                      prev.email != curr.email,
+                                  builder: (context, state) =>
+                                      ProfileEmailEditRowWidget(
+                                    email: state.email,
+                                    onTap: () => context.push(
+                                      RouteNames.passengerEmailEdit,
+                                      extra: state.email ?? '',
+                                    ),
+                                  ),
+                                ),
+                                AnimatedSize(
+                                  duration: const Duration(milliseconds: 160),
+                                  curve: Curves.easeOut,
+                                  child: state.errorMessage.isNotEmpty
+                                      ? Padding(
+                                          padding: EdgeInsets.only(top: 16.h),
+                                          child: ProfileErrorBannerWidget(
+                                            message: state.errorMessage,
+                                          ),
+                                        )
+                                      : const SizedBox.shrink(),
+                                ),
+                                SizedBox(height: 24.h),
+                              ],
                             ),
                           ),
-                        ),
-                        AnimatedSize(
-                          duration: const Duration(milliseconds: 160),
-                          curve: Curves.easeOut,
-                          child: state.errorMessage.isNotEmpty
-                              ? Padding(
-                                  padding: EdgeInsets.only(top: 16.h),
-                                  child: ProfileErrorBannerWidget(
-                                    message: state.errorMessage,
-                                  ),
-                                )
-                              : const SizedBox.shrink(),
-                        ),
-                        SizedBox(height: 24.h),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            );
-          },
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

@@ -16,7 +16,7 @@ abstract final class AppTheme {
       brightness: Brightness.light,
       primary: AppColors.primary,
       onPrimary: AppColors.white,
-      surface: const Color(0xFFFFFFFF),
+      surface: const Color(0xFFFDFBF7),
       onSurface: AppColors.black,
     );
 
@@ -29,7 +29,7 @@ abstract final class AppTheme {
       brightness: Brightness.dark,
       primary: AppColors.primary,
       onPrimary: AppColors.white,
-      surface: const Color(0xFF121212),
+      surface: AppColors.black,
       onSurface: AppColors.white,
     );
 
@@ -98,13 +98,12 @@ abstract final class AppTheme {
         style: ElevatedButton.styleFrom(
           backgroundColor: colorScheme.primary,
           foregroundColor: colorScheme.onPrimary,
-          disabledBackgroundColor:
-              colorScheme.onSurface.withValues(alpha: 0.12), // M3 disabled container
-          disabledForegroundColor:
-              colorScheme.onSurface.withValues(alpha: 0.38), // M3 disabled content
+          disabledBackgroundColor: colorScheme.onSurface
+              .withValues(alpha: 0.12), // M3 disabled container
+          disabledForegroundColor: colorScheme.onSurface
+              .withValues(alpha: 0.38), // M3 disabled content
           elevation: 0,
-          shape:
-              const RoundedRectangleBorder(borderRadius: inputRadius),
+          shape: const RoundedRectangleBorder(borderRadius: inputRadius),
           minimumSize: const Size(double.infinity, 56),
         ),
       ),

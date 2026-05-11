@@ -23,6 +23,7 @@ class AppScaffold extends StatelessWidget {
     this.resizeToAvoidBottomInset = true,
     this.onLeadingTap,
     this.appBarTitle,
+    this.appBarSubtitle,
     this.showAppBar = false,
   });
 
@@ -34,6 +35,7 @@ class AppScaffold extends StatelessWidget {
   final bool resizeToAvoidBottomInset;
   final VoidCallback? onLeadingTap;
   final String? appBarTitle;
+  final String? appBarSubtitle;
   final bool showAppBar;
 
   @override
@@ -51,6 +53,7 @@ class AppScaffold extends StatelessWidget {
         appBar: showAppBar
             ? AppAppBar(
                 title: appBarTitle,
+                subtitle: appBarSubtitle,
                 onLeadingTap: onLeadingTap,
               )
             : appBar,

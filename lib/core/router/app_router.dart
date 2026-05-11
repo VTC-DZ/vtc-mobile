@@ -86,7 +86,7 @@ final class AppRouter {
           builder: (context, state, child) => BlocProvider(
                 create: (context) =>
                     PassengerHomeCubit(_profileRepository)..getProfile(),
-                child: child,
+                child: PassengerHomeShell(child: child),
               ),
           routes: [
             GoRoute(

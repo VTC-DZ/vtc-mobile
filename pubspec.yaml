@@ -23,6 +23,7 @@ dependencies:
 
   # Responsive sizing
   flutter_screenutil: ^5.9.3
+  flutter_zoom_drawer: ^3.2.0
 
   # Secure local storage
   flutter_secure_storage: ^9.2.2

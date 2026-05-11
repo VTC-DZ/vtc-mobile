@@ -22,13 +22,29 @@ abstract final class AppColors {
       Theme.of(context).brightness == Brightness.dark;
 
   static Color background(BuildContext context) =>
-      isDark(context) ? const Color(0xFF121212) : const Color(0xFFFFFFFF);
+      isDark(context) ? const Color(0xFF121212) : const Color(0xFFFDFBF7);
 
   static Color surface(BuildContext context) =>
-      isDark(context) ? const Color(0xFF1A1A1A) : const Color(0xFFF7F8FA);
+      isDark(context) ? const Color(0xFF1A1A1A) : const Color(0xFFF3F0E9);
 
   static Color bottomBarSurface(BuildContext context) =>
-      isDark(context) ? const Color(0xFF202327) : const Color(0xFFE5E7EB);
+      isDark(context) ? const Color(0xFF202327) : const Color(0xFFE9E4D9);
+
+  static Color drawerBackground(BuildContext context) =>
+      isDark(context) ? black : const Color(0xFFF3F0E9);
+
+  static Color drawerText(BuildContext context) =>
+      isDark(context) ? white : const Color(0xFF151511);
+
+  static Color drawerTextMuted(BuildContext context) =>
+      drawerText(context).withValues(alpha: isDark(context) ? 0.68 : 0.62);
+
+  static Color drawerItemSelected(BuildContext context) => isDark(context)
+      ? white.withValues(alpha: 0.1)
+      : black.withValues(alpha: 0.06);
+
+  static Color drawerDivider(BuildContext context) =>
+      drawerText(context).withValues(alpha: isDark(context) ? 0.34 : 0.24);
 
   static Color text(BuildContext context) => isDark(context) ? white : black;
 

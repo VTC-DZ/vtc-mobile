@@ -22,7 +22,6 @@ final class PhoneCubit extends Cubit<PhoneState> {
       state.copyWith(
         phoneNumber: value,
         isValid: ValidationPatterns.dzPhone.hasMatch(value),
-        status: PhoneStatus.initial,
         errorMessage: Validators.dzPhonePartial(value) ?? '',
       ),
     );
