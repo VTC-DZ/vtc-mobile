@@ -31,7 +31,7 @@ class PassengerEmailEditCubit extends Cubit<PassengerEmailEditState> {
 
   Future<void> updateEmail() async {
     if (!state.canSave) return;
-    emit(state.copyWith(status: EmailEditStatus.saving, errorMessage: ''));
+    emit(state.copyWith(status: EmailEditStatus.loading, errorMessage: ''));
     try {
       await _repository.updateEmail(email: emailController.text.trim());
       emit(state.copyWith(

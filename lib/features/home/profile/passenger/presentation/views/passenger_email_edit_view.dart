@@ -40,7 +40,7 @@ class PassengerEmailEditView extends StatelessWidget {
             child: PrimaryButton(
               label: 'Save',
               isEnabled: state.canSave,
-              isLoading: state.status == EmailEditStatus.saving,
+              isLoading: state.status == EmailEditStatus.loading,
               onPressed: cubit.updateEmail,
             ),
           ),
@@ -60,7 +60,7 @@ class PassengerEmailEditView extends StatelessWidget {
                       controller: cubit.emailController,
                       onChanged: cubit.emailChanged,
                       error: state.emailError,
-                      enabled: state.status != EmailEditStatus.saving,
+                      enabled: state.status != EmailEditStatus.loading,
                     ),
                     AnimatedSize(
                       duration: const Duration(milliseconds: 160),
