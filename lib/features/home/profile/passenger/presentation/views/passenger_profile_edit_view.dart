@@ -28,7 +28,8 @@ class PassengerProfileEditView extends StatelessWidget {
     final cubit = context.read<PassengerProfileEditCubit>();
 
     return BlocListener<PassengerProfileEditCubit, PassengerProfileEditState>(
-      listenWhen: (prev, curr) => curr.updateProfileStatus == UpdateProfileStatus.success,
+      listenWhen: (prev, curr) =>
+          curr.updateProfileStatus == UpdateProfileStatus.success,
       listener: (context, state) {
         AppToast.success('Profile updated successfully');
         context.read<PassengerHomeCubit>().updateProfile(state.savedProfile!);
@@ -39,13 +40,15 @@ class PassengerProfileEditView extends StatelessWidget {
         bottomNavigationBar:
             BlocBuilder<PassengerProfileEditCubit, PassengerProfileEditState>(
           buildWhen: (prev, curr) =>
-              prev.canSave != curr.canSave || prev.updateProfileStatus != curr.updateProfileStatus,
+              prev.canSave != curr.canSave ||
+              prev.updateProfileStatus != curr.updateProfileStatus,
           builder: (context, state) => Padding(
             padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 16.h),
             child: PrimaryButton(
               label: 'Save Changes',
               isEnabled: state.canSave,
-              isLoading: state.updateProfileStatus == UpdateProfileStatus.loading,
+              isLoading:
+                  state.updateProfileStatus == UpdateProfileStatus.loading,
               onPressed: cubit.updateProfile,
             ),
           ),
@@ -74,7 +77,12 @@ class PassengerProfileEditView extends StatelessWidget {
                   }
                   return BlocBuilder<PassengerProfileEditCubit,
                       PassengerProfileEditState>(
-                    buildWhen: (prev, curr) => prev.updateProfileStatus != curr.updateProfileStatus,
+                    buildWhen: (prev, curr) =>
+                        prev.updateProfileStatus != curr.updateProfileStatus ||
+                        prev.gender != curr.gender ||
+                        prev.dateOfBirth != curr.dateOfBirth ||
+                        prev.nameError != curr.nameError ||
+                        prev.errorMessage != curr.errorMessage,
                     builder: (context, state) {
                       return SingleChildScrollView(
                         child: Padding(
@@ -89,8 +97,8 @@ class PassengerProfileEditView extends StatelessWidget {
                                 controller: cubit.nameController,
                                 onChanged: cubit.nameChanged,
                                 error: state.nameError,
-                                enabled:
-                                    state.updateProfileStatus != UpdateProfileStatus.loading,
+                                enabled: state.updateProfileStatus !=
+                                    UpdateProfileStatus.loading,
                               ),
                               SizedBox(height: 24.h),
                               const ProfileFieldLabelWidget(label: 'Gender'),
@@ -98,8 +106,8 @@ class PassengerProfileEditView extends StatelessWidget {
                               ProfileGenderToggleWidget(
                                 selected: state.gender,
                                 onChanged: cubit.genderChanged,
-                                enabled:
-                                    state.updateProfileStatus != UpdateProfileStatus.loading,
+                                enabled: state.updateProfileStatus !=
+                                    UpdateProfileStatus.loading,
                               ),
                               SizedBox(height: 24.h),
                               const ProfileFieldLabelWidget(
@@ -108,8 +116,8 @@ class PassengerProfileEditView extends StatelessWidget {
                               DriverDatePickerFieldWidget(
                                 selectedDate: state.dateOfBirth,
                                 onDateSelected: cubit.dateOfBirthChanged,
-                                enabled:
-                                    state.updateProfileStatus != UpdateProfileStatus.loading,
+                                enabled: state.updateProfileStatus !=
+                                    UpdateProfileStatus.loading,
                               ),
                               SizedBox(height: 24.h),
                               const ProfileFieldLabelWidget(
