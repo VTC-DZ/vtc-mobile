@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_zoom_drawer/flutter_zoom_drawer.dart';
 import 'package:go_router/go_router.dart';
@@ -7,20 +8,14 @@ import '../../../../../../core/router/route_names.dart';
 import '../../../../../../core/theme/app_colors.dart';
 import '../../../../../../core/theme/app_text_styles.dart';
 import '../../../../../auth/data/repo/auth_repository.dart';
+import '../../cubit/passenger_home_cubit.dart';
+import '../../cubit/passenger_home_state.dart';
 
-class HomeDrawer extends StatefulWidget {
+const int _profileIndex = 1;
+const int _logoutIndex = 8;
+
+class HomeDrawer extends StatelessWidget {
   const HomeDrawer({super.key});
-
-  @override
-  State<HomeDrawer> createState() => _HomeDrawerState();
-}
-
-class _HomeDrawerState extends State<HomeDrawer> {
-  static const int _homeIndex = 0;
-  static const int _profileIndex = 1;
-  static const int _logoutIndex = 8;
-
-  int _selectedIndex = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -38,43 +33,55 @@ class _HomeDrawerState extends State<HomeDrawer> {
       const _DrawerMenuItemData(Icons.help_outline_rounded, 'Help & Support'),
     ];
 
-    return Scaffold(
-      backgroundColor: AppColors.drawerBackground(context),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: EdgeInsets.all(20.w),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildDrawerHeader(context),
-              SizedBox(height: 18.h),
-              ..._buildMenuSection(menuItems),
-              Padding(
-                padding: EdgeInsets.symmetric(vertical: 24.h),
-                child: const _DashedDivider(),
+    return BlocBuilder<PassengerHomeCubit, PassengerHomeState>(
+      builder: (context, state) {
+        final selectedIndex = state.selectedIndex;
+
+        return Scaffold(
+          backgroundColor: AppColors.drawerBackground(context),
+          body: SafeArea(
+            child: SingleChildScrollView(
+              padding: EdgeInsets.all(20.w),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildDrawerHeader(context, state),
+                  SizedBox(height: 18.h),
+                  ..._buildMenuSection(
+                    menuItems,
+                    selectedIndex: selectedIndex,
+                    context: context,
+                  ),
+                  Padding(
+                    padding: EdgeInsets.symmetric(vertical: 24.h),
+                    child: const _DashedDivider(),
+                  ),
+                  ..._buildMenuSection(
+                    supportItems,
+                    startIndex: menuItems.length,
+                    selectedIndex: selectedIndex,
+                    context: context,
+                  ),
+                  SizedBox(height: 14.h),
+                  _DrawerItem(
+                    icon: Icons.logout_outlined,
+                    label: 'Logout',
+                    color: AppColors.error,
+                    isSelected: selectedIndex == _logoutIndex,
+                    onTap: () => _onMenuItemTap(context, _logoutIndex),
+                  ),
+                ],
               ),
-              ..._buildMenuSection(
-                supportItems,
-                startIndex: menuItems.length,
-              ),
-              SizedBox(height: 14.h),
-              _DrawerItem(
-                icon: Icons.logout_outlined,
-                label: 'Logout',
-                color: AppColors.error,
-                isSelected: _selectedIndex == _logoutIndex,
-                onTap: () => _onMenuItemTap(_logoutIndex),
-              ),
-            ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
-  void _onMenuItemTap(int index) {
+  void _onMenuItemTap(BuildContext context, int index) {
     if (index == _logoutIndex) {
-      setState(() => _selectedIndex = index);
+      context.read<PassengerHomeCubit>().updateSelectedIndex(index);
       ZoomDrawer.of(context)?.close();
       const AuthRepository().logout();
       return;
@@ -83,9 +90,9 @@ class _HomeDrawerState extends State<HomeDrawer> {
     final route = index == _profileIndex
         ? RouteNames.passengerProfileEdit
         : RouteNames.passengerHome;
-    final selectedIndex = index == _profileIndex ? _profileIndex : _homeIndex;
+    final selectedIndex = index == _profileIndex ? _profileIndex : 0;
 
-    setState(() => _selectedIndex = selectedIndex);
+    context.read<PassengerHomeCubit>().updateSelectedIndex(selectedIndex);
     ZoomDrawer.of(context)?.close();
     context.go(route);
   }
@@ -93,6 +100,8 @@ class _HomeDrawerState extends State<HomeDrawer> {
   List<Widget> _buildMenuSection(
     List<_DrawerMenuItemData> items, {
     int startIndex = 0,
+    required int selectedIndex,
+    required BuildContext context,
   }) {
     return List.generate(items.length, (offset) {
       final index = startIndex + offset;
@@ -101,13 +110,14 @@ class _HomeDrawerState extends State<HomeDrawer> {
       return _DrawerItem(
         icon: item.icon,
         label: item.label,
-        isSelected: _selectedIndex == index,
-        onTap: () => _onMenuItemTap(index),
+        isSelected: selectedIndex == index,
+        onTap: () => _onMenuItemTap(context, index),
       );
     });
   }
 
-  Widget _buildDrawerHeader(BuildContext context) {
+  Widget _buildDrawerHeader(BuildContext context, PassengerHomeState state) {
+    final name = state.profile?.fullName;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -157,7 +167,7 @@ class _HomeDrawerState extends State<HomeDrawer> {
         ),
         SizedBox(height: 20.h),
         Text(
-          'Hello, Passenger!',
+          name != null ? 'Hello, $name!' : 'Hello, Passenger!',
           style: AppTextStyles.headingMedium(context).copyWith(
             color: AppColors.drawerText(context),
             fontWeight: FontWeight.w800,

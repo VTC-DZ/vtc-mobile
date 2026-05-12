@@ -13,8 +13,8 @@ class PassengerHomeCubit extends Cubit<PassengerHomeState> {
     emit(state.copyWith(status: PassengerHomeStatus.loading));
     try {
       final PassengerProfileModel profile = await _repository.getProfile();
-      emit(
-          state.copyWith(status: PassengerHomeStatus.loaded, profile: profile));
+      emit(state.copyWith(
+          status: PassengerHomeStatus.success, profile: profile));
     } catch (e) {
       emit(state.copyWith(
         status: PassengerHomeStatus.failure,
@@ -25,6 +25,10 @@ class PassengerHomeCubit extends Cubit<PassengerHomeState> {
 
   void updateProfile(PassengerProfileModel profile) {
     emit(state.copyWith(profile: profile));
+  }
+
+  void updateSelectedIndex(int index) {
+    emit(state.copyWith(selectedIndex: index));
   }
 
   void updateEmail(String email) {

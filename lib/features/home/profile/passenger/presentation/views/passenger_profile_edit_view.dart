@@ -32,6 +32,8 @@ class PassengerProfileEditView extends StatelessWidget {
       listener: (context, state) {
         AppToast.success('Profile updated successfully');
         context.read<PassengerHomeCubit>().updateProfile(state.savedProfile!);
+        context.read<PassengerHomeCubit>().updateSelectedIndex(0);
+        context.go(RouteNames.passengerHome);
       },
       child: AppScaffold(
         bottomNavigationBar:
@@ -65,7 +67,7 @@ class PassengerProfileEditView extends StatelessWidget {
                 builder: (context, state) {
                   if (state.status == PassengerHomeStatus.loading) {
                     return const ProfileEditShimmerWidget();
-                  } else if (state.status == PassengerHomeStatus.loaded) {
+                  } else if (state.status == PassengerHomeStatus.success) {
                     context
                         .read<PassengerProfileEditCubit>()
                         .initData(state.profile!);
