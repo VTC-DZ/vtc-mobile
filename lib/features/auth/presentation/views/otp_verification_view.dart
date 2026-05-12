@@ -40,7 +40,7 @@ class OtpVerificationView extends StatelessWidget {
       child: AppScaffold(
         showAppBar: true,
         appBarTitle: 'Verification',
-        // onLeadingTap: () => context.go(RouteNames.phone),
+        onLeadingTap: () => context.go(RouteNames.phone),
         body: SingleChildScrollView(
           physics: const ClampingScrollPhysics(),
           padding: EdgeInsets.symmetric(horizontal: 24.w),

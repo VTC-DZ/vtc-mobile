@@ -3,9 +3,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-
 import '../../core/theme/app_colors.dart';
-import 'app_app_bar.dart';
+import 'app_slim_app_bar.dart';
 
 /// Thin wrapper around [Scaffold] that enforces the app's default background
 /// colour and status-bar appearance on every screen.
@@ -51,12 +50,12 @@ class AppScaffold extends StatelessWidget {
       child: Scaffold(
         backgroundColor: backgroundColor ?? AppColors.background(context),
         appBar: showAppBar
-            ? AppAppBar(
-                title: appBarTitle,
-                subtitle: appBarSubtitle,
-                onLeadingTap: onLeadingTap,
-              )
-            : appBar,
+            ? appBar ??
+                AppSlimAppBar(
+                  title: appBarTitle,
+                  onLeadingTap: onLeadingTap,
+                )
+            : null,
         bottomNavigationBar: bottomNavigationBar == null
             ? null
             : DecoratedBox(
@@ -87,7 +86,7 @@ class AppScaffold extends StatelessWidget {
                 ),
               ),
         resizeToAvoidBottomInset: resizeToAvoidBottomInset,
-        body: showAppBar ? body : SafeArea(child: body),
+        body: SafeArea(child: body),
       ),
     );
   }
