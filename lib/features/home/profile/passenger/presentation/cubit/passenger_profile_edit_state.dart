@@ -3,11 +3,13 @@ import 'package:equatable/equatable.dart';
 import '../../../../../../../features/auth/data/models/gender.dart';
 import '../../../../../../../features/auth/data/models/passenger_profile_model.dart';
 
-enum ProfileEditStatus { loading, loaded, saving, success, failure }
+enum GetProfileStatus { initial, loading, success, failure }
+enum UpdateProfileStatus { initial, loading, success, failure }
 
 final class PassengerProfileEditState extends Equatable {
   const PassengerProfileEditState({
-    this.status = ProfileEditStatus.loading,
+    this.getProfileStatus = GetProfileStatus.initial,
+    this.updateProfileStatus = UpdateProfileStatus.initial,
     this.gender,
     this.dateOfBirth,
     this.email,
@@ -16,7 +18,8 @@ final class PassengerProfileEditState extends Equatable {
     this.savedProfile,
   });
 
-  final ProfileEditStatus status;
+  final GetProfileStatus getProfileStatus;
+  final UpdateProfileStatus updateProfileStatus;
   final Gender? gender;
   final DateTime? dateOfBirth;
   final String? email;
@@ -28,10 +31,11 @@ final class PassengerProfileEditState extends Equatable {
       nameError.isEmpty &&
       gender != null &&
       dateOfBirth != null &&
-      status != ProfileEditStatus.saving;
+      updateProfileStatus != UpdateProfileStatus.loading;
 
   PassengerProfileEditState copyWith({
-    ProfileEditStatus? status,
+    GetProfileStatus? getProfileStatus,
+    UpdateProfileStatus? updateProfileStatus,
     Gender? gender,
     DateTime? dateOfBirth,
     String? email,
@@ -40,7 +44,8 @@ final class PassengerProfileEditState extends Equatable {
     PassengerProfileModel? savedProfile,
   }) {
     return PassengerProfileEditState(
-      status: status ?? this.status,
+      getProfileStatus: getProfileStatus ?? this.getProfileStatus,
+      updateProfileStatus: updateProfileStatus ?? this.updateProfileStatus,
       gender: gender ?? this.gender,
       dateOfBirth: dateOfBirth ?? this.dateOfBirth,
       email: email ?? this.email,
@@ -52,7 +57,8 @@ final class PassengerProfileEditState extends Equatable {
 
   @override
   List<Object?> get props => [
-        status,
+        getProfileStatus,
+        updateProfileStatus,
         gender,
         dateOfBirth,
         email,

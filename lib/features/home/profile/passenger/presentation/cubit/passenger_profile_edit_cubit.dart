@@ -24,7 +24,7 @@ class PassengerProfileEditCubit extends Cubit<PassengerProfileEditState> {
   void initData(PassengerProfileModel profile) {
     nameController.text = profile.fullName;
     emit(PassengerProfileEditState(
-      status: ProfileEditStatus.loaded,
+      getProfileStatus: GetProfileStatus.success,
       gender: profile.gender,
       dateOfBirth: profile.dateOfBirth,
       email: profile.email,
@@ -49,7 +49,7 @@ class PassengerProfileEditCubit extends Cubit<PassengerProfileEditState> {
 
   Future<void> updateProfile() async {
     if (!state.canSave) return;
-    emit(state.copyWith(status: ProfileEditStatus.saving, errorMessage: ''));
+    emit(state.copyWith(updateProfileStatus: UpdateProfileStatus.loading, errorMessage: ''));
     try {
       final profile = await _repository.saveProfile(
         fullName: nameController.text.trim(),
@@ -57,12 +57,12 @@ class PassengerProfileEditCubit extends Cubit<PassengerProfileEditState> {
         dateOfBirth: state.dateOfBirth!,
       );
       emit(state.copyWith(
-        status: ProfileEditStatus.success,
+        updateProfileStatus: UpdateProfileStatus.success,
         savedProfile: profile,
       ));
     } catch (e) {
       emit(state.copyWith(
-        status: ProfileEditStatus.failure,
+        updateProfileStatus: UpdateProfileStatus.failure,
         errorMessage: e is String ? e : 'Failed to save profile.',
       ));
     }

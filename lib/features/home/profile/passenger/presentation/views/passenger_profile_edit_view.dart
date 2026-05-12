@@ -28,7 +28,7 @@ class PassengerProfileEditView extends StatelessWidget {
     final cubit = context.read<PassengerProfileEditCubit>();
 
     return BlocListener<PassengerProfileEditCubit, PassengerProfileEditState>(
-      listenWhen: (prev, curr) => curr.status == ProfileEditStatus.success,
+      listenWhen: (prev, curr) => curr.updateProfileStatus == UpdateProfileStatus.success,
       listener: (context, state) {
         AppToast.success('Profile updated successfully');
         context.read<PassengerHomeCubit>().updateProfile(state.savedProfile!);
@@ -39,13 +39,13 @@ class PassengerProfileEditView extends StatelessWidget {
         bottomNavigationBar:
             BlocBuilder<PassengerProfileEditCubit, PassengerProfileEditState>(
           buildWhen: (prev, curr) =>
-              prev.canSave != curr.canSave || prev.status != curr.status,
+              prev.canSave != curr.canSave || prev.updateProfileStatus != curr.updateProfileStatus,
           builder: (context, state) => Padding(
             padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 16.h),
             child: PrimaryButton(
               label: 'Save Changes',
               isEnabled: state.canSave,
-              isLoading: state.status == ProfileEditStatus.saving,
+              isLoading: state.updateProfileStatus == UpdateProfileStatus.loading,
               onPressed: cubit.updateProfile,
             ),
           ),
@@ -74,7 +74,7 @@ class PassengerProfileEditView extends StatelessWidget {
                   }
                   return BlocBuilder<PassengerProfileEditCubit,
                       PassengerProfileEditState>(
-                    buildWhen: (prev, curr) => prev.status != curr.status,
+                    buildWhen: (prev, curr) => prev.updateProfileStatus != curr.updateProfileStatus,
                     builder: (context, state) {
                       return SingleChildScrollView(
                         child: Padding(
@@ -90,7 +90,7 @@ class PassengerProfileEditView extends StatelessWidget {
                                 onChanged: cubit.nameChanged,
                                 error: state.nameError,
                                 enabled:
-                                    state.status != ProfileEditStatus.saving,
+                                    state.updateProfileStatus != UpdateProfileStatus.loading,
                               ),
                               SizedBox(height: 24.h),
                               const ProfileFieldLabelWidget(label: 'Gender'),
@@ -99,7 +99,7 @@ class PassengerProfileEditView extends StatelessWidget {
                                 selected: state.gender,
                                 onChanged: cubit.genderChanged,
                                 enabled:
-                                    state.status != ProfileEditStatus.saving,
+                                    state.updateProfileStatus != UpdateProfileStatus.loading,
                               ),
                               SizedBox(height: 24.h),
                               const ProfileFieldLabelWidget(
@@ -109,7 +109,7 @@ class PassengerProfileEditView extends StatelessWidget {
                                 selectedDate: state.dateOfBirth,
                                 onDateSelected: cubit.dateOfBirthChanged,
                                 enabled:
-                                    state.status != ProfileEditStatus.saving,
+                                    state.updateProfileStatus != UpdateProfileStatus.loading,
                               ),
                               SizedBox(height: 24.h),
                               const ProfileFieldLabelWidget(
