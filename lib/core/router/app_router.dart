@@ -22,7 +22,7 @@ import '../../features/home/profile/passenger/presentation/cubit/passenger_email
 import '../../features/home/profile/passenger/presentation/cubit/passenger_profile_edit_cubit.dart';
 import '../../features/home/profile/passenger/presentation/views/passenger_email_edit_view.dart';
 import '../../features/home/profile/passenger/presentation/views/passenger_profile_edit_view.dart';
-import '../network/dio_client.dart';
+import '../session/auth_session.dart';
 import 'route_names.dart';
 
 final class AppRouter {
@@ -32,8 +32,7 @@ final class AppRouter {
   static const _profileRepository = ProfileRepository();
 
   static final GoRouter router = GoRouter(
-    initialLocation:
-        DioClient.isLoggedIn ? RouteNames.passengerHome : RouteNames.phone,
+    initialLocation: AuthSession.resolveInitialRoute(),
     debugLogDiagnostics: kDebugMode,
     errorBuilder: (context, state) => const Scaffold(
       body: Center(child: Text('Page not found')),

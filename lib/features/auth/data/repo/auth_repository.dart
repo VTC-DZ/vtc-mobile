@@ -4,7 +4,7 @@ import '../../../../core/constants/passenger_api_constants.dart';
 import '../../../../core/network/dio_client.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/router/route_names.dart';
-import '../../../../core/storage/secure_storage_helper.dart';
+import '../../../../core/session/auth_session.dart';
 import '../models/auth_tokens_model.dart';
 import '../models/gender.dart';
 
@@ -26,12 +26,11 @@ final class AuthRepository {
     );
     final tokens =
         AuthTokensModel.fromJson(response.data as Map<String, dynamic>);
-    await SecureStorageHelper.saveTokens(
+    await AuthSession.setTokens(
       accessToken: tokens.accessToken,
       refreshToken: tokens.refreshToken,
     );
-    await DioClient.updateToken(tokens.accessToken);
-    await DioClient.updateRefreshToken(tokens.refreshToken);
+    await AuthSession.setIsNewUser(tokens.isNewUser);
     return tokens;
   }
 
@@ -45,7 +44,7 @@ final class AuthRepository {
         data: {},
       );
     } catch (_) {}
-    await DioClient.removeToken();
+    await AuthSession.clearSession();
     AppRouter.router.go(RouteNames.phone);
   }
 

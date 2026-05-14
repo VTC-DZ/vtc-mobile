@@ -34,6 +34,7 @@ class SecureStorageHelper {
     required String accessToken,
     String? refreshToken,
     String? idToken,
+    String? userRole,
   }) async {
     await write(
       key: CacheKeys.secureStorageKeys.accessTokenKey,
@@ -51,5 +52,15 @@ class SecureStorageHelper {
         value: idToken,
       );
     }
+    if (userRole != null) {
+      await write(
+        key: CacheKeys.secureStorageKeys.userRoleKey,
+        value: userRole,
+      );
+    }
+  }
+
+  static void removeAllSecureStorage() {
+    _storage.deleteAll();
   }
 }

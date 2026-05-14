@@ -1,25 +1,18 @@
-// lib/core/network/dio_client.dart
-
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 
 import '../constants/api_constants.dart';
-import '../constants/cache_keys.dart';
 import '../constants/passenger_api_constants.dart';
 import '../router/app_router.dart';
 import '../router/route_names.dart';
-import '../storage/secure_storage_helper.dart';
+import '../session/auth_session.dart';
 import '../../features/auth/data/models/auth_tokens_model.dart';
 
 final class DioClient {
   DioClient._();
 
   static late Dio _dio;
-  static String? _accessToken;
-  static String? _refreshToken;
   static bool _isRefreshing = false;
-
-  static bool get isLoggedIn => _accessToken != null;
 
   static void init() {
     _dio = Dio(
@@ -39,8 +32,9 @@ final class DioClient {
     _dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) {
-          if (_accessToken != null) {
-            options.headers['Authorization'] = 'Bearer $_accessToken';
+          final token = AuthSession.accessToken;
+          if (token != null) {
+            options.headers['Authorization'] = 'Bearer $token';
           }
           handler.next(options);
         },
@@ -52,7 +46,7 @@ final class DioClient {
         onError: (error, handler) async {
           if (error.response?.statusCode != 401 ||
               _isRefreshing ||
-              _refreshToken == null) {
+              AuthSession.refreshToken == null) {
             return handler.next(error);
           }
 
@@ -60,7 +54,7 @@ final class DioClient {
           try {
             final response = await _dio.post(
               PassengerApiConstants.refresh,
-              data: {'refreshToken': _refreshToken},
+              data: {'refreshToken': AuthSession.refreshToken},
               options: Options(
                 headers: {'Authorization': null},
               ),
@@ -68,15 +62,18 @@ final class DioClient {
             final tokens = AuthTokensModel.fromJson(
               response.data as Map<String, dynamic>,
             );
-            await updateToken(tokens.accessToken);
-            await updateRefreshToken(tokens.refreshToken);
+            await AuthSession.setTokens(
+              accessToken: tokens.accessToken,
+              refreshToken: tokens.refreshToken,
+            );
 
             final retryOptions = error.requestOptions;
-            retryOptions.headers['Authorization'] = 'Bearer ${tokens.accessToken}';
+            retryOptions.headers['Authorization'] =
+                'Bearer ${tokens.accessToken}';
             final retried = await _dio.fetch(retryOptions);
             handler.resolve(retried);
           } catch (_) {
-            await removeToken();
+            await AuthSession.clearSession();
             AppRouter.router.go(RouteNames.phone);
             handler.next(error);
           } finally {
@@ -98,46 +95,6 @@ final class DioClient {
         ),
       );
     }
-  }
-
-  /// Loads persisted tokens into memory. Call once at app startup after [init].
-  static Future<void> loadToken() async {
-    _accessToken = await SecureStorageHelper.read(
-      key: CacheKeys.secureStorageKeys.accessTokenKey,
-    );
-    _refreshToken = await SecureStorageHelper.read(
-      key: CacheKeys.secureStorageKeys.refreshTokenKey,
-    );
-  }
-
-  /// Saves the access token in memory and to secure storage.
-  static Future<void> updateToken(String token) async {
-    _accessToken = token;
-    await SecureStorageHelper.write(
-      key: CacheKeys.secureStorageKeys.accessTokenKey,
-      value: token,
-    );
-  }
-
-  /// Saves the refresh token in memory and to secure storage.
-  static Future<void> updateRefreshToken(String token) async {
-    _refreshToken = token;
-    await SecureStorageHelper.write(
-      key: CacheKeys.secureStorageKeys.refreshTokenKey,
-      value: token,
-    );
-  }
-
-  /// Clears both tokens from memory and secure storage.
-  static Future<void> removeToken() async {
-    _accessToken = null;
-    _refreshToken = null;
-    await SecureStorageHelper.remove(
-      key: CacheKeys.secureStorageKeys.accessTokenKey,
-    );
-    await SecureStorageHelper.remove(
-      key: CacheKeys.secureStorageKeys.refreshTokenKey,
-    );
   }
 
   static Future<Response> get({

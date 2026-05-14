@@ -8,6 +8,7 @@ import 'package:khfif_drif/core/helper/observer.dart';
 import 'core/constants/app_constants.dart';
 import 'core/network/dio_client.dart';
 import 'core/router/app_router.dart';
+import 'core/session/auth_session.dart';
 import 'core/storage/secure_storage_helper.dart';
 import 'core/theme/app_theme.dart';
 
@@ -15,8 +16,9 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   Bloc.observer = MyBlocObserver();
   SecureStorageHelper.init();
+  // SecureStorageHelper.removeAllSecureStorage();
+  await AuthSession.loadSession();
   DioClient.init();
-  await DioClient.loadToken();
   runApp(const MyApp());
 }
 

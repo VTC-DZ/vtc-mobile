@@ -1,0 +1,285 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "VTC API",
+    "description": "VTC platform API — passenger, driver, and admin surfaces.",
+    "version": "0.1.0-SNAPSHOT"
+  },
+  "servers": [
+    { "url": "http://localhost:8080", "description": "Generated server url" }
+  ],
+  "paths": {
+    "/api/driver/profile/kyc/submit": {
+      "post": {
+        "tags": ["kyc-controller"],
+        "operationId": "submitKyc",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "req": { "$ref": "#/components/schemas/KycSubmitRequest" },
+                  "nationalId": {
+                    "type": "array",
+                    "items": { "type": "string", "format": "binary" }
+                  },
+                  "driverLicense": {
+                    "type": "array",
+                    "items": { "type": "string", "format": "binary" }
+                  },
+                  "grayCard": { "type": "string", "format": "binary" },
+                  "insurance": { "type": "string", "format": "binary" },
+                  "carPictures": {
+                    "type": "array",
+                    "items": { "type": "string", "format": "binary" }
+                  }
+                },
+                "required": [
+                  "carPictures",
+                  "driverLicense",
+                  "grayCard",
+                  "insurance",
+                  "nationalId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/KycSubmitResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/driver/auth/switch-role": {
+      "post": {
+        "tags": ["driver-auth-controller"],
+        "operationId": "switchRole",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/SwitchRoleRequest" }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/AccessTokenResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/driver/auth/refresh": {
+      "post": {
+        "tags": ["driver-auth-controller"],
+        "operationId": "refresh",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/RefreshRequest" }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/AuthTokensResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/driver/auth/otp/verify": {
+      "post": {
+        "tags": ["driver-auth-controller"],
+        "operationId": "verifyOtp",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/OtpVerifyRequest" }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/AuthTokensResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/driver/auth/otp/request": {
+      "post": {
+        "tags": ["driver-auth-controller"],
+        "operationId": "requestOtp",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/OtpRequestRequest" }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/OtpRequestResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/driver/auth/logout": {
+      "post": {
+        "tags": ["driver-auth-controller"],
+        "operationId": "logout",
+        "responses": { "200": { "description": "OK" } }
+      }
+    },
+    "/api/driver/profile/kyc/status": {
+      "get": {
+        "tags": ["kyc-controller"],
+        "operationId": "getStatus",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/KycStatusResponse" }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "KycSubmitRequest": {
+        "type": "object",
+        "properties": {
+          "firstName": { "type": "string", "minLength": 1 },
+          "lastName": { "type": "string", "minLength": 1 },
+          "dateOfBirth": { "type": "string", "format": "date" },
+          "licenseNumber": { "type": "string", "minLength": 1 },
+          "licenseExpiry": { "type": "string", "format": "date" },
+          "vehiclePlate": { "type": "string", "minLength": 1 },
+          "vehicleModel": { "type": "string", "minLength": 1 },
+          "vehicleYear": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 2000
+          },
+          "vehicleColor": { "type": "string", "minLength": 1 },
+          "vehicleCategory": {
+            "type": "string",
+            "enum": ["CAR", "MOTORCYCLE", "VAN"]
+          },
+          "insuranceExpiry": { "type": "string", "format": "date" }
+        },
+        "required": [
+          "dateOfBirth",
+          "firstName",
+          "insuranceExpiry",
+          "lastName",
+          "licenseExpiry",
+          "licenseNumber",
+          "vehicleCategory",
+          "vehicleColor",
+          "vehicleModel",
+          "vehiclePlate"
+        ]
+      },
+      "KycSubmitResponse": {
+        "type": "object",
+        "properties": {
+          "submissionId": { "type": "string", "format": "uuid" },
+          "submissionNumber": { "type": "integer", "format": "int32" },
+          "status": { "type": "string" },
+          "submittedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "SwitchRoleRequest": {
+        "type": "object",
+        "properties": { "targetRole": { "type": "string" } },
+        "required": ["targetRole"]
+      },
+      "AccessTokenResponse": {
+        "type": "object",
+        "properties": { "accessToken": { "type": "string" } }
+      },
+      "RefreshRequest": {
+        "type": "object",
+        "properties": { "refreshToken": { "type": "string", "minLength": 1 } },
+        "required": ["refreshToken"]
+      },
+      "AuthTokensResponse": {
+        "type": "object",
+        "properties": {
+          "accessToken": { "type": "string" },
+          "refreshToken": { "type": "string" },
+          "isNewUser": { "type": "boolean" }
+        }
+      },
+      "OtpVerifyRequest": {
+        "type": "object",
+        "properties": {
+          "phone": { "type": "string", "minLength": 1 },
+          "code": { "type": "string", "minLength": 1, "pattern": "^\\d{6}$" }
+        },
+        "required": ["code", "phone"]
+      },
+      "OtpRequestRequest": {
+        "type": "object",
+        "properties": { "phone": { "type": "string", "minLength": 1 } },
+        "required": ["phone"]
+      },
+      "OtpRequestResponse": {
+        "type": "object",
+        "properties": { "expiresIn": { "type": "integer", "format": "int32" } }
+      },
+      "KycStatusResponse": {
+        "type": "object",
+        "properties": {
+          "kycStatus": { "type": "string" },
+          "submission": { "$ref": "#/components/schemas/SubmissionDetail" }
+        }
+      },
+      "SubmissionDetail": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "status": { "type": "string" },
+          "submittedAt": { "type": "string", "format": "date-time" },
+          "reviewedAt": { "type": "string", "format": "date-time" },
+          "resubmissionNote": { "type": "string" }
+        }
+      }
+    }
+  }
+}

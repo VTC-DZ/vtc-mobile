@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:khfif_drif/shared/widgets/primary_button.dart';
 
 import '../../../../../core/router/route_names.dart';
+import '../../../../../core/session/auth_session.dart';
 import '../../../../../core/theme/app_text_styles.dart';
 import '../../../../../shared/widgets/app_scaffold.dart';
 import '../../cubit/passenger_profile_cubit/passenger_profile_cubit.dart';
@@ -39,8 +40,10 @@ class _PassengerProfileViewState extends State<PassengerProfileView> {
         listenWhen: (previous, current) =>
             previous.status != current.status &&
             current.status == ProfileStatus.success,
-        listener: (context, state) {
+        listener: (context, state) async {
           if (state.status == ProfileStatus.success) {
+            await AuthSession.setIsNewUser(false);
+            if (!context.mounted) return;
             context.go(RouteNames.passengerHome);
           }
         },
