@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/auth/data/repo/auth_repository.dart';
+import '../../features/auth/data/repo/driver_repository.dart';
 import '../../features/auth/data/repo/profile_repository.dart';
 import '../../features/auth/presentation/cubit/otp_cubit/otp_cubit.dart';
 import '../../features/auth/presentation/cubit/passenger_profile_cubit/passenger_profile_cubit.dart';
@@ -30,6 +31,7 @@ final class AppRouter {
 
   static const _repository = AuthRepository();
   static const _profileRepository = ProfileRepository();
+  static const _driverRepository = DriverRepository();
 
   static final GoRouter router = GoRouter(
     initialLocation: AuthSession.resolveInitialRoute(),
@@ -122,7 +124,9 @@ final class AppRouter {
         path: RouteNames.driverProfile,
         builder: (BuildContext context, GoRouterState state) {
           return BlocProvider<DriverProfileCubit>(
-            create: (_) => DriverProfileCubit(_repository),
+            create: (_) => DriverProfileCubit(
+              _driverRepository,
+            ),
             child: const DriverRegistrationView(),
           );
         },

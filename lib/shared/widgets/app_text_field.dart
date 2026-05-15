@@ -1,3 +1,5 @@
+// lib/shared/widgets/app_text_field.dart
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -11,6 +13,7 @@ class AppTextField extends StatelessWidget {
     required this.controller,
     this.hintText,
     this.prefixIcon,
+    this.suffixIcon,
     this.keyboardType,
     this.textInputAction = TextInputAction.done,
     this.textCapitalization = TextCapitalization.none,
@@ -18,6 +21,8 @@ class AppTextField extends StatelessWidget {
     this.onChanged,
     this.onSubmitted,
     this.onTapOutside,
+    this.onTap,
+    this.readOnly = false,
     this.error = '',
     this.enabled = true,
     this.unfocusOnTapOutside = true,
@@ -26,6 +31,7 @@ class AppTextField extends StatelessWidget {
   final TextEditingController controller;
   final String? hintText;
   final Widget? prefixIcon;
+  final Widget? suffixIcon;
   final TextInputType? keyboardType;
   final TextInputAction textInputAction;
   final TextCapitalization textCapitalization;
@@ -33,6 +39,8 @@ class AppTextField extends StatelessWidget {
   final ValueChanged<String>? onChanged;
   final ValueChanged<String>? onSubmitted;
   final VoidCallback? onTapOutside;
+  final VoidCallback? onTap;
+  final bool readOnly;
   final bool unfocusOnTapOutside;
   final String error;
   final bool enabled;
@@ -47,6 +55,8 @@ class AppTextField extends StatelessWidget {
         TextFormField(
           controller: controller,
           enabled: enabled,
+          readOnly: readOnly,
+          onTap: onTap,
           textInputAction: textInputAction,
           keyboardType: keyboardType,
           textCapitalization: textCapitalization,
@@ -72,6 +82,17 @@ class AppTextField extends StatelessWidget {
                       size: 20.w,
                     ),
                     child: prefixIcon!,
+                  )
+                : null,
+            suffixIcon: suffixIcon != null
+                ? IconTheme(
+                    data: IconThemeData(
+                      color: hasError
+                          ? AppColors.error
+                          : AppColors.textSecondary(context),
+                      size: 20.w,
+                    ),
+                    child: suffixIcon!,
                   )
                 : null,
             border: InputBorder.none,

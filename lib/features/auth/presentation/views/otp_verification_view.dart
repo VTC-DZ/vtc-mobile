@@ -5,9 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../core/models/token_payload.dart';
 import '../../../../core/router/route_names.dart';
-import '../../../../core/session/auth_session.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../shared/widgets/app_scaffold.dart';
@@ -35,12 +33,7 @@ class OtpVerificationView extends StatelessWidget {
           if (state.isNewUser) {
             context.go(RouteNames.modeSelection);
           } else {
-            final role = AuthSession.tokenPayload?.activeRole;
-            if (role == ActiveRole.passenger) {
-              context.go(RouteNames.passengerHome);
-            } else {
-              context.go(RouteNames.passengerHome);
-            }
+            context.go(RouteNames.passengerHome);
           }
         }
       },

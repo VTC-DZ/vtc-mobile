@@ -33,8 +33,6 @@ class SecureStorageHelper {
   static Future<void> saveTokens({
     required String accessToken,
     String? refreshToken,
-    String? idToken,
-    String? userRole,
   }) async {
     await write(
       key: CacheKeys.secureStorageKeys.accessTokenKey,
@@ -44,18 +42,6 @@ class SecureStorageHelper {
       await write(
         key: CacheKeys.secureStorageKeys.refreshTokenKey,
         value: refreshToken,
-      );
-    }
-    if (idToken != null) {
-      await write(
-        key: CacheKeys.secureStorageKeys.idTokenKey,
-        value: idToken,
-      );
-    }
-    if (userRole != null) {
-      await write(
-        key: CacheKeys.secureStorageKeys.userRoleKey,
-        value: userRole,
       );
     }
   }

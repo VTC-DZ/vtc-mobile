@@ -1,8 +1,9 @@
-// lib/features/driver/presentation/views/driver_pending_review_view.dart
+// lib/features/auth/presentation/views/driver/driver_pending_review_view.dart
 
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lottie/lottie.dart';
 
 import '../../../../../core/constants/app_strings.dart';
 import '../../../../../core/router/route_names.dart';
@@ -21,46 +22,58 @@ class DriverPendingReviewView extends StatelessWidget {
     return PopScope(
       canPop: false,
       child: AppScaffold(
-        body: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 24.w),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // ── Icon ──────────────────────────────────────────────────────
-              Icon(
-                Icons.hourglass_top_rounded,
-                size: 72.w,
-                color: AppColors.primary,
-              ),
+        body: SafeArea(
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 32.h),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const Spacer(flex: 1),
 
-              SizedBox(height: 24.h),
+                // ── Lottie Animation ──────────────────────────────────────────
+                Lottie.asset(
+                  'assets/lottie/loading.json',
+                  width: 170.w,
+                  height: 170.w,
+                  fit: BoxFit.contain,
+                ),
 
-              // ── Title ─────────────────────────────────────────────────────
-              Text(
-                AppStrings.pendingReviewTitle,
-                style: AppTextStyles.displayMedium(context),
-                textAlign: TextAlign.center,
-              ),
+                SizedBox(height: 48.h),
 
-              SizedBox(height: 12.h),
+                // ── Title ─────────────────────────────────────────────────────
+                Text(
+                  AppStrings.pendingReviewTitle,
+                  style: AppTextStyles.displayMedium(context).copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
 
-              // ── Body ──────────────────────────────────────────────────────
-              Text(
-                AppStrings.pendingReviewBody,
-                style: AppTextStyles.bodyMedium(context),
-                textAlign: TextAlign.center,
-              ),
+                SizedBox(height: 16.h),
 
-              SizedBox(height: 48.h),
+                // ── Body ──────────────────────────────────────────────────────
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16.w),
+                  child: Text(
+                    AppStrings.pendingReviewBody,
+                    style: AppTextStyles.bodyLarge(context).copyWith(
+                      color: AppColors.textSecondary(context),
+                      height: 1.5,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
 
-              // ── CTA ───────────────────────────────────────────────────────
-              PrimaryButton(
-                label: AppStrings.goToHome,
-                isEnabled: true,
-                onPressed: () => context.go(RouteNames.passengerHome),
-              ),
-            ],
+                const Spacer(flex: 3),
+
+                // ── CTA ───────────────────────────────────────────────────────
+                PrimaryButton(
+                  label: AppStrings.goToHome,
+                  isEnabled: true,
+                  onPressed: () => context.go(RouteNames.passengerHome),
+                ),
+              ],
+            ),
           ),
         ),
       ),

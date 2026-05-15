@@ -29,8 +29,7 @@ class TokenPayload {
   final String jti;
   final ActiveRole activeRole;
 
-  bool get isExpired =>
-      DateTime.now().millisecondsSinceEpoch ~/ 1000 > exp;
+  bool get isExpired => DateTime.now().millisecondsSinceEpoch ~/ 1000 > exp;
 
   factory TokenPayload.fromJson(Map<String, dynamic> json) {
     return TokenPayload(
@@ -60,5 +59,10 @@ class TokenPayload {
       'DRIVER' => ActiveRole.driver,
       _ => ActiveRole.unknown,
     };
+  }
+
+  @override
+  String toString() {
+    return 'TokenPayload{sub: $sub, aud: $aud, kycVerified: $kycVerified, hasDriverProfile: $hasDriverProfile, gender: $gender, accountType: $accountType, iss: $iss, exp: $exp, iat: $iat, jti: $jti, activeRole: $activeRole}';
   }
 }

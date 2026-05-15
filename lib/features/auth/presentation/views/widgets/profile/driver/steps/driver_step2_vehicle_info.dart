@@ -10,7 +10,9 @@ import '../../../../../../data/models/driver_document.dart';
 import '../../profile_field_label_widget.dart';
 import '../../../../../cubit/driver_profile_cubit/driver_profile_cubit.dart';
 import '../../../../../cubit/driver_profile_cubit/driver_profile_state.dart';
+import '../fields/driver_category_dropdown_widget.dart';
 import '../fields/driver_document_single_card_widget.dart';
+import '../fields/driver_future_date_picker_widget.dart';
 import '../fields/driver_plate_field_widget.dart';
 import '../fields/driver_text_field_widget.dart';
 import '../fields/driver_year_dropdown_widget.dart';
@@ -52,6 +54,17 @@ class _DriverStep2VehicleInfoState extends State<DriverStep2VehicleInfo> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              // ── Vehicle Category ──────────────────────────────────────────────
+              const ProfileFieldLabelWidget(label: 'Vehicle Type'),
+              SizedBox(height: 8.h),
+              DriverCategoryDropdownWidget(
+                selectedCategory: vehicle.vehicleCategory,
+                onChanged: cubit.vehicleCategoryChanged,
+                enabled: !isSubmitting,
+              ),
+
+              SizedBox(height: 24.h),
+
               // ── Car Make ───────────────────────────────────────────────────────
               const ProfileFieldLabelWidget(label: AppStrings.fieldCarMake),
               SizedBox(height: 8.h),
@@ -144,6 +157,34 @@ class _DriverStep2VehicleInfoState extends State<DriverStep2VehicleInfo> {
                   final source = await showImageSourceSheet(context);
                   if (source != null) cubit.pickVehiclePhoto(source);
                 },
+                enabled: !isSubmitting,
+              ),
+
+              SizedBox(height: 24.h),
+
+              // ── Insurance Document ─────────────────────────────────────────────
+              const ProfileFieldLabelWidget(label: 'Insurance'),
+              SizedBox(height: 8.h),
+              DriverDocumentSingleCardWidget(
+                label: 'Insurance',
+                badgeLabel: 'INS',
+                document: vehicle.insuranceDocument,
+                onTap: () async {
+                  final source = await showImageSourceSheet(context);
+                  if (source != null) cubit.pickInsuranceDocument(source);
+                },
+                enabled: !isSubmitting,
+              ),
+
+              SizedBox(height: 24.h),
+
+              // ── Insurance Expiry ───────────────────────────────────────────────
+              const ProfileFieldLabelWidget(label: 'Insurance Expiry'),
+              SizedBox(height: 8.h),
+              DriverFutureDatePickerWidget(
+                label: 'Expiry date',
+                selectedDate: vehicle.insuranceExpiry,
+                onDateSelected: cubit.insuranceExpiryChanged,
                 enabled: !isSubmitting,
               ),
 

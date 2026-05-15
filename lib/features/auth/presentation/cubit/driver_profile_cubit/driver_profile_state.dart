@@ -3,6 +3,8 @@ import '../../../data/models/driver_document.dart';
 
 enum DriverRegistrationStatus { initial, loading, success, failure }
 
+enum VehicleCategory { car, motorcycle, van }
+
 enum DriverStep { personalInfo, vehicleInfo, documents }
 
 // ── Step data classes ─────────────────────────────────────────────────────────
@@ -57,24 +59,30 @@ final class DriverPersonalInfo {
 
 final class DriverVehicleInfo {
   const DriverVehicleInfo({
+    this.vehicleCategory = VehicleCategory.car,
     this.vehicleMake = '',
     this.vehicleModel = '',
     this.vehicleYear,
     this.vehicleColor = '',
     this.plateNumber = '',
     this.vehiclePhotoPath,
+    this.insuranceDocument = const DriverDocument(),
+    this.insuranceExpiry,
     this.vehicleMakeError = '',
     this.vehicleModelError = '',
     this.vehicleColorError = '',
     this.plateNumberError = '',
   });
 
+  final VehicleCategory vehicleCategory;
   final String vehicleMake;
   final String vehicleModel;
   final int? vehicleYear;
   final String vehicleColor;
   final String plateNumber;
   final String? vehiclePhotoPath;
+  final DriverDocument insuranceDocument;
+  final DateTime? insuranceExpiry;
   final String vehicleMakeError;
   final String vehicleModelError;
   final String vehicleColorError;
@@ -94,27 +102,35 @@ final class DriverVehicleInfo {
       vehicleYear != null &&
       isVehicleColorValid &&
       isPlateNumberValid &&
-      vehiclePhotoPath != null;
+      vehiclePhotoPath != null &&
+      insuranceDocument.isUploaded &&
+      insuranceExpiry != null;
 
   DriverVehicleInfo copyWith({
+    VehicleCategory? vehicleCategory,
     String? vehicleMake,
     String? vehicleModel,
     int? vehicleYear,
     String? vehicleColor,
     String? plateNumber,
     String? vehiclePhotoPath,
+    DriverDocument? insuranceDocument,
+    DateTime? insuranceExpiry,
     String? vehicleMakeError,
     String? vehicleModelError,
     String? vehicleColorError,
     String? plateNumberError,
   }) {
     return DriverVehicleInfo(
+      vehicleCategory: vehicleCategory ?? this.vehicleCategory,
       vehicleMake: vehicleMake ?? this.vehicleMake,
       vehicleModel: vehicleModel ?? this.vehicleModel,
       vehicleYear: vehicleYear ?? this.vehicleYear,
       vehicleColor: vehicleColor ?? this.vehicleColor,
       plateNumber: plateNumber ?? this.plateNumber,
       vehiclePhotoPath: vehiclePhotoPath ?? this.vehiclePhotoPath,
+      insuranceDocument: insuranceDocument ?? this.insuranceDocument,
+      insuranceExpiry: insuranceExpiry ?? this.insuranceExpiry,
       vehicleMakeError: vehicleMakeError ?? this.vehicleMakeError,
       vehicleModelError: vehicleModelError ?? this.vehicleModelError,
       vehicleColorError: vehicleColorError ?? this.vehicleColorError,
@@ -130,6 +146,9 @@ final class DriverDocuments {
     this.licenseFront = const DriverDocument(),
     this.licenseBack = const DriverDocument(),
     this.vehicleRegistration = const DriverDocument(),
+    this.licenseNumber = '',
+    this.licenseExpiry,
+    this.licenseNumberError = '',
   });
 
   final DriverDocument nationalIdFront;
@@ -137,13 +156,21 @@ final class DriverDocuments {
   final DriverDocument licenseFront;
   final DriverDocument licenseBack;
   final DriverDocument vehicleRegistration;
+  final String licenseNumber;
+  final DateTime? licenseExpiry;
+  final String licenseNumberError;
+
+  bool get isLicenseNumberValid =>
+      licenseNumberError.isEmpty && licenseNumber.trim().isNotEmpty;
 
   bool get allUploaded =>
       nationalIdFront.isUploaded &&
       nationalIdBack.isUploaded &&
       licenseFront.isUploaded &&
       licenseBack.isUploaded &&
-      vehicleRegistration.isUploaded;
+      vehicleRegistration.isUploaded &&
+      isLicenseNumberValid &&
+      licenseExpiry != null;
 
   DriverDocuments copyWith({
     DriverDocument? nationalIdFront,
@@ -151,6 +178,9 @@ final class DriverDocuments {
     DriverDocument? licenseFront,
     DriverDocument? licenseBack,
     DriverDocument? vehicleRegistration,
+    String? licenseNumber,
+    DateTime? licenseExpiry,
+    String? licenseNumberError,
   }) {
     return DriverDocuments(
       nationalIdFront: nationalIdFront ?? this.nationalIdFront,
@@ -158,6 +188,9 @@ final class DriverDocuments {
       licenseFront: licenseFront ?? this.licenseFront,
       licenseBack: licenseBack ?? this.licenseBack,
       vehicleRegistration: vehicleRegistration ?? this.vehicleRegistration,
+      licenseNumber: licenseNumber ?? this.licenseNumber,
+      licenseExpiry: licenseExpiry ?? this.licenseExpiry,
+      licenseNumberError: licenseNumberError ?? this.licenseNumberError,
     );
   }
 }

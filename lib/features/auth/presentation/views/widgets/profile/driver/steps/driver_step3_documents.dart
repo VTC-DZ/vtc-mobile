@@ -1,6 +1,5 @@
-// lib/features/auth/presentation/views/widgets/profile/driver/steps/driver_step3_documents.dart
-
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
@@ -8,17 +7,44 @@ import '../../../../../../../../core/theme/app_colors.dart';
 import '../../../../../../../../core/theme/app_text_styles.dart';
 import '../../../../../../../../core/widgets/image_source_bottom_sheet.dart';
 import '../../../../../../data/models/driver_document.dart';
+import '../../../../../../data/repo/auth_repository.dart';
+import 'package:go_router/go_router.dart';
+import '../../../../../../../../core/router/route_names.dart';
 import '../../../../../cubit/driver_profile_cubit/driver_profile_cubit.dart';
 import '../../../../../cubit/driver_profile_cubit/driver_profile_state.dart';
 import '../fields/driver_document_flip_card_widget.dart';
 import '../fields/driver_document_single_card_widget.dart';
+import '../fields/driver_future_date_picker_widget.dart';
+import '../fields/driver_text_field_widget.dart';
+import '../../profile_field_label_widget.dart';
 
-class DriverStep3Documents extends StatelessWidget {
+class DriverStep3Documents extends StatefulWidget {
   const DriverStep3Documents({super.key});
 
   @override
+  State<DriverStep3Documents> createState() => _DriverStep3DocumentsState();
+}
+
+class _DriverStep3DocumentsState extends State<DriverStep3Documents> {
+  final _licenseNumberController = TextEditingController();
+
+  @override
+  void dispose() {
+    _licenseNumberController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return BlocBuilder<DriverProfileCubit, DriverProfileState>(
+    return BlocConsumer<DriverProfileCubit, DriverProfileState>(
+      listener: (context, state) async {
+        if (state.status == DriverRegistrationStatus.success) {
+          await const AuthRepository().refreshToken();
+          if (context.mounted) {
+            context.go(RouteNames.driverPendingReview);
+          }
+        }
+      },
       buildWhen: (prev, curr) =>
           prev.documents != curr.documents || prev.status != curr.status,
       builder: (context, state) {
@@ -41,6 +67,47 @@ class DriverStep3Documents extends StatelessWidget {
               _InfoHint(),
               SizedBox(height: 24.h),
 
+              // ── License Details ─────────────────────────────────────────────
+              const ProfileFieldLabelWidget(label: 'License Number'),
+              SizedBox(height: 8.h),
+              DriverTextFieldWidget(
+                controller: _licenseNumberController,
+                hintText: 'e.g. 123456789',
+                icon: Icons.credit_card_outlined,
+                onChanged: cubit.licenseNumberChanged,
+                error: docs.licenseNumberError,
+                enabled: !isSubmitting,
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9]')),
+                ],
+              ),
+
+              SizedBox(height: 20.h),
+
+              const ProfileFieldLabelWidget(label: 'License Expiry'),
+              SizedBox(height: 8.h),
+              DriverFutureDatePickerWidget(
+                label: 'Expiry date',
+                selectedDate: docs.licenseExpiry,
+                onDateSelected: cubit.licenseExpiryChanged,
+                enabled: !isSubmitting,
+              ),
+
+              SizedBox(height: 20.h),
+
+              // ── License Photos ──────────────────────────────────────────────
+              DriverDocumentFlipCardWidget(
+                label: "License Photos",
+                frontDocument: docs.licenseFront,
+                backDocument: docs.licenseBack,
+                onFrontTap: () => pick(DriverDocumentType.licenseFront),
+                onBackTap: () => pick(DriverDocumentType.licenseBack),
+                icon: Icons.credit_card_outlined,
+                enabled: !isSubmitting,
+              ),
+
+              SizedBox(height: 20.h),
+
               // ── National ID ─────────────────────────────────────────────────
               DriverDocumentFlipCardWidget(
                 label: 'National ID',
@@ -49,19 +116,6 @@ class DriverStep3Documents extends StatelessWidget {
                 onFrontTap: () => pick(DriverDocumentType.nationalIdFront),
                 onBackTap: () => pick(DriverDocumentType.nationalIdBack),
                 icon: Icons.badge_outlined,
-                enabled: !isSubmitting,
-              ),
-
-              SizedBox(height: 20.h),
-
-              // ── Driver's License ────────────────────────────────────────────
-              DriverDocumentFlipCardWidget(
-                label: "Driver's License",
-                frontDocument: docs.licenseFront,
-                backDocument: docs.licenseBack,
-                onFrontTap: () => pick(DriverDocumentType.licenseFront),
-                onBackTap: () => pick(DriverDocumentType.licenseBack),
-                icon: Icons.credit_card_outlined,
                 enabled: !isSubmitting,
               ),
 

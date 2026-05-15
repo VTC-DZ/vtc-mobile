@@ -209,6 +209,30 @@ final class DioClient {
     }
   }
 
+  static Future<Response> postMultipart({
+    required String path,
+    required FormData formData,
+    Map<String, dynamic>? queryParameters,
+    Options? options,
+    CancelToken? cancelToken,
+    void Function(int, int)? onSendProgress,
+    void Function(int, int)? onReceiveProgress,
+  }) async {
+    try {
+      return await _dio.post(
+        path,
+        data: formData,
+        queryParameters: queryParameters,
+        options: options,
+        cancelToken: cancelToken,
+        onSendProgress: onSendProgress,
+        onReceiveProgress: onReceiveProgress,
+      );
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
   static String _handleDioError(DioException e) {
     final data = e.response?.data;
     if (data is Map) {

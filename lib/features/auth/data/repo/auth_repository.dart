@@ -6,7 +6,7 @@ import '../../../../core/router/app_router.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../core/session/auth_session.dart';
 import '../models/auth_tokens_model.dart';
-import '../models/gender.dart';
+import 'package:dio/dio.dart';
 
 final class AuthRepository {
   const AuthRepository();
@@ -48,29 +48,21 @@ final class AuthRepository {
     AppRouter.router.go(RouteNames.phone);
   }
 
-  /// Saves the driver's personal info (Step 1 of driver registration).
-  Future<void> saveDriverPersonalInfo({
-    required String fullName,
-    required Gender gender,
-    required DateTime dateOfBirth,
-  }) async {
-    await Future<void>.delayed(const Duration(milliseconds: 1000));
-  }
+  /// Explicitly refreshes the session tokens (e.g. after KYC submission to get updated claims).
+  Future<void> refreshToken() async {
+    if (AuthSession.refreshToken == null) return;
 
-  /// Submits driver vehicle info and documents for admin review (Step 3).
-  Future<void> submitDriverDocuments({
-    required String nationalIdFrontPath,
-    required String nationalIdBackPath,
-    required String licenseFrontPath,
-    required String licenseBackPath,
-    required String vehicleRegistrationPath,
-    required String vehiclePhotoPath,
-    required String vehicleMake,
-    required String vehicleModel,
-    required int vehicleYear,
-    required String vehicleColor,
-    required String plateNumber,
-  }) async {
-    await Future<void>.delayed(const Duration(milliseconds: 1500));
+    final response = await DioClient.post(
+      path: PassengerApiConstants.refresh,
+      data: {'refreshToken': AuthSession.refreshToken},
+      options: Options(
+        headers: {'Authorization': null},
+      ),
+    );
+    final tokens = AuthTokensModel.fromJson(response.data as Map<String, dynamic>);
+    await AuthSession.setTokens(
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+    );
   }
 }
