@@ -14,7 +14,7 @@ import '../../../../../cubit/driver_profile_cubit/driver_profile_cubit.dart';
 import '../../../../../cubit/driver_profile_cubit/driver_profile_state.dart';
 import '../fields/driver_document_flip_card_widget.dart';
 import '../fields/driver_document_single_card_widget.dart';
-import '../fields/driver_future_date_picker_widget.dart';
+import '../fields/driver_date_picker_field_widget.dart';
 import '../fields/driver_text_field_widget.dart';
 import '../../profile_field_label_widget.dart';
 
@@ -86,11 +86,13 @@ class _DriverStep3DocumentsState extends State<DriverStep3Documents> {
 
               const ProfileFieldLabelWidget(label: 'License Expiry'),
               SizedBox(height: 8.h),
-              DriverFutureDatePickerWidget(
-                label: 'Expiry date',
+              DriverDatePickerFieldWidget(
+                hintText: 'Expiry date',
+                prefixIcon: const Icon(Icons.calendar_month_outlined),
                 selectedDate: docs.licenseExpiry,
                 onDateSelected: cubit.licenseExpiryChanged,
                 enabled: !isSubmitting,
+                isFutureDate: true,
               ),
 
               SizedBox(height: 20.h),

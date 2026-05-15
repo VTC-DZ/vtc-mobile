@@ -12,7 +12,7 @@ import '../../../../../cubit/driver_profile_cubit/driver_profile_cubit.dart';
 import '../../../../../cubit/driver_profile_cubit/driver_profile_state.dart';
 import '../fields/driver_category_dropdown_widget.dart';
 import '../fields/driver_document_single_card_widget.dart';
-import '../fields/driver_future_date_picker_widget.dart';
+import '../fields/driver_date_picker_field_widget.dart';
 import '../fields/driver_plate_field_widget.dart';
 import '../fields/driver_text_field_widget.dart';
 import '../fields/driver_year_dropdown_widget.dart';
@@ -181,11 +181,13 @@ class _DriverStep2VehicleInfoState extends State<DriverStep2VehicleInfo> {
               // ── Insurance Expiry ───────────────────────────────────────────────
               const ProfileFieldLabelWidget(label: 'Insurance Expiry'),
               SizedBox(height: 8.h),
-              DriverFutureDatePickerWidget(
-                label: 'Expiry date',
+              DriverDatePickerFieldWidget(
+                hintText: 'Expiry date',
+                prefixIcon: const Icon(Icons.calendar_month_outlined),
                 selectedDate: vehicle.insuranceExpiry,
                 onDateSelected: cubit.insuranceExpiryChanged,
                 enabled: !isSubmitting,
+                isFutureDate: true,
               ),
 
               SizedBox(height: 12.h),

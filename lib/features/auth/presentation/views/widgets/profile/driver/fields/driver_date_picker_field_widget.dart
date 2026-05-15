@@ -16,11 +16,17 @@ class DriverDatePickerFieldWidget extends StatefulWidget {
     required this.selectedDate,
     required this.onDateSelected,
     required this.enabled,
+    this.hintText = 'DD/MM/YYYY',
+    this.prefixIcon = const Icon(Icons.cake_outlined),
+    this.isFutureDate = false,
   });
 
   final DateTime? selectedDate;
   final ValueChanged<DateTime> onDateSelected;
   final bool enabled;
+  final String hintText;
+  final Widget prefixIcon;
+  final bool isFutureDate;
 
   @override
   State<DriverDatePickerFieldWidget> createState() =>
@@ -63,16 +69,31 @@ class _DriverDatePickerFieldWidgetState
   }
 
   Future<void> _openPicker() async {
-    final maxDate = DateTime(
-      DateTime.now().year - AppConstants.driverMinAgeYears,
-      DateTime.now().month,
-      DateTime.now().day,
-    );
+    final now = DateTime.now();
+    
+    final DateTime initialDate;
+    final DateTime firstDate;
+    final DateTime lastDate;
+
+    if (widget.isFutureDate) {
+      firstDate = now;
+      lastDate = now.add(const Duration(days: 365 * 10));
+      initialDate = widget.selectedDate ?? now.add(const Duration(days: 30));
+    } else {
+      lastDate = DateTime(
+        now.year - AppConstants.driverMinAgeYears,
+        now.month,
+        now.day,
+      );
+      firstDate = DateTime(1940);
+      initialDate = widget.selectedDate ?? lastDate;
+    }
+
     final picked = await showDatePicker(
       context: context,
-      initialDate: widget.selectedDate ?? maxDate,
-      firstDate: DateTime(1940),
-      lastDate: maxDate,
+      initialDate: initialDate,
+      firstDate: firstDate,
+      lastDate: lastDate,
       builder: (context, child) {
         final isDark = AppColors.isDark(context);
         return Theme(
@@ -122,8 +143,8 @@ class _DriverDatePickerFieldWidgetState
       readOnly: true,
       onTap: widget.enabled ? _openPicker : null,
       enabled: widget.enabled,
-      hintText: 'DD/MM/YYYY',
-      prefixIcon: const Icon(Icons.cake_outlined),
+      hintText: widget.hintText,
+      prefixIcon: widget.prefixIcon,
       suffixIcon: const Icon(Icons.calendar_month_outlined),
     );
   }
