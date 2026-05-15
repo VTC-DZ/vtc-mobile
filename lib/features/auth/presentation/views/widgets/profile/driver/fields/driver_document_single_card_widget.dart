@@ -96,8 +96,7 @@ class DriverDocumentSingleCardWidget extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: isError
                           ? AppColors.error.withValues(alpha: 0.06)
-                          : AppColors.borderDefault(context)
-                              .withValues(alpha: 0.5),
+                          : AppColors.text(context).withValues(alpha: 0.06),
                       borderRadius: BorderRadius.only(
                         topLeft: Radius.circular(13.r),
                         bottomLeft: Radius.circular(13.r),

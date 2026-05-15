@@ -266,8 +266,7 @@ class _CardFace extends StatelessWidget {
                       child: Image.file(
                         File(document.filePath!),
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) =>
-                            const SizedBox.shrink(),
+                        errorBuilder: (_, __, ___) => const SizedBox.shrink(),
                       ),
                     ),
                   ],
@@ -295,8 +294,7 @@ class _CardFace extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: isError
                           ? AppColors.error.withValues(alpha: 0.06)
-                          : AppColors.borderDefault(context)
-                              .withValues(alpha: 0.5),
+                          : AppColors.text(context).withValues(alpha: 0.06),
                       borderRadius: BorderRadius.only(
                         topLeft: Radius.circular(13.r),
                         bottomLeft: Radius.circular(13.r),
@@ -322,9 +320,7 @@ class _CardFace extends StatelessWidget {
                   // Content
                   Expanded(
                     child: _StatusContent(
-                        status: status,
-                        document: document,
-                        hasImage: hasImage),
+                        status: status, document: document, hasImage: hasImage),
                   ),
                 ],
               ),
@@ -423,8 +419,6 @@ class _StatusContent extends StatelessWidget {
     }
   }
 }
-
-
 
 class _Dots extends StatelessWidget {
   const _Dots(
