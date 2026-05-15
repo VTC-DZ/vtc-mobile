@@ -6,7 +6,6 @@ import '../../../../core/router/app_router.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../core/session/auth_session.dart';
 import '../models/auth_tokens_model.dart';
-import 'package:dio/dio.dart';
 
 final class AuthRepository {
   const AuthRepository();
@@ -46,23 +45,5 @@ final class AuthRepository {
     } catch (_) {}
     await AuthSession.clearSession();
     AppRouter.router.go(RouteNames.phone);
-  }
-
-  /// Explicitly refreshes the session tokens (e.g. after KYC submission to get updated claims).
-  Future<void> refreshToken() async {
-    if (AuthSession.refreshToken == null) return;
-
-    final response = await DioClient.post(
-      path: PassengerApiConstants.refresh,
-      data: {'refreshToken': AuthSession.refreshToken},
-      options: Options(
-        headers: {'Authorization': null},
-      ),
-    );
-    final tokens = AuthTokensModel.fromJson(response.data as Map<String, dynamic>);
-    await AuthSession.setTokens(
-      accessToken: tokens.accessToken,
-      refreshToken: tokens.refreshToken,
-    );
   }
 }

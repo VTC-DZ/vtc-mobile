@@ -139,7 +139,19 @@ class _DriverStep2VehicleInfoState extends State<DriverStep2VehicleInfo> {
               ),
 
               SizedBox(height: 24.h),
+              // ── Insurance Expiry ───────────────────────────────────────────────
+              const ProfileFieldLabelWidget(label: 'Insurance Expiry'),
+              SizedBox(height: 8.h),
+              DriverDatePickerFieldWidget(
+                hintText: 'Expiry date',
+                prefixIcon: const Icon(Icons.calendar_month_outlined),
+                selectedDate: vehicle.insuranceExpiry,
+                onDateSelected: cubit.insuranceExpiryChanged,
+                enabled: !isSubmitting,
+                isFutureDate: true,
+              ),
 
+              SizedBox(height: 24.h),
               // ── Vehicle Photo ──────────────────────────────────────────────────
               const ProfileFieldLabelWidget(
                   label: AppStrings.fieldVehiclePhoto),
@@ -177,20 +189,6 @@ class _DriverStep2VehicleInfoState extends State<DriverStep2VehicleInfo> {
               ),
 
               SizedBox(height: 24.h),
-
-              // ── Insurance Expiry ───────────────────────────────────────────────
-              const ProfileFieldLabelWidget(label: 'Insurance Expiry'),
-              SizedBox(height: 8.h),
-              DriverDatePickerFieldWidget(
-                hintText: 'Expiry date',
-                prefixIcon: const Icon(Icons.calendar_month_outlined),
-                selectedDate: vehicle.insuranceExpiry,
-                onDateSelected: cubit.insuranceExpiryChanged,
-                enabled: !isSubmitting,
-                isFutureDate: true,
-              ),
-
-              SizedBox(height: 12.h),
             ],
           ),
         );

@@ -9,11 +9,13 @@ final class AuthSession {
   static String? _accessToken;
   static String? _refreshToken;
   static bool? _isNewUser;
+  static bool? _waitingKycStatus;
 
   static String? get accessToken => _accessToken;
   static String? get refreshToken => _refreshToken;
   static bool get isLoggedIn => _accessToken != null;
   static bool get isNewUser => _isNewUser ?? false;
+  static bool get waitingKycStatus => _waitingKycStatus ?? false;
 
   /// Loads persisted session from secure storage. Call once at startup.
   static Future<void> loadSession() async {
@@ -28,6 +30,11 @@ final class AuthSession {
       key: CacheKeys.secureStorageKeys.isNewUserKey,
     );
     _isNewUser = isNewUserStr == 'true';
+
+    final isWaitingKycStr = await SecureStorageHelper.read(
+      key: CacheKeys.secureStorageKeys.isWaitingKyc,
+    );
+    _waitingKycStatus = isWaitingKycStr == 'true';
   }
 
   /// Saves tokens, decodes the JWT payload, and persists the role.
@@ -47,6 +54,14 @@ final class AuthSession {
     _isNewUser = value;
     await SecureStorageHelper.write(
       key: CacheKeys.secureStorageKeys.isNewUserKey,
+      value: value.toString(),
+    );
+  }
+
+  static Future<void> setWaitingKycStatus(bool value) async {
+    _waitingKycStatus = value;
+    await SecureStorageHelper.write(
+      key: CacheKeys.secureStorageKeys.isWaitingKyc,
       value: value.toString(),
     );
   }
@@ -73,13 +88,19 @@ final class AuthSession {
       key: CacheKeys.secureStorageKeys.isNewUserKey,
     );
     await SecureStorageHelper.remove(
-      key: CacheKeys.secureStorageKeys.driverKycStatusKey,
+      key: CacheKeys.secureStorageKeys.isWaitingKyc,
     );
   }
 
   static String resolveInitialRoute() {
     if (!isLoggedIn) return RouteNames.phone;
-    if (isNewUser) return RouteNames.modeSelection;
+    if (isNewUser) {
+      if (waitingKycStatus) {
+        return RouteNames.driverPendingReview;
+      } else {
+        return RouteNames.modeSelection;
+      }
+    }
 
     return RouteNames.passengerHome;
   }

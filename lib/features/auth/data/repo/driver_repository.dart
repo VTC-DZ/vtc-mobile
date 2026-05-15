@@ -1,6 +1,7 @@
 // lib/features/auth/data/repo/driver_repository.dart
 
 import 'package:dio/dio.dart';
+import 'package:khfif_drif/core/session/auth_session.dart';
 
 import '../../../../core/constants/driver_api_constants.dart';
 import '../../../../core/network/dio_client.dart';
@@ -53,6 +54,9 @@ final class DriverRepository {
     );
 
     final data = response.data as Map<String, dynamic>;
+
+    await AuthSession.setWaitingKycStatus(true);
+
     return KycSubmitResult(
       submissionId: data['submissionId'] as String? ?? '',
       status: data['status'] as String? ?? '',

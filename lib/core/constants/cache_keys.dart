@@ -12,5 +12,5 @@ class SecureStorageKeys {
   String get accessTokenKey => 'access_token';
   String get refreshTokenKey => 'refresh_token';
   String get isNewUserKey => 'is_new_user';
-  String get driverKycStatusKey => 'driver_kyc_status';
+  String get isWaitingKyc => 'is_waiting_kyc';
 }

@@ -7,7 +7,6 @@ import '../../../../../../../../core/theme/app_colors.dart';
 import '../../../../../../../../core/theme/app_text_styles.dart';
 import '../../../../../../../../core/widgets/image_source_bottom_sheet.dart';
 import '../../../../../../data/models/driver_document.dart';
-import '../../../../../../data/repo/auth_repository.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../../../../../core/router/route_names.dart';
 import '../../../../../cubit/driver_profile_cubit/driver_profile_cubit.dart';
@@ -39,7 +38,6 @@ class _DriverStep3DocumentsState extends State<DriverStep3Documents> {
     return BlocConsumer<DriverProfileCubit, DriverProfileState>(
       listener: (context, state) async {
         if (state.status == DriverRegistrationStatus.success) {
-          await const AuthRepository().refreshToken();
           if (context.mounted) {
             context.go(RouteNames.driverPendingReview);
           }
