@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../../core/constants/app_constants.dart';
+import '../../../../../core/session/auth_session.dart';
 import '../../../data/repo/auth_repository.dart';
 import 'otp_state.dart';
 
@@ -30,7 +31,16 @@ final class OtpCubit extends Cubit<OtpState> {
     try {
       final tokens = await _repository.verifyOtp(state.phoneNumber, state.otpValue);
       _failedAttempts = 0;
-      emit(state.copyWith(status: OtpStatus.success, isNewUser: tokens.isNewUser));
+
+      if (tokens.hasDriverProfile) {
+        await AuthSession.setHasDriverProfile(true);
+      }
+
+      emit(state.copyWith(
+        status: OtpStatus.success,
+        isNewUser: tokens.isNewUser,
+        hasDriverProfile: tokens.hasDriverProfile,
+      ));
     } catch (_) {
       _failedAttempts++;
       if (_failedAttempts >= AppConstants.otpMaxFailedAttempts) {

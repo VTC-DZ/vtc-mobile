@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 
+import '../../../data/models/kyc_status.dart';
 import '../../../data/repo/driver_repository.dart';
 
 enum KycStatusViewStatus { initial, loading, success, failure }
@@ -15,10 +16,10 @@ final class KycStatusState extends Equatable {
   final KycStatusResult? kycResult;
   final String errorMessage;
 
-  bool get isPending => kycResult?.kycStatus == 'PENDING';
-  bool get isApproved => kycResult?.kycStatus == 'APPROVED';
-  bool get isRejected => kycResult?.kycStatus == 'REJECTED';
-  bool get isNone => kycResult?.kycStatus == 'NONE';
+  bool get isPending => kycResult?.kycStatus == KycStatus.pending;
+  bool get isApproved => kycResult?.kycStatus == KycStatus.approved;
+  bool get isRejected => kycResult?.kycStatus == KycStatus.rejected;
+  bool get isNone => kycResult?.kycStatus == KycStatus.none;
 
   KycStatusState copyWith({
     KycStatusViewStatus? status,

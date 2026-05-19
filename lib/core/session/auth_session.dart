@@ -10,12 +10,14 @@ final class AuthSession {
   static String? _refreshToken;
   static bool? _isNewUser;
   static bool? _waitingKycStatus;
+  static bool? _hasDriverProfile;
 
   static String? get accessToken => _accessToken;
   static String? get refreshToken => _refreshToken;
   static bool get isLoggedIn => _accessToken != null;
   static bool get isNewUser => _isNewUser ?? false;
   static bool get waitingKycStatus => _waitingKycStatus ?? false;
+  static bool get hasDriverProfile => _hasDriverProfile ?? false;
 
   /// Loads persisted session from secure storage. Call once at startup.
   static Future<void> loadSession() async {
@@ -35,6 +37,11 @@ final class AuthSession {
       key: CacheKeys.secureStorageKeys.isWaitingKyc,
     );
     _waitingKycStatus = isWaitingKycStr == 'true';
+
+    final hasDriverProfileStr = await SecureStorageHelper.read(
+      key: CacheKeys.secureStorageKeys.hasDriverProfile,
+    );
+    _hasDriverProfile = hasDriverProfileStr == 'true';
   }
 
   /// Saves tokens, decodes the JWT payload, and persists the role.
@@ -66,6 +73,14 @@ final class AuthSession {
     );
   }
 
+  static Future<void> setHasDriverProfile(bool value) async {
+    _hasDriverProfile = value;
+    await SecureStorageHelper.write(
+      key: CacheKeys.secureStorageKeys.hasDriverProfile,
+      value: value.toString(),
+    );
+  }
+
   static Future<void> clearIsNewUser() async {
     _isNewUser = false;
     await SecureStorageHelper.remove(
@@ -78,6 +93,8 @@ final class AuthSession {
     _accessToken = null;
     _refreshToken = null;
     _isNewUser = null;
+    _waitingKycStatus = null;
+    _hasDriverProfile = null;
     await SecureStorageHelper.remove(
       key: CacheKeys.secureStorageKeys.accessTokenKey,
     );
@@ -90,6 +107,9 @@ final class AuthSession {
     await SecureStorageHelper.remove(
       key: CacheKeys.secureStorageKeys.isWaitingKyc,
     );
+    await SecureStorageHelper.remove(
+      key: CacheKeys.secureStorageKeys.hasDriverProfile,
+    );
   }
 
   static String resolveInitialRoute() {
@@ -101,7 +121,7 @@ final class AuthSession {
         return RouteNames.modeSelection;
       }
     }
-
+    if (hasDriverProfile) return RouteNames.driverStatusReview;
     return RouteNames.passengerHome;
   }
 }

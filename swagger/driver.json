@@ -9,6 +9,104 @@
     { "url": "http://localhost:8080", "description": "Generated server url" }
   ],
   "paths": {
+    "/api/driver/profile": {
+      "get": {
+        "tags": ["driver-profile-controller"],
+        "operationId": "getProfile",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/DriverProfileResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": ["driver-profile-controller"],
+        "operationId": "updateProfile",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DriverProfileUpdateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/DriverProfileResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/driver/profile/phone/request": {
+      "post": {
+        "tags": ["driver-change-phone-controller"],
+        "operationId": "requestPhoneChange",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DriverChangePhoneRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/OtpRequestResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/driver/profile/phone/confirm": {
+      "post": {
+        "tags": ["driver-change-phone-controller"],
+        "operationId": "confirmPhoneChange",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DriverChangePhoneConfirmRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/DriverChangePhoneResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/driver/profile/kyc/submit": {
       "post": {
         "tags": ["kyc-controller"],
@@ -180,6 +278,47 @@
   },
   "components": {
     "schemas": {
+      "DriverProfileUpdateRequest": {
+        "type": "object",
+        "properties": { "acceptsFemaleOnly": { "type": "boolean" } }
+      },
+      "DriverProfileResponse": {
+        "type": "object",
+        "properties": {
+          "fullName": { "type": "string" },
+          "gender": { "type": "string", "enum": ["MALE", "FEMALE"] },
+          "phone": { "type": "string" },
+          "kycStatus": {
+            "type": "string",
+            "enum": ["NONE", "PENDING", "APPROVED", "REJECTED"]
+          },
+          "acceptsFemaleOnly": { "type": "boolean" }
+        }
+      },
+      "DriverChangePhoneRequest": {
+        "type": "object",
+        "properties": { "newPhone": { "type": "string", "minLength": 1 } },
+        "required": ["newPhone"]
+      },
+      "OtpRequestResponse": {
+        "type": "object",
+        "properties": { "expiresIn": { "type": "integer", "format": "int32" } }
+      },
+      "DriverChangePhoneConfirmRequest": {
+        "type": "object",
+        "properties": {
+          "newPhone": { "type": "string", "minLength": 1 },
+          "code": { "type": "string", "minLength": 1, "pattern": "^\\d{6}$" }
+        },
+        "required": ["code", "newPhone"]
+      },
+      "DriverChangePhoneResponse": {
+        "type": "object",
+        "properties": {
+          "accessToken": { "type": "string" },
+          "refreshToken": { "type": "string" }
+        }
+      },
       "KycSubmitRequest": {
         "type": "object",
         "properties": {
@@ -193,7 +332,7 @@
           "vehicleYear": {
             "type": "integer",
             "format": "int32",
-            "minimum": 2000
+            "minimum": 1950
           },
           "vehicleColor": { "type": "string", "minLength": 1 },
           "vehicleCategory": {
@@ -243,7 +382,9 @@
         "properties": {
           "accessToken": { "type": "string" },
           "refreshToken": { "type": "string" },
-          "isNewUser": { "type": "boolean" }
+          "isNewUser": { "type": "boolean" },
+          "profileCompleted": { "type": "boolean" },
+          "hasDriverProfile": { "type": "boolean" }
         }
       },
       "OtpVerifyRequest": {
@@ -258,10 +399,6 @@
         "type": "object",
         "properties": { "phone": { "type": "string", "minLength": 1 } },
         "required": ["phone"]
-      },
-      "OtpRequestResponse": {
-        "type": "object",
-        "properties": { "expiresIn": { "type": "integer", "format": "int32" } }
       },
       "KycStatusResponse": {
         "type": "object",

@@ -18,6 +18,7 @@ import '../../features/auth/presentation/cubit/kyc_status_cubit/kyc_status_cubit
 import '../../features/auth/presentation/views/driver/driver_status_review_view.dart';
 import '../../features/auth/presentation/views/driver/driver_registration_view.dart';
 import '../../features/auth/presentation/views/driver/driver_rejection_view.dart';
+import '../../features/home/driver/presentation/views/driver_home_view.dart';
 import '../../features/home/passenger/presentation/cubit/passenger_home_cubit.dart';
 import '../../features/home/passenger/presentation/views/passenger_home_view.dart';
 import '../../features/home/profile/passenger/presentation/cubit/passenger_email_edit_cubit.dart';
@@ -130,6 +131,12 @@ final class AppRouter {
             ),
             child: const DriverRegistrationView(),
           );
+        },
+      ),
+      GoRoute(
+        path: RouteNames.driverHome,
+        builder: (BuildContext context, GoRouterState state) {
+          return const DriverHomeView();
         },
       ),
       GoRoute(

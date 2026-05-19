@@ -170,7 +170,7 @@ class _ApprovedContent extends StatelessWidget {
         PrimaryButton(
           label: AppStrings.continueLabel,
           isEnabled: true,
-          onPressed: () => context.go(RouteNames.passengerHome),
+          onPressed: () => context.go(RouteNames.driverHome),
         ),
       ],
     );

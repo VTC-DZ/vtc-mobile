@@ -13,6 +13,7 @@ final class OtpState extends Equatable {
   final int blockSecondsRemaining;
   final String errorMessage;
   final bool isNewUser;
+  final bool hasDriverProfile;
 
   const OtpState({
     required this.phoneNumber,
@@ -23,6 +24,7 @@ final class OtpState extends Equatable {
     this.blockSecondsRemaining = 0,
     this.errorMessage = '',
     this.isNewUser = false,
+    this.hasDriverProfile = false,
   });
 
   bool get isComplete => otpValue.length == 6;
@@ -43,6 +45,7 @@ final class OtpState extends Equatable {
     int? blockSecondsRemaining,
     String? errorMessage,
     bool? isNewUser,
+    bool? hasDriverProfile,
   }) =>
       OtpState(
         phoneNumber: phoneNumber ?? this.phoneNumber,
@@ -54,6 +57,7 @@ final class OtpState extends Equatable {
             blockSecondsRemaining ?? this.blockSecondsRemaining,
         errorMessage: errorMessage ?? this.errorMessage,
         isNewUser: isNewUser ?? this.isNewUser,
+        hasDriverProfile: hasDriverProfile ?? this.hasDriverProfile,
       );
 
   @override
@@ -66,5 +70,6 @@ final class OtpState extends Equatable {
         blockSecondsRemaining,
         errorMessage,
         isNewUser,
+        hasDriverProfile,
       ];
 }

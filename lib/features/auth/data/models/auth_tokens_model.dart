@@ -11,12 +11,14 @@ class AuthTokensModel {
     required this.refreshToken,
     required this.isNewUser,
     this.profileCompleted,
+    this.hasDriverProfile = false,
   });
 
   final String accessToken;
   final String refreshToken;
   final bool isNewUser;
   final bool? profileCompleted;
+  final bool hasDriverProfile;
 
   factory AuthTokensModel.fromJson(Map<String, dynamic> json) {
     return AuthTokensModel(
@@ -24,6 +26,7 @@ class AuthTokensModel {
       refreshToken: json['refreshToken'] as String,
       isNewUser: json['isNewUser'],
       profileCompleted: json['profileCompleted'] ?? false,
+      hasDriverProfile: json['hasDriverProfile'] ?? false,
     );
   }
 }

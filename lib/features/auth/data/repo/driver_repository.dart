@@ -6,6 +6,8 @@ import 'package:khfif_drif/core/session/auth_session.dart';
 import '../../../../core/constants/driver_api_constants.dart';
 import '../../../../core/network/dio_client.dart';
 import '../../../../core/utils/image_compressor.dart';
+import '../models/driver_profile_model.dart';
+import '../models/kyc_status.dart';
 
 final class DriverRepository {
   const DriverRepository();
@@ -63,6 +65,13 @@ final class DriverRepository {
     );
   }
 
+  Future<DriverProfileModel> getDriverProfile() async {
+    final response = await DioClient.get(path: DriverApiConstants.profile);
+    return DriverProfileModel.fromJson(
+      response.data as Map<String, dynamic>,
+    );
+  }
+
   Future<KycStatusResult> getKycStatus() async {
     final response = await DioClient.get(
       path: DriverApiConstants.kycStatus,
@@ -71,7 +80,7 @@ final class DriverRepository {
     final data = response.data as Map<String, dynamic>;
     final submission = data['submission'] as Map<String, dynamic>?;
     return KycStatusResult(
-      kycStatus: data['kycStatus'] as String? ?? '',
+      kycStatus: KycStatus.fromString(data['kycStatus'] as String?),
       submissionId: submission?['id'] as String?,
       submissionStatus: submission?['status'] as String?,
       resubmissionNote: submission?['resubmissionNote'] as String?,
@@ -101,7 +110,7 @@ final class KycStatusResult {
     this.reviewedAt,
   });
 
-  final String kycStatus;
+  final KycStatus kycStatus;
   final String? submissionId;
   final String? submissionStatus;
   final String? resubmissionNote;

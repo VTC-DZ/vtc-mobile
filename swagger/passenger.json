@@ -47,6 +47,60 @@
         }
       }
     },
+    "/api/passenger/profile/phone/request": {
+      "post": {
+        "tags": ["passenger-change-phone-controller"],
+        "operationId": "requestPhoneChange",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PassengerChangePhoneRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/OtpRequestResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/passenger/profile/phone/confirm": {
+      "post": {
+        "tags": ["passenger-change-phone-controller"],
+        "operationId": "confirmPhoneChange",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PassengerChangePhoneConfirmRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PassengerChangePhoneResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/passenger/auth/switch-role": {
       "post": {
         "tags": ["passenger-auth-controller"],
@@ -198,7 +252,32 @@
             "type": "string",
             "enum": ["ACTIVE", "BLOCKED", "SUSPENDED"]
           },
-          "driverRegistered": { "type": "boolean" }
+          "hasDriverProfile": { "type": "boolean" },
+          "profileCompleted": { "type": "boolean" }
+        }
+      },
+      "PassengerChangePhoneRequest": {
+        "type": "object",
+        "properties": { "newPhone": { "type": "string", "minLength": 1 } },
+        "required": ["newPhone"]
+      },
+      "OtpRequestResponse": {
+        "type": "object",
+        "properties": { "expiresIn": { "type": "integer", "format": "int32" } }
+      },
+      "PassengerChangePhoneConfirmRequest": {
+        "type": "object",
+        "properties": {
+          "newPhone": { "type": "string", "minLength": 1 },
+          "code": { "type": "string", "minLength": 1, "pattern": "^\\d{6}$" }
+        },
+        "required": ["code", "newPhone"]
+      },
+      "PassengerChangePhoneResponse": {
+        "type": "object",
+        "properties": {
+          "accessToken": { "type": "string" },
+          "refreshToken": { "type": "string" }
         }
       },
       "SwitchRoleRequest": {
@@ -220,7 +299,9 @@
         "properties": {
           "accessToken": { "type": "string" },
           "refreshToken": { "type": "string" },
-          "isNewUser": { "type": "boolean" }
+          "isNewUser": { "type": "boolean" },
+          "profileCompleted": { "type": "boolean" },
+          "hasDriverProfile": { "type": "boolean" }
         }
       },
       "OtpVerifyRequest": {
@@ -235,10 +316,6 @@
         "type": "object",
         "properties": { "phone": { "type": "string", "minLength": 1 } },
         "required": ["phone"]
-      },
-      "OtpRequestResponse": {
-        "type": "object",
-        "properties": { "expiresIn": { "type": "integer", "format": "int32" } }
       },
       "EmailUpdateRequest": {
         "type": "object",
