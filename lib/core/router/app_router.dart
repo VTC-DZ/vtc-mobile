@@ -14,7 +14,8 @@ import '../../features/auth/presentation/views/otp_verification_view.dart';
 import '../../features/auth/presentation/views/passenger/passenger_profile_view.dart';
 import '../../features/auth/presentation/views/phone_entry_view.dart';
 import '../../features/auth/presentation/cubit/driver_profile_cubit/driver_profile_cubit.dart';
-import '../../features/auth/presentation/views/driver/driver_pending_review_view.dart';
+import '../../features/auth/presentation/cubit/kyc_status_cubit/kyc_status_cubit.dart';
+import '../../features/auth/presentation/views/driver/driver_status_review_view.dart';
 import '../../features/auth/presentation/views/driver/driver_registration_view.dart';
 import '../../features/auth/presentation/views/driver/driver_rejection_view.dart';
 import '../../features/home/passenger/presentation/cubit/passenger_home_cubit.dart';
@@ -132,9 +133,12 @@ final class AppRouter {
         },
       ),
       GoRoute(
-        path: RouteNames.driverPendingReview,
+        path: RouteNames.driverStatusReview,
         builder: (BuildContext context, GoRouterState state) {
-          return const DriverPendingReviewView();
+          return BlocProvider<KycStatusCubit>(
+            create: (_) => KycStatusCubit(_driverRepository),
+            child: const DriverStatusReviewView(),
+          );
         },
       ),
       GoRoute(

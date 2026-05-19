@@ -22,7 +22,7 @@ class DriverRegistrationView extends StatelessWidget {
     return BlocConsumer<DriverProfileCubit, DriverProfileState>(
       listenWhen: (prev, curr) =>
           curr.status == DriverRegistrationStatus.success,
-      listener: (context, state) => context.go(RouteNames.driverPendingReview),
+      listener: (context, state) => context.go(RouteNames.driverStatusReview),
       builder: (context, state) {
         final cubit = context.read<DriverProfileCubit>();
 

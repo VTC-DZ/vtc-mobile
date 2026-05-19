@@ -96,7 +96,7 @@ final class AuthSession {
     if (!isLoggedIn) return RouteNames.phone;
     if (isNewUser) {
       if (waitingKycStatus) {
-        return RouteNames.driverPendingReview;
+        return RouteNames.driverStatusReview;
       } else {
         return RouteNames.modeSelection;
       }

@@ -1,5 +1,3 @@
-// lib/core/constants/api_constants.dart
-
 abstract final class ApiConstants {
   ApiConstants._();
 

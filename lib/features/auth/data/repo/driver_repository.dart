@@ -75,6 +75,12 @@ final class DriverRepository {
       submissionId: submission?['id'] as String?,
       submissionStatus: submission?['status'] as String?,
       resubmissionNote: submission?['resubmissionNote'] as String?,
+      submittedAt: submission?['submittedAt'] != null
+          ? DateTime.tryParse(submission!['submittedAt'] as String)
+          : null,
+      reviewedAt: submission?['reviewedAt'] != null
+          ? DateTime.tryParse(submission!['reviewedAt'] as String)
+          : null,
     );
   }
 }
@@ -91,10 +97,14 @@ final class KycStatusResult {
     this.submissionId,
     this.submissionStatus,
     this.resubmissionNote,
+    this.submittedAt,
+    this.reviewedAt,
   });
 
   final String kycStatus;
   final String? submissionId;
   final String? submissionStatus;
   final String? resubmissionNote;
+  final DateTime? submittedAt;
+  final DateTime? reviewedAt;
 }

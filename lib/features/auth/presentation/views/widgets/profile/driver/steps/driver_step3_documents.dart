@@ -39,7 +39,7 @@ class _DriverStep3DocumentsState extends State<DriverStep3Documents> {
       listener: (context, state) async {
         if (state.status == DriverRegistrationStatus.success) {
           if (context.mounted) {
-            context.go(RouteNames.driverPendingReview);
+            context.go(RouteNames.driverStatusReview);
           }
         }
       },

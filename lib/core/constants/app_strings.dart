@@ -42,4 +42,15 @@ abstract final class AppStrings {
   static const String rejectionTitle = 'Application Rejected';
   static const String resubmitDocuments = 'Re-submit Documents';
   static const String goToHome = 'Continue as Passenger';
+
+  // KYC Status Review
+  static const String statusApprovedTitle = 'Approved';
+  static const String statusApprovedBody =
+      "Congratulations! Your documents have been approved. You're now ready to drive.";
+  static const String statusLoadingTitle = 'Checking Status...';
+  static const String statusErrorTitle = 'Something Went Wrong';
+  static const String statusErrorBody =
+      'We could not retrieve your verification status. Please try again.';
+  static const String retry = 'Retry';
+  static const String continueLabel = 'Continue';
 }
