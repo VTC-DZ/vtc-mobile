@@ -14,6 +14,7 @@ abstract final class RouteNames {
   static const String driverStatusReview = '/driver-status-review';
   static const String driverHome = '/driver-home';
   static const String driverRejection = '/driver-rejection';
+  static const String driverProfileEdit = '/driver-profile-edit';
   static const String passengerProfileEdit = '/passenger-profile-edit';
   static const String passengerEmailEdit = '/passenger-email-edit';
 }

@@ -19,6 +19,8 @@ import '../../features/auth/presentation/views/driver/driver_status_review_view.
 import '../../features/auth/presentation/views/driver/driver_registration_view.dart';
 import '../../features/auth/presentation/views/driver/driver_rejection_view.dart';
 import '../../features/home/driver/presentation/views/driver_home_view.dart';
+import '../../features/home/driver/presentation/cubit/driver_home_cubit.dart';
+import '../../features/home/driver/presentation/views/driver_home_shell.dart';
 import '../../features/home/passenger/presentation/cubit/passenger_home_cubit.dart';
 import '../../features/home/passenger/presentation/views/passenger_home_view.dart';
 import '../../features/home/profile/passenger/presentation/cubit/passenger_email_edit_cubit.dart';
@@ -31,7 +33,7 @@ import 'route_names.dart';
 final class AppRouter {
   AppRouter._();
 
-  static const _repository = AuthRepository();
+  static const _authRepository = AuthRepository();
   static const _profileRepository = ProfileRepository();
   static const _driverRepository = DriverRepository();
 
@@ -46,7 +48,7 @@ final class AppRouter {
         path: RouteNames.phone,
         builder: (BuildContext context, GoRouterState state) {
           return BlocProvider<PhoneCubit>(
-            create: (_) => PhoneCubit(_repository),
+            create: (_) => PhoneCubit(_authRepository),
             child: const PhoneEntryView(),
           );
         },
@@ -56,7 +58,7 @@ final class AppRouter {
         builder: (BuildContext context, GoRouterState state) {
           final phone = state.extra is String ? state.extra as String : '';
           return BlocProvider<OtpCubit>(
-            create: (_) => OtpCubit(_repository, phoneNumber: phone),
+            create: (_) => OtpCubit(_authRepository, phoneNumber: phone),
             child: const OtpVerificationView(),
           );
         },
@@ -133,11 +135,28 @@ final class AppRouter {
           );
         },
       ),
-      GoRoute(
-        path: RouteNames.driverHome,
-        builder: (BuildContext context, GoRouterState state) {
-          return const DriverHomeView();
-        },
+      ShellRoute(
+        builder: (context, state, child) => BlocProvider(
+          create: (context) =>
+              DriverHomeCubit(_driverRepository)..getProfile(),
+          child: DriverHomeShell(child: child),
+        ),
+        routes: [
+          GoRoute(
+            path: RouteNames.driverHome,
+            builder: (BuildContext context, GoRouterState state) {
+              return const DriverHomeView();
+            },
+          ),
+          GoRoute(
+            path: RouteNames.driverProfileEdit,
+            builder: (context, state) {
+              return const Scaffold(
+                body: Center(child: Text('Driver Profile Edit')),
+              );
+            },
+          ),
+        ],
       ),
       GoRoute(
         path: RouteNames.driverStatusReview,

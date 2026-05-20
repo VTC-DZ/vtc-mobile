@@ -11,14 +11,14 @@ import '../../../../../../shared/widgets/dashed_divider.dart';
 import '../../../../../../shared/widgets/drawer_item.dart';
 import '../../../../../../shared/widgets/drawer_menu_item_data.dart';
 import '../../../../../auth/data/repo/auth_repository.dart';
-import '../../cubit/passenger_home_cubit.dart';
-import '../../cubit/passenger_home_state.dart';
+import '../../cubit/driver_home_cubit.dart';
+import '../../cubit/driver_home_state.dart';
 
 const int _profileIndex = 1;
-const int _logoutIndex = 8;
+const int _logoutIndex = 7;
 
-class HomeDrawer extends StatelessWidget {
-  const HomeDrawer({super.key});
+class DriverHomeDrawer extends StatelessWidget {
+  const DriverHomeDrawer({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -26,9 +26,8 @@ class HomeDrawer extends StatelessWidget {
       const DrawerMenuItemData(Icons.home_outlined, 'Home'),
       const DrawerMenuItemData(Icons.person_outline_rounded, 'Profile'),
       const DrawerMenuItemData(Icons.directions_car_rounded, 'My Rides'),
-      const DrawerMenuItemData(Icons.bookmark_border_rounded, 'Saved Places'),
-      const DrawerMenuItemData(Icons.credit_card_rounded, 'Payment'),
-      const DrawerMenuItemData(Icons.local_offer_outlined, 'Promotions'),
+      const DrawerMenuItemData(Icons.account_balance_wallet_outlined, 'Earnings'),
+      const DrawerMenuItemData(Icons.motorcycle_outlined, 'Vehicle Info'),
     ];
 
     final supportItems = <DrawerMenuItemData>[
@@ -36,7 +35,7 @@ class HomeDrawer extends StatelessWidget {
       const DrawerMenuItemData(Icons.help_outline_rounded, 'Help & Support'),
     ];
 
-    return BlocBuilder<PassengerHomeCubit, PassengerHomeState>(
+    return BlocBuilder<DriverHomeCubit, DriverHomeState>(
       builder: (context, state) {
         final selectedIndex = state.selectedIndex;
 
@@ -84,18 +83,18 @@ class HomeDrawer extends StatelessWidget {
 
   void _onMenuItemTap(BuildContext context, int index) {
     if (index == _logoutIndex) {
-      context.read<PassengerHomeCubit>().updateSelectedIndex(index);
+      context.read<DriverHomeCubit>().updateSelectedIndex(index);
       ZoomDrawer.of(context)?.close();
       const AuthRepository().logout();
       return;
     }
 
     final route = index == _profileIndex
-        ? RouteNames.passengerProfileEdit
-        : RouteNames.passengerHome;
+        ? RouteNames.driverProfileEdit
+        : RouteNames.driverHome;
     final selectedIndex = index == _profileIndex ? _profileIndex : 0;
 
-    context.read<PassengerHomeCubit>().updateSelectedIndex(selectedIndex);
+    context.read<DriverHomeCubit>().updateSelectedIndex(selectedIndex);
     ZoomDrawer.of(context)?.close();
     context.go(route);
   }
@@ -119,7 +118,7 @@ class HomeDrawer extends StatelessWidget {
     });
   }
 
-  Widget _buildDrawerHeader(BuildContext context, PassengerHomeState state) {
+  Widget _buildDrawerHeader(BuildContext context, DriverHomeState state) {
     final name = state.profile?.fullName;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -170,7 +169,7 @@ class HomeDrawer extends StatelessWidget {
         ),
         SizedBox(height: 20.h),
         Text(
-          name != null ? 'Hello, $name!' : 'Hello, Passenger!',
+          name != null ? 'Hello, $name!' : 'Hello, Driver!',
           style: AppTextStyles.headingMedium(context).copyWith(
             color: AppColors.drawerText(context),
             fontWeight: FontWeight.w800,
@@ -179,7 +178,7 @@ class HomeDrawer extends StatelessWidget {
         ),
         SizedBox(height: 6.h),
         Text(
-          'Ready for your next ride?',
+          "Let's get on the road!",
           style: AppTextStyles.bodySmall(context).copyWith(
             color: AppColors.drawerTextMuted(context),
             fontWeight: FontWeight.w500,

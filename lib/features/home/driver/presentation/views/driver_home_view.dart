@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../../core/theme/app_colors.dart';
+import '../../../../../shared/widgets/top_bar.dart';
 
 class DriverHomeView extends StatelessWidget {
   const DriverHomeView({super.key});
@@ -10,8 +11,18 @@ class DriverHomeView extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppColors.background(context),
       body: const SafeArea(
-        child: Center(
-          child: Text('Driver Home'),
+        child: Column(
+          children: [
+            TopBar(
+              title: 'Driver Mode',
+              subtitle: 'Ready to drive',
+            ),
+            Expanded(
+              child: Center(
+                child: Text('Driver Home Content'),
+              ),
+            ),
+          ],
         ),
       ),
     );

@@ -3,13 +3,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_zoom_drawer/flutter_zoom_drawer.dart';
 
 import '../../../../../core/theme/app_colors.dart';
-import '../../../../../shared/widgets/top_bar.dart';
-import 'widgets/home_bottom_panel.dart';
-import 'widgets/home_drawer.dart';
-import 'widgets/home_map_section.dart';
+import 'widgets/driver_home_drawer.dart';
 
-class PassengerHomeShell extends StatelessWidget {
-  const PassengerHomeShell({
+class DriverHomeShell extends StatelessWidget {
+  const DriverHomeShell({
     super.key,
     required this.child,
   });
@@ -28,7 +25,7 @@ class PassengerHomeShell extends StatelessWidget {
       ),
       child: ZoomDrawer(
         style: DrawerStyle.defaultStyle,
-        menuScreen: const HomeDrawer(),
+        menuScreen: const DriverHomeDrawer(),
         mainScreen: child,
         borderRadius: 30,
         showShadow: true,
@@ -36,26 +33,6 @@ class PassengerHomeShell extends StatelessWidget {
         menuBackgroundColor: AppColors.drawerBackground(context),
         moveMenuScreen: false,
         slideWidth: MediaQuery.sizeOf(context).width * 0.72,
-      ),
-    );
-  }
-}
-
-class PassengerHomeView extends StatelessWidget {
-  const PassengerHomeView({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background(context),
-      body: const SafeArea(
-        child: Column(
-          children: [
-            TopBar(),
-            Expanded(child: HomeMapSection()),
-            HomeBottomPanel(),
-          ],
-        ),
       ),
     );
   }
