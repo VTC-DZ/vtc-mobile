@@ -24,14 +24,18 @@ class DriverStatusReviewView extends StatelessWidget {
         body: SafeArea(
           child: Padding(
             padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 32.h),
-            child: BlocBuilder<KycStatusCubit, KycStatusState>(
+            child: BlocConsumer<KycStatusCubit, KycStatusState>(
+              listenWhen: (previous, current) =>
+                  !previous.isApproved && current.isApproved,
+              listener: (context, state) {
+                context.go(RouteNames.driverHome);
+              },
               builder: (context, state) {
                 return switch (state.status) {
                   KycStatusViewStatus.initial ||
                   KycStatusViewStatus.loading =>
                     const _LoadingContent(),
-                  KycStatusViewStatus.success =>
-                    _buildContent(context, state),
+                  KycStatusViewStatus.success => _buildContent(context, state),
                   KycStatusViewStatus.failure => _ErrorContent(
                       message: state.errorMessage,
                       onRetry: () =>
@@ -47,8 +51,8 @@ class DriverStatusReviewView extends StatelessWidget {
   }
 
   Widget _buildContent(BuildContext context, KycStatusState state) {
+    if (state.isApproved) return const _LoadingContent();
     if (state.isPending || state.isNone) return const _PendingContent();
-    if (state.isApproved) return const _ApprovedContent();
     if (state.isRejected) {
       return _RejectedContent(note: state.kycResult?.resubmissionNote);
     }
@@ -126,51 +130,6 @@ class _PendingContent extends StatelessWidget {
           label: AppStrings.goToHome,
           isEnabled: true,
           onPressed: () => context.go(RouteNames.passengerHome),
-        ),
-      ],
-    );
-  }
-}
-
-class _ApprovedContent extends StatelessWidget {
-  const _ApprovedContent();
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        const Spacer(flex: 1),
-        Icon(
-          Icons.check_circle_rounded,
-          size: 72.w,
-          color: AppColors.primary,
-        ),
-        SizedBox(height: 48.h),
-        Text(
-          AppStrings.statusApprovedTitle,
-          style: AppTextStyles.displayMedium(context).copyWith(
-            fontWeight: FontWeight.w700,
-          ),
-          textAlign: TextAlign.center,
-        ),
-        SizedBox(height: 16.h),
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16.w),
-          child: Text(
-            AppStrings.statusApprovedBody,
-            style: AppTextStyles.bodyLarge(context).copyWith(
-              color: AppColors.textSecondary(context),
-              height: 1.5,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ),
-        const Spacer(flex: 3),
-        PrimaryButton(
-          label: AppStrings.continueLabel,
-          isEnabled: true,
-          onPressed: () => context.go(RouteNames.driverHome),
         ),
       ],
     );
