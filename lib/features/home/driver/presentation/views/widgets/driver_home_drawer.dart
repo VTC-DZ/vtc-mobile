@@ -7,15 +7,18 @@ import 'package:go_router/go_router.dart';
 import '../../../../../../core/router/route_names.dart';
 import '../../../../../../core/theme/app_colors.dart';
 import '../../../../../../core/theme/app_text_styles.dart';
+import '../../../../../../core/widgets/app_toast.dart';
 import '../../../../../../shared/widgets/dashed_divider.dart';
 import '../../../../../../shared/widgets/drawer_item.dart';
 import '../../../../../../shared/widgets/drawer_menu_item_data.dart';
 import '../../../../../auth/data/repo/auth_repository.dart';
+import '../../../../../auth/data/repo/driver_repository.dart';
 import '../../cubit/driver_home_cubit.dart';
 import '../../cubit/driver_home_state.dart';
 
 const int _profileIndex = 1;
-const int _logoutIndex = 7;
+const int _switchRoleIndex = 7;
+const int _logoutIndex = 8;
 
 class DriverHomeDrawer extends StatelessWidget {
   const DriverHomeDrawer({super.key});
@@ -66,6 +69,13 @@ class DriverHomeDrawer extends StatelessWidget {
                   ),
                   SizedBox(height: 14.h),
                   DrawerItem(
+                    icon: Icons.swap_horiz_rounded,
+                    label: 'Go to Passenger',
+                    isSelected: selectedIndex == _switchRoleIndex,
+                    onTap: () => _onSwitchRoleTap(context),
+                  ),
+                  SizedBox(height: 14.h),
+                  DrawerItem(
                     icon: Icons.logout_outlined,
                     label: 'Logout',
                     color: AppColors.error,
@@ -79,6 +89,26 @@ class DriverHomeDrawer extends StatelessWidget {
         );
       },
     );
+  }
+
+  void _onSwitchRoleTap(BuildContext context) {
+    ZoomDrawer.of(context)?.close();
+    _performSwitch(context, targetRole: 'PASSENGER');
+  }
+
+  Future<void> _performSwitch(
+    BuildContext context, {
+    required String targetRole,
+  }) async {
+    try {
+      await const DriverRepository().switchRole(targetRole);
+      final destination = targetRole == 'DRIVER'
+          ? RouteNames.driverHome
+          : RouteNames.passengerHome;
+      context.go(destination);
+    } catch (e) {
+      AppToast.error('Failed to switch role. Please try again.');
+    }
   }
 
   void _onMenuItemTap(BuildContext context, int index) {

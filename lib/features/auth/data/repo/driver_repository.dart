@@ -65,6 +65,15 @@ final class DriverRepository {
     );
   }
 
+  Future<void> switchRole(String targetRole) async {
+    final response = await DioClient.post(
+      path: DriverApiConstants.switchRole,
+      data: {'targetRole': targetRole},
+    );
+    final data = response.data as Map<String, dynamic>;
+    await AuthSession.setAccessToken(data['accessToken'] as String);
+  }
+
   Future<DriverProfileModel> getDriverProfile() async {
     final response = await DioClient.get(path: DriverApiConstants.profile);
     return DriverProfileModel.fromJson(

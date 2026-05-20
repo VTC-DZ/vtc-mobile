@@ -65,6 +65,14 @@ final class AuthSession {
     );
   }
 
+  static Future<void> setAccessToken(String accessToken) async {
+    _accessToken = accessToken;
+    await SecureStorageHelper.write(
+      key: CacheKeys.secureStorageKeys.accessTokenKey,
+      value: accessToken,
+    );
+  }
+
   static Future<void> setWaitingKycStatus(bool value) async {
     _waitingKycStatus = value;
     await SecureStorageHelper.write(

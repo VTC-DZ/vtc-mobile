@@ -5,8 +5,10 @@ import 'package:flutter_zoom_drawer/flutter_zoom_drawer.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../../../core/router/route_names.dart';
+import '../../../../../../core/session/auth_session.dart';
 import '../../../../../../core/theme/app_colors.dart';
 import '../../../../../../core/theme/app_text_styles.dart';
+import '../../../../../../core/widgets/app_toast.dart';
 import '../../../../../../shared/widgets/dashed_divider.dart';
 import '../../../../../../shared/widgets/drawer_item.dart';
 import '../../../../../../shared/widgets/drawer_menu_item_data.dart';
@@ -15,7 +17,8 @@ import '../../cubit/passenger_home_cubit.dart';
 import '../../cubit/passenger_home_state.dart';
 
 const int _profileIndex = 1;
-const int _logoutIndex = 8;
+const int _switchRoleIndex = 8;
+const int _logoutIndex = 9;
 
 class HomeDrawer extends StatelessWidget {
   const HomeDrawer({super.key});
@@ -65,6 +68,16 @@ class HomeDrawer extends StatelessWidget {
                     selectedIndex: selectedIndex,
                     context: context,
                   ),
+                  if (AuthSession.waitingKycStatus ||
+                      AuthSession.hasDriverProfile) ...[
+                    SizedBox(height: 14.h),
+                    DrawerItem(
+                      icon: Icons.swap_horiz_rounded,
+                      label: 'Go to Driver',
+                      isSelected: selectedIndex == _switchRoleIndex,
+                      onTap: () => _onSwitchRoleTap(context),
+                    ),
+                  ],
                   SizedBox(height: 14.h),
                   DrawerItem(
                     icon: Icons.logout_outlined,
@@ -80,6 +93,26 @@ class HomeDrawer extends StatelessWidget {
         );
       },
     );
+  }
+
+  void _onSwitchRoleTap(BuildContext context) {
+    ZoomDrawer.of(context)?.close();
+    _performSwitch(context, targetRole: 'DRIVER');
+  }
+
+  Future<void> _performSwitch(
+    BuildContext context, {
+    required String targetRole,
+  }) async {
+    try {
+      await const AuthRepository().switchRole(targetRole);
+      final destination = targetRole == 'DRIVER'
+          ? RouteNames.driverHome
+          : RouteNames.passengerHome;
+      context.go(destination);
+    } catch (e) {
+      AppToast.error('Failed to switch role. Please try again.');
+    }
   }
 
   void _onMenuItemTap(BuildContext context, int index) {

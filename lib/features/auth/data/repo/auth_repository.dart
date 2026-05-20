@@ -33,6 +33,16 @@ final class AuthRepository {
     return tokens;
   }
 
+  Future<void> switchRole(String targetRole) async {
+    final response = await DioClient.post(
+      path: PassengerApiConstants.switchRole,
+      data: {'targetRole': targetRole},
+    );
+    final data = response.data as Map<String, dynamic>;
+
+    await AuthSession.setAccessToken(data['accessToken'] as String);
+  }
+
   /// Calls the logout endpoint, clears all local tokens, and navigates to the
   /// phone entry screen. Errors from the API are silently ignored so that the
   /// user is always logged out locally even if the network call fails.

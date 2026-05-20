@@ -10,6 +10,7 @@ abstract final class DriverApiConstants {
   // static const String otpVerify = '$_base/auth/otp/verify';  //! use passenger otp verify
   static const String refresh = '$_base/auth/refresh'; //! use passenger refresh
   static const String logout = '$_base/auth/logout'; //! use passenger logout
+  static const String switchRole = '$_base/auth/switch-role';
 
   // Registration
   static const String registration = '$_base/registration';
