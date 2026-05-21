@@ -66,11 +66,11 @@ class _StepContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final step = context.select<DriverProfileCubit, DriverStep>(
-      (c) => c.state.currentStep,
+    final cubitState = context.select<DriverProfileCubit, DriverProfileState>(
+      (c) => c.state,
     );
     return IndexedStack(
-      index: step.index,
+      index: cubitState.currentStep.index,
       children: const [
         DriverStep1PersonalInfo(),
         DriverStep2VehicleInfo(),

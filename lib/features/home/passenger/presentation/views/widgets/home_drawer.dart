@@ -77,6 +77,22 @@ class HomeDrawer extends StatelessWidget {
                       isSelected: selectedIndex == _switchRoleIndex,
                       onTap: () => _onSwitchRoleTap(context),
                     ),
+                  ] else ...[
+                    SizedBox(height: 14.h),
+                    DrawerItem(
+                      icon: Icons.drive_eta_rounded,
+                      label: 'Become a Driver',
+                      isSelected: selectedIndex == _switchRoleIndex,
+                      onTap: () {
+                        ZoomDrawer.of(context)?.close();
+                        final profile =
+                            context.read<PassengerHomeCubit>().state.profile;
+                        context.push(
+                          RouteNames.driverProfile,
+                          extra: profile,
+                        );
+                      },
+                    ),
                   ],
                   SizedBox(height: 14.h),
                   DrawerItem(

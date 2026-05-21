@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../../../../core/constants/app_strings.dart';
 import '../../../../../core/utils/validators.dart';
 import '../../../data/models/gender.dart';
+import '../../../data/models/passenger_profile_model.dart';
 import '../../../data/repo/driver_repository.dart';
 import '../../../data/models/driver_document.dart';
 import 'document_pick_result.dart';
@@ -12,10 +13,24 @@ import 'driver_profile_state.dart';
 
 final class DriverProfileCubit extends Cubit<DriverProfileState> {
   DriverProfileCubit(
-    this._driverRepo,
-  ) : super(const DriverProfileState());
+    this._driverRepo, {
+    this.passengerProfile,
+  }) : super(DriverProfileState(
+          personalInfo: passengerProfile != null
+              ? DriverPersonalInfo(
+                  firstName: passengerProfile.fullName.split(' ').first,
+                  lastName: passengerProfile.fullName
+                      .split(' ')
+                      .skip(1)
+                      .join(' '),
+                  gender: passengerProfile.gender,
+                  dateOfBirth: passengerProfile.dateOfBirth,
+                )
+              : const DriverPersonalInfo(),
+        ));
 
   final DriverRepository _driverRepo;
+  final PassengerProfileModel? passengerProfile;
   final _picker = DriverDocumentPickerService();
 
   // ── Step 1: Personal Info ─────────────────────────────────────────────────
@@ -158,9 +173,9 @@ final class DriverProfileCubit extends Cubit<DriverProfileState> {
       errorMessage: '',
     ));
     try {
-      final p = state.personalInfo;
       final v = state.vehicleInfo;
       final d = state.documents;
+      final p = state.personalInfo;
       await _driverRepo.submitKyc(
         reqFields: {
           'firstName': p.firstName.trim(),
@@ -206,7 +221,8 @@ final class DriverProfileCubit extends Cubit<DriverProfileState> {
         return;
       }
       if (target == DriverStep.documents &&
-          (!state.canProceedStep1 || !state.canProceedStep2)) {
+          !state.canProceedStep1 &&
+          !state.canProceedStep2) {
         return;
       }
     }

@@ -24,6 +24,14 @@ class _DriverStep1PersonalInfoState extends State<DriverStep1PersonalInfo> {
   final TextEditingController _lastNameController = TextEditingController();
 
   @override
+  void initState() {
+    super.initState();
+    final info = context.read<DriverProfileCubit>().state.personalInfo;
+    if (info.firstName.isNotEmpty) _firstNameController.text = info.firstName;
+    if (info.lastName.isNotEmpty) _lastNameController.text = info.lastName;
+  }
+
+  @override
   void dispose() {
     _firstNameController.dispose();
     _lastNameController.dispose();
@@ -45,7 +53,6 @@ class _DriverStep1PersonalInfoState extends State<DriverStep1PersonalInfo> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              //  ── First Name ─────────────────────────────────────────────────────
               const ProfileFieldLabelWidget(label: AppStrings.fieldFirstName),
               SizedBox(height: 8.h),
               ProfileNameFieldWidget(
@@ -54,10 +61,7 @@ class _DriverStep1PersonalInfoState extends State<DriverStep1PersonalInfo> {
                 error: info.firstNameError,
                 enabled: !isSubmitting,
               ),
-
               SizedBox(height: 24.h),
-
-              // ── Last Name ──────────────────────────────────────────────────────
               const ProfileFieldLabelWidget(label: AppStrings.fieldLastName),
               SizedBox(height: 8.h),
               ProfileNameFieldWidget(
@@ -66,10 +70,7 @@ class _DriverStep1PersonalInfoState extends State<DriverStep1PersonalInfo> {
                 error: info.lastNameError,
                 enabled: !isSubmitting,
               ),
-
               SizedBox(height: 24.h),
-
-              // ── Date of Birth ──────────────────────────────────────────────────
               const ProfileFieldLabelWidget(label: AppStrings.fieldDateOfBirth),
               SizedBox(height: 8.h),
               DriverDatePickerFieldWidget(
@@ -77,10 +78,7 @@ class _DriverStep1PersonalInfoState extends State<DriverStep1PersonalInfo> {
                 onDateSelected: cubit.dateOfBirthSelected,
                 enabled: !isSubmitting,
               ),
-
               SizedBox(height: 24.h),
-
-              // ── Gender ─────────────────────────────────────────────────────────
               const ProfileFieldLabelWidget(label: AppStrings.fieldGender),
               SizedBox(height: 8.h),
               ProfileGenderToggleWidget(

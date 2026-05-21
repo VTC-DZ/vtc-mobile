@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../features/auth/data/models/passenger_profile_model.dart';
 import '../../features/auth/data/repo/auth_repository.dart';
 import '../../features/auth/data/repo/driver_repository.dart';
 import '../../features/auth/data/repo/profile_repository.dart';
@@ -130,6 +131,7 @@ final class AppRouter {
           return BlocProvider<DriverProfileCubit>(
             create: (_) => DriverProfileCubit(
               _driverRepository,
+              passengerProfile: state.extra as PassengerProfileModel?,
             ),
             child: const DriverRegistrationView(),
           );
