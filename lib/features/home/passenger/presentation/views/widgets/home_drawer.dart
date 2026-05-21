@@ -122,6 +122,7 @@ class HomeDrawer extends StatelessWidget {
   }) async {
     try {
       await const AuthRepository().switchRole(targetRole);
+      await AuthSession.setLastRole(targetRole);
       final destination = targetRole == 'DRIVER'
           ? RouteNames.driverHome
           : RouteNames.passengerHome;

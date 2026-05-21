@@ -1,4 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:khfif_drif/core/session/auth_session.dart';
 import 'package:khfif_drif/features/auth/data/models/passenger_profile_model.dart';
 
 import '../../../../../features/auth/data/repo/profile_repository.dart';
@@ -13,6 +14,9 @@ class PassengerHomeCubit extends Cubit<PassengerHomeState> {
     emit(state.copyWith(status: PassengerHomeStatus.loading));
     try {
       final PassengerProfileModel profile = await _repository.getProfile();
+      if (profile.hasDriverProfile && !AuthSession.hasDriverProfile) {
+        await AuthSession.setHasDriverProfile(true);
+      }
       emit(state.copyWith(
           status: PassengerHomeStatus.success, profile: profile));
     } catch (e) {

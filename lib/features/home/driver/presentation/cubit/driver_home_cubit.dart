@@ -12,10 +12,8 @@ class DriverHomeCubit extends Cubit<DriverHomeState> {
   Future<void> getProfile() async {
     emit(state.copyWith(status: DriverHomeStatus.loading));
     try {
-      final DriverProfileModel profile =
-          await _repository.getDriverProfile();
-      emit(state.copyWith(
-          status: DriverHomeStatus.success, profile: profile));
+      final DriverProfileModel profile = await _repository.getDriverProfile();
+      emit(state.copyWith(status: DriverHomeStatus.success, profile: profile));
     } catch (e) {
       emit(state.copyWith(
         status: DriverHomeStatus.failure,
