@@ -9,7 +9,6 @@ final class PassengerProfileState extends Equatable {
   final DateTime? dateOfBirth;
   final ProfileStatus status;
   final String nameError;
-  final String emailError;
   final String errorMessage;
 
   const PassengerProfileState({
@@ -17,7 +16,6 @@ final class PassengerProfileState extends Equatable {
     this.dateOfBirth,
     this.status = ProfileStatus.initial,
     this.nameError = '',
-    this.emailError = '',
     this.errorMessage = '',
   });
 
@@ -25,11 +23,7 @@ final class PassengerProfileState extends Equatable {
   bool get isDateOfBirthSelected => dateOfBirth != null;
 
   bool get canSubmit =>
-      nameError.isEmpty &&
-      emailError.isEmpty &&
-      isGenderSelected &&
-      isDateOfBirthSelected &&
-      status != ProfileStatus.loading;
+      nameError.isEmpty && isGenderSelected && isDateOfBirthSelected;
 
   PassengerProfileState copyWith({
     Gender? gender,
@@ -44,12 +38,11 @@ final class PassengerProfileState extends Equatable {
       dateOfBirth: dateOfBirth ?? this.dateOfBirth,
       status: status ?? this.status,
       nameError: nameError ?? this.nameError,
-      emailError: emailError ?? this.emailError,
       errorMessage: errorMessage ?? this.errorMessage,
     );
   }
 
   @override
   List<Object?> get props =>
-      [gender, dateOfBirth, status, nameError, emailError, errorMessage];
+      [gender, dateOfBirth, status, nameError, errorMessage];
 }

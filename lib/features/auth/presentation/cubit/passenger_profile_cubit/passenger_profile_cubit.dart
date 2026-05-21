@@ -27,7 +27,7 @@ final class PassengerProfileCubit extends Cubit<PassengerProfileState> {
     emit(state.copyWith(emailError: Validators.email(value.trim())));
   }
 
-  Future<void> submit({required String fullName, required String email}) async {
+  Future<void> submit({required String fullName}) async {
     if (!state.canSubmit) return;
 
     emit(state.copyWith(status: ProfileStatus.loading, errorMessage: ''));

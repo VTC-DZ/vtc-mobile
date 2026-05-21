@@ -4,7 +4,6 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../../../../cubit/passenger_profile_cubit/passenger_profile_cubit.dart';
 import '../../../../cubit/passenger_profile_cubit/passenger_profile_state.dart';
-import 'profile_email_field_widget.dart';
 import 'profile_error_banner_widget.dart';
 import '../profile_field_label_widget.dart';
 import '../profile_gender_toggle_widget.dart';
@@ -15,11 +14,9 @@ class PassengerProfileFormSection extends StatelessWidget {
   const PassengerProfileFormSection({
     super.key,
     required this.nameController,
-    required this.emailController,
   });
 
   final TextEditingController nameController;
-  final TextEditingController emailController;
 
   @override
   Widget build(BuildContext context) {
@@ -30,7 +27,6 @@ class PassengerProfileFormSection extends StatelessWidget {
           previous.gender != current.gender ||
           previous.dateOfBirth != current.dateOfBirth ||
           previous.nameError != current.nameError ||
-          previous.emailError != current.emailError ||
           previous.errorMessage != current.errorMessage ||
           previous.status != current.status,
       builder: (context, state) {
@@ -63,18 +59,7 @@ class PassengerProfileFormSection extends StatelessWidget {
               onDateSelected: cubit.dateOfBirthChanged,
               enabled: !isSubmitting,
             ),
-            SizedBox(height: 24.h),
-            const ProfileFieldLabelWidget(
-              label: 'Email',
-              badge: 'Optional',
-            ),
             SizedBox(height: 8.h),
-            ProfileEmailFieldWidget(
-              controller: emailController,
-              onChanged: cubit.emailChanged,
-              error: state.emailError,
-              enabled: !isSubmitting,
-            ),
             AnimatedSize(
               duration: const Duration(milliseconds: 160),
               curve: Curves.easeOut,

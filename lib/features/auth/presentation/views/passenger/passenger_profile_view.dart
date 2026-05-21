@@ -25,12 +25,10 @@ class PassengerProfileView extends StatefulWidget {
 
 class _PassengerProfileViewState extends State<PassengerProfileView> {
   late final TextEditingController _nameController = TextEditingController();
-  late final TextEditingController _emailController = TextEditingController();
 
   @override
   void dispose() {
     _nameController.dispose();
-    _emailController.dispose();
     super.dispose();
   }
 
@@ -65,10 +63,7 @@ class _PassengerProfileViewState extends State<PassengerProfileView> {
                     style: AppTextStyles.bodyMedium(context),
                   ),
                   SizedBox(height: 40.h),
-                  PassengerProfileFormSection(
-                    nameController: _nameController,
-                    emailController: _emailController,
-                  ),
+                  PassengerProfileFormSection(nameController: _nameController),
                 ],
               ),
             ),
@@ -88,7 +83,6 @@ class _PassengerProfileViewState extends State<PassengerProfileView> {
                   isLoading: isLoading,
                   onPressed: () => context.read<PassengerProfileCubit>().submit(
                         fullName: _nameController.text,
-                        email: _emailController.text,
                       ),
                 );
               },
