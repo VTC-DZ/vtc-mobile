@@ -18,6 +18,7 @@ import '../../cubit/passenger_home_cubit.dart';
 import '../../cubit/passenger_home_state.dart';
 
 const int _profileIndex = 1;
+const int _savedPlacesIndex = 3;
 const int _switchRoleIndex = 8;
 const int _logoutIndex = 9;
 
@@ -148,9 +149,11 @@ class HomeDrawer extends StatelessWidget {
       return;
     }
 
-    final route = index == _profileIndex
-        ? RouteNames.passengerProfileEdit
-        : RouteNames.passengerHome;
+    final route = switch (index) {
+      _profileIndex => RouteNames.passengerProfileEdit,
+      _savedPlacesIndex => RouteNames.savedPlaces,
+      _ => RouteNames.passengerHome,
+    };
     final selectedIndex = index == _profileIndex ? _profileIndex : 0;
 
     context.read<PassengerHomeCubit>().updateSelectedIndex(selectedIndex);

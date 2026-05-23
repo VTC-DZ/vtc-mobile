@@ -29,6 +29,12 @@ import '../../features/profile/passenger/presentation/cubit/passenger_email_edit
 import '../../features/profile/passenger/presentation/cubit/passenger_profile_edit_cubit.dart';
 import '../../features/profile/passenger/presentation/views/passenger_email_edit_view.dart';
 import '../../features/profile/passenger/presentation/views/passenger_profile_edit_view.dart';
+import '../../features/saved_places/data/address_repository.dart';
+import '../../features/saved_places/presentation/cubit/saved_places_cubit.dart';
+import '../../features/saved_places/presentation/views/saved_places_view.dart';
+import '../../features/saved_places/data/address_model.dart';
+import '../../features/saved_places/presentation/views/address_create_view.dart';
+import '../../features/saved_places/presentation/views/address_edit_view.dart';
 import '../session/auth_session.dart';
 import 'route_names.dart';
 
@@ -124,6 +130,31 @@ final class AppRouter {
                   child: const PassengerEmailEditView(),
                 );
               },
+            ),
+            ShellRoute(
+              builder: (context, state, child) => BlocProvider(
+                create: (_) => SavedPlacesCubit(const AddressRepository())
+                  ..getAddresses(),
+                child: child,
+              ),
+              routes: [
+                GoRoute(
+                  path: RouteNames.savedPlaces,
+                  builder: (context, state) => const SavedPlacesView(),
+                ),
+                GoRoute(
+                  path: RouteNames.addressForm,
+                  builder: (context, state) => const AddressCreateView(),
+                ),
+                GoRoute(
+                  path: RouteNames.addressEdit,
+                  builder: (context, state) {
+                    return AddressEditView(
+                      address: state.extra as AddressModel,
+                    );
+                  },
+                ),
+              ],
             ),
           ]),
       GoRoute(

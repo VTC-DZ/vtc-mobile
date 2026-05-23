@@ -10,22 +10,6 @@
   ],
   "paths": {
     "/api/driver/profile": {
-      "get": {
-        "tags": ["driver-profile-controller"],
-        "operationId": "getProfile",
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/DriverProfileResponse"
-                }
-              }
-            }
-          }
-        }
-      },
       "put": {
         "tags": ["driver-profile-controller"],
         "operationId": "updateProfile",
@@ -53,63 +37,9 @@
         }
       }
     },
-    "/api/driver/profile/phone/request": {
+    "/api/driver/kyc/submit": {
       "post": {
-        "tags": ["driver-change-phone-controller"],
-        "operationId": "requestPhoneChange",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/DriverChangePhoneRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "*/*": {
-                "schema": { "$ref": "#/components/schemas/OtpRequestResponse" }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/driver/profile/phone/confirm": {
-      "post": {
-        "tags": ["driver-change-phone-controller"],
-        "operationId": "confirmPhoneChange",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/DriverChangePhoneConfirmRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/DriverChangePhoneResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/driver/profile/kyc/submit": {
-      "post": {
-        "tags": ["kyc-controller"],
+        "tags": ["driver-kyc-controller"],
         "operationId": "submitKyc",
         "requestBody": {
           "content": {
@@ -156,112 +86,9 @@
         }
       }
     },
-    "/api/driver/auth/switch-role": {
-      "post": {
-        "tags": ["driver-auth-controller"],
-        "operationId": "switchRole",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": { "$ref": "#/components/schemas/SwitchRoleRequest" }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "*/*": {
-                "schema": { "$ref": "#/components/schemas/AccessTokenResponse" }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/driver/auth/refresh": {
-      "post": {
-        "tags": ["driver-auth-controller"],
-        "operationId": "refresh",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": { "$ref": "#/components/schemas/RefreshRequest" }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "*/*": {
-                "schema": { "$ref": "#/components/schemas/AuthTokensResponse" }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/driver/auth/otp/verify": {
-      "post": {
-        "tags": ["driver-auth-controller"],
-        "operationId": "verifyOtp",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": { "$ref": "#/components/schemas/OtpVerifyRequest" }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "*/*": {
-                "schema": { "$ref": "#/components/schemas/AuthTokensResponse" }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/driver/auth/otp/request": {
-      "post": {
-        "tags": ["driver-auth-controller"],
-        "operationId": "requestOtp",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": { "$ref": "#/components/schemas/OtpRequestRequest" }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "*/*": {
-                "schema": { "$ref": "#/components/schemas/OtpRequestResponse" }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/driver/auth/logout": {
-      "post": {
-        "tags": ["driver-auth-controller"],
-        "operationId": "logout",
-        "responses": { "200": { "description": "OK" } }
-      }
-    },
-    "/api/driver/profile/kyc/status": {
+    "/api/driver/kyc/status": {
       "get": {
-        "tags": ["kyc-controller"],
+        "tags": ["driver-kyc-controller"],
         "operationId": "getStatus",
         "responses": {
           "200": {
@@ -285,38 +112,28 @@
       "DriverProfileResponse": {
         "type": "object",
         "properties": {
+          "id": { "type": "string", "format": "uuid" },
           "fullName": { "type": "string" },
           "gender": { "type": "string", "enum": ["MALE", "FEMALE"] },
           "phone": { "type": "string" },
+          "email": { "type": "string" },
+          "status": {
+            "type": "string",
+            "enum": ["ACTIVE", "BLOCKED", "SUSPENDED"]
+          },
+          "dateOfBirth": { "type": "string", "format": "date" },
           "kycStatus": {
             "type": "string",
-            "enum": ["NONE", "PENDING", "APPROVED", "REJECTED"]
+            "enum": ["NONE", "PENDING", "APPROVED", "REJECTED", "REVOKED"]
           },
-          "acceptsFemaleOnly": { "type": "boolean" }
-        }
-      },
-      "DriverChangePhoneRequest": {
-        "type": "object",
-        "properties": { "newPhone": { "type": "string", "minLength": 1 } },
-        "required": ["newPhone"]
-      },
-      "OtpRequestResponse": {
-        "type": "object",
-        "properties": { "expiresIn": { "type": "integer", "format": "int32" } }
-      },
-      "DriverChangePhoneConfirmRequest": {
-        "type": "object",
-        "properties": {
-          "newPhone": { "type": "string", "minLength": 1 },
-          "code": { "type": "string", "minLength": 1, "pattern": "^\\d{6}$" }
-        },
-        "required": ["code", "newPhone"]
-      },
-      "DriverChangePhoneResponse": {
-        "type": "object",
-        "properties": {
-          "accessToken": { "type": "string" },
-          "refreshToken": { "type": "string" }
+          "acceptsFemaleOnly": { "type": "boolean" },
+          "vehicleCategory": {
+            "type": "string",
+            "enum": ["CAR", "MOTORCYCLE", "VAN"]
+          },
+          "vehicleTier": { "type": "string", "enum": ["STANDARD", "COMFORT"] },
+          "isOnline": { "type": "boolean" },
+          "requiresRekyc": { "type": "boolean" }
         }
       },
       "KycSubmitRequest": {
@@ -362,43 +179,6 @@
           "status": { "type": "string" },
           "submittedAt": { "type": "string", "format": "date-time" }
         }
-      },
-      "SwitchRoleRequest": {
-        "type": "object",
-        "properties": { "targetRole": { "type": "string" } },
-        "required": ["targetRole"]
-      },
-      "AccessTokenResponse": {
-        "type": "object",
-        "properties": { "accessToken": { "type": "string" } }
-      },
-      "RefreshRequest": {
-        "type": "object",
-        "properties": { "refreshToken": { "type": "string", "minLength": 1 } },
-        "required": ["refreshToken"]
-      },
-      "AuthTokensResponse": {
-        "type": "object",
-        "properties": {
-          "accessToken": { "type": "string" },
-          "refreshToken": { "type": "string" },
-          "isNewUser": { "type": "boolean" },
-          "profileCompleted": { "type": "boolean" },
-          "hasDriverProfile": { "type": "boolean" }
-        }
-      },
-      "OtpVerifyRequest": {
-        "type": "object",
-        "properties": {
-          "phone": { "type": "string", "minLength": 1 },
-          "code": { "type": "string", "minLength": 1, "pattern": "^\\d{6}$" }
-        },
-        "required": ["code", "phone"]
-      },
-      "OtpRequestRequest": {
-        "type": "object",
-        "properties": { "phone": { "type": "string", "minLength": 1 } },
-        "required": ["phone"]
       },
       "KycStatusResponse": {
         "type": "object",

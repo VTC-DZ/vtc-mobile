@@ -9,47 +9,9 @@
     { "url": "http://localhost:8080", "description": "Generated server url" }
   ],
   "paths": {
-    "/api/passenger/profile": {
-      "get": {
-        "tags": ["profile-controller"],
-        "operationId": "getProfile",
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "*/*": {
-                "schema": { "$ref": "#/components/schemas/ProfileResponse" }
-              }
-            }
-          }
-        }
-      },
+    "/api/passenger/addresses/{id}": {
       "put": {
-        "tags": ["profile-controller"],
-        "operationId": "updateProfile",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": { "$ref": "#/components/schemas/ProfileUpdateRequest" }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "*/*": {
-                "schema": { "$ref": "#/components/schemas/ProfileResponse" }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/passenger/profile/addresses/{id}": {
-      "put": {
-        "tags": ["address-controller"],
+        "tags": ["passenger-address-controller"],
         "operationId": "updateAddress",
         "parameters": [
           {
@@ -81,7 +43,7 @@
         }
       },
       "delete": {
-        "tags": ["address-controller"],
+        "tags": ["passenger-address-controller"],
         "operationId": "deleteAddress",
         "parameters": [
           {
@@ -94,63 +56,9 @@
         "responses": { "200": { "description": "OK" } }
       }
     },
-    "/api/passenger/profile/phone/request": {
-      "post": {
-        "tags": ["passenger-change-phone-controller"],
-        "operationId": "requestPhoneChange",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/PassengerChangePhoneRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "*/*": {
-                "schema": { "$ref": "#/components/schemas/OtpRequestResponse" }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/passenger/profile/phone/confirm": {
-      "post": {
-        "tags": ["passenger-change-phone-controller"],
-        "operationId": "confirmPhoneChange",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/PassengerChangePhoneConfirmRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/PassengerChangePhoneResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/passenger/profile/addresses": {
+    "/api/passenger/addresses": {
       "get": {
-        "tags": ["address-controller"],
+        "tags": ["passenger-address-controller"],
         "operationId": "listAddresses",
         "responses": {
           "200": {
@@ -166,7 +74,7 @@
         }
       },
       "post": {
-        "tags": ["address-controller"],
+        "tags": ["passenger-address-controller"],
         "operationId": "addAddress",
         "parameters": [
           {
@@ -197,162 +105,10 @@
           }
         }
       }
-    },
-    "/api/passenger/auth/switch-role": {
-      "post": {
-        "tags": ["passenger-auth-controller"],
-        "operationId": "switchRole",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": { "$ref": "#/components/schemas/SwitchRoleRequest" }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "*/*": {
-                "schema": { "$ref": "#/components/schemas/AccessTokenResponse" }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/passenger/auth/refresh": {
-      "post": {
-        "tags": ["passenger-auth-controller"],
-        "operationId": "refresh",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": { "$ref": "#/components/schemas/RefreshRequest" }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "*/*": {
-                "schema": { "$ref": "#/components/schemas/AuthTokensResponse" }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/passenger/auth/otp/verify": {
-      "post": {
-        "tags": ["passenger-auth-controller"],
-        "operationId": "verifyOtp",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": { "$ref": "#/components/schemas/OtpVerifyRequest" }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "*/*": {
-                "schema": { "$ref": "#/components/schemas/AuthTokensResponse" }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/passenger/auth/otp/request": {
-      "post": {
-        "tags": ["passenger-auth-controller"],
-        "operationId": "requestOtp",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": { "$ref": "#/components/schemas/OtpRequestRequest" }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "*/*": {
-                "schema": { "$ref": "#/components/schemas/OtpRequestResponse" }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/passenger/auth/logout": {
-      "post": {
-        "tags": ["passenger-auth-controller"],
-        "operationId": "logout",
-        "responses": { "200": { "description": "OK" } }
-      }
-    },
-    "/api/passenger/email": {
-      "patch": {
-        "tags": ["profile-controller"],
-        "operationId": "updateEmail",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": { "$ref": "#/components/schemas/EmailUpdateRequest" }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "*/*": {
-                "schema": { "$ref": "#/components/schemas/ProfileResponse" }
-              }
-            }
-          }
-        }
-      }
     }
   },
   "components": {
     "schemas": {
-      "ProfileUpdateRequest": {
-        "type": "object",
-        "properties": {
-          "fullName": { "type": "string", "pattern": "^[\\p{L} '\\-]{2,100}$" },
-          "gender": { "type": "string", "enum": ["MALE", "FEMALE"] },
-          "dateOfBirth": { "type": "string", "format": "date" }
-        }
-      },
-      "ProfileResponse": {
-        "type": "object",
-        "properties": {
-          "id": { "type": "string", "format": "uuid" },
-          "phone": { "type": "string" },
-          "fullName": { "type": "string" },
-          "gender": { "type": "string", "enum": ["MALE", "FEMALE"] },
-          "email": { "type": "string" },
-          "dateOfBirth": { "type": "string", "format": "date" },
-          "status": {
-            "type": "string",
-            "enum": ["ACTIVE", "BLOCKED", "SUSPENDED"]
-          },
-          "hasDriverProfile": { "type": "boolean" },
-          "profileCompleted": { "type": "boolean" }
-        }
-      },
       "UpdateAddressRequest": {
         "type": "object",
         "properties": {
@@ -392,30 +148,6 @@
           "description": { "type": "string" }
         }
       },
-      "PassengerChangePhoneRequest": {
-        "type": "object",
-        "properties": { "newPhone": { "type": "string", "minLength": 1 } },
-        "required": ["newPhone"]
-      },
-      "OtpRequestResponse": {
-        "type": "object",
-        "properties": { "expiresIn": { "type": "integer", "format": "int32" } }
-      },
-      "PassengerChangePhoneConfirmRequest": {
-        "type": "object",
-        "properties": {
-          "newPhone": { "type": "string", "minLength": 1 },
-          "code": { "type": "string", "minLength": 1, "pattern": "^\\d{6}$" }
-        },
-        "required": ["code", "newPhone"]
-      },
-      "PassengerChangePhoneResponse": {
-        "type": "object",
-        "properties": {
-          "accessToken": { "type": "string" },
-          "refreshToken": { "type": "string" }
-        }
-      },
       "AddAddressRequest": {
         "type": "object",
         "properties": {
@@ -440,47 +172,6 @@
           "description": { "type": "string", "maxLength": 1024, "minLength": 0 }
         },
         "required": ["address", "label", "type"]
-      },
-      "SwitchRoleRequest": {
-        "type": "object",
-        "properties": { "targetRole": { "type": "string" } },
-        "required": ["targetRole"]
-      },
-      "AccessTokenResponse": {
-        "type": "object",
-        "properties": { "accessToken": { "type": "string" } }
-      },
-      "RefreshRequest": {
-        "type": "object",
-        "properties": { "refreshToken": { "type": "string", "minLength": 1 } },
-        "required": ["refreshToken"]
-      },
-      "AuthTokensResponse": {
-        "type": "object",
-        "properties": {
-          "accessToken": { "type": "string" },
-          "refreshToken": { "type": "string" },
-          "isNewUser": { "type": "boolean" },
-          "profileCompleted": { "type": "boolean" },
-          "hasDriverProfile": { "type": "boolean" }
-        }
-      },
-      "OtpVerifyRequest": {
-        "type": "object",
-        "properties": {
-          "phone": { "type": "string", "minLength": 1 },
-          "code": { "type": "string", "minLength": 1, "pattern": "^\\d{6}$" }
-        },
-        "required": ["code", "phone"]
-      },
-      "OtpRequestRequest": {
-        "type": "object",
-        "properties": { "phone": { "type": "string", "minLength": 1 } },
-        "required": ["phone"]
-      },
-      "EmailUpdateRequest": {
-        "type": "object",
-        "properties": { "email": { "type": "string" } }
       },
       "SavedAddressListResponse": {
         "type": "object",
