@@ -9,6 +9,7 @@ import '../../../../../core/theme/app_text_styles.dart';
 import '../../../../../shared/widgets/app_confirm_dialog.dart';
 import '../../../../saved_places/data/address_model.dart';
 import '../../../../saved_places/presentation/cubit/saved_places_cubit.dart';
+import '../../../../saved_places/presentation/cubit/saved_places_state.dart';
 import 'address_type_icon_widget.dart';
 
 class AddressCardWidget extends StatelessWidget {
@@ -17,18 +18,32 @@ class AddressCardWidget extends StatelessWidget {
   final AddressModel address;
 
   void _confirmDelete(BuildContext context) async {
-    final confirmed = await showAppConfirmDialog(
+    final cubit = context.read<SavedPlacesCubit>();
+    await showDialog<bool>(
       context: context,
-      title: 'Delete Address',
-      message: 'Are you sure you want to delete "${address.label}"?',
-      confirmLabel: 'Delete',
-      isDestructive: true,
+      barrierColor: Colors.black.withValues(alpha: 0.5),
+      builder: (_) => BlocConsumer<SavedPlacesCubit, SavedPlacesState>(
+        bloc: cubit,
+        listener: (context, state) {
+          if (state.deleteAddressStatus == DeleteAddressStatus.success) {
+            Navigator.of(context).pop(true);
+          }
+        },
+        builder: (context, state) {
+          final isLoading =
+              state.deleteAddressStatus == DeleteAddressStatus.loading;
+
+          return AppConfirmDialog(
+            title: 'Delete Address',
+            message: 'Are you sure you want to delete "${address.label}"?',
+            confirmLabel: 'Delete',
+            isDestructive: true,
+            isLoading: isLoading,
+            onConfirm: () => cubit.deleteAddress(address.id!),
+          );
+        },
+      ),
     );
-    if (confirmed == true) {
-      if (context.mounted) {
-        context.read<SavedPlacesCubit>().deleteAddress(address.id!);
-      }
-    }
   }
 
   @override

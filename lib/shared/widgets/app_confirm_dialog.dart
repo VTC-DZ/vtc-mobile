@@ -24,27 +24,32 @@ Future<bool?> showAppConfirmDialog({
   String confirmLabel = 'Confirm',
   String cancelLabel = 'Cancel',
   bool isDestructive = false,
+  bool isLoading = false,
 }) {
   return showDialog<bool>(
     context: context,
     barrierColor: Colors.black.withValues(alpha: 0.5),
-    builder: (_) => _AppConfirmDialog(
+    builder: (_) => AppConfirmDialog(
       title: title,
       message: message,
       confirmLabel: confirmLabel,
       cancelLabel: cancelLabel,
       isDestructive: isDestructive,
+      isLoading: isLoading,
     ),
   );
 }
 
-class _AppConfirmDialog extends StatelessWidget {
-  const _AppConfirmDialog({
+class AppConfirmDialog extends StatelessWidget {
+  const AppConfirmDialog({
+    super.key,
     required this.title,
     required this.message,
-    required this.confirmLabel,
-    required this.cancelLabel,
-    required this.isDestructive,
+    this.confirmLabel = 'Confirm',
+    this.cancelLabel = 'Cancel',
+    this.isDestructive = false,
+    this.isLoading = false,
+    this.onConfirm,
   });
 
   final String title;
@@ -52,6 +57,8 @@ class _AppConfirmDialog extends StatelessWidget {
   final String confirmLabel;
   final String cancelLabel;
   final bool isDestructive;
+  final bool isLoading;
+  final VoidCallback? onConfirm;
 
   @override
   Widget build(BuildContext context) {
@@ -95,18 +102,29 @@ class _AppConfirmDialog extends StatelessWidget {
                   color: confirmColor,
                   borderRadius: BorderRadius.circular(12.r),
                   child: InkWell(
-                    onTap: () => Navigator.of(context).pop(true),
+                    onTap: isLoading
+                            ? null
+                            : onConfirm ?? () => Navigator.of(context).pop(true),
                     borderRadius: BorderRadius.circular(12.r),
                     splashColor: AppColors.white.withValues(alpha: 0.2),
                     highlightColor: AppColors.white.withValues(alpha: 0.1),
                     child: Center(
-                      child: Text(
-                        confirmLabel,
-                        style: AppTextStyles.labelMedium(context).copyWith(
-                          color: AppColors.white,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
+                      child: isLoading
+                          ? SizedBox(
+                              width: 20.w,
+                              height: 20.w,
+                              child: const CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: AppColors.white,
+                              ),
+                            )
+                          : Text(
+                              confirmLabel,
+                              style: AppTextStyles.labelMedium(context).copyWith(
+                                color: AppColors.white,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
                     ),
                   ),
                 ),
