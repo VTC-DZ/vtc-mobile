@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-import '../../../../../../../core/theme/app_colors.dart';
+import '../../../../../../core/theme/app_colors.dart';
 
 class ProfileEmailEditRowWidget extends StatelessWidget {
   const ProfileEmailEditRowWidget({super.key, required this.onTap, this.email});

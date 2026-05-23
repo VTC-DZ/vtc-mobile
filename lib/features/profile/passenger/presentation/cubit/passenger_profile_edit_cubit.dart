@@ -1,10 +1,10 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../../../../../core/utils/validators.dart';
-import '../../../../../../../features/auth/data/models/gender.dart';
-import '../../../../../../../features/auth/data/models/passenger_profile_model.dart';
-import '../../../../../../../features/auth/data/repo/profile_repository.dart';
+import '../../../../../../core/utils/validators.dart';
+import '../../../../../../features/auth/data/models/gender.dart';
+import '../../../../../../features/auth/data/models/passenger_profile_model.dart';
+import '../../../../../../features/auth/data/repo/profile_repository.dart';
 import 'passenger_profile_edit_state.dart';
 
 class PassengerProfileEditCubit extends Cubit<PassengerProfileEditState> {

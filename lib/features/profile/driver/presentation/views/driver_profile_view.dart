@@ -3,13 +3,13 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../../../../auth/presentation/views/widgets/profile/profile_field_label_widget.dart';
-import '../../../profile/passenger/presentation/views/widgets/profile_edit_shimmer_widget.dart';
+import '../../../passenger/presentation/views/widgets/profile_edit_shimmer_widget.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_text_styles.dart';
 import '../../../../../shared/widgets/app_scaffold.dart';
-import '../../../passenger/presentation/views/widgets/top_bar.dart';
-import '../cubit/driver_home_cubit.dart';
-import '../cubit/driver_home_state.dart';
+import '../../../../home/passenger/presentation/views/widgets/top_bar.dart';
+import '../../../../home/driver/presentation/cubit/driver_home_cubit.dart';
+import '../../../../home/driver/presentation/cubit/driver_home_state.dart';
 
 class DriverProfileView extends StatelessWidget {
   const DriverProfileView({super.key});

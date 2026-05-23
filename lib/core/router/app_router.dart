@@ -22,13 +22,13 @@ import '../../features/auth/presentation/views/driver/driver_rejection_view.dart
 import '../../features/home/driver/presentation/views/driver_home_view.dart';
 import '../../features/home/driver/presentation/cubit/driver_home_cubit.dart';
 import '../../features/home/driver/presentation/views/driver_home_shell.dart';
-import '../../features/home/driver/presentation/views/driver_profile_view.dart';
+import '../../features/profile/driver/presentation/views/driver_profile_view.dart';
 import '../../features/home/passenger/presentation/cubit/passenger_home_cubit.dart';
 import '../../features/home/passenger/presentation/views/passenger_home_view.dart';
-import '../../features/home/profile/passenger/presentation/cubit/passenger_email_edit_cubit.dart';
-import '../../features/home/profile/passenger/presentation/cubit/passenger_profile_edit_cubit.dart';
-import '../../features/home/profile/passenger/presentation/views/passenger_email_edit_view.dart';
-import '../../features/home/profile/passenger/presentation/views/passenger_profile_edit_view.dart';
+import '../../features/profile/passenger/presentation/cubit/passenger_email_edit_cubit.dart';
+import '../../features/profile/passenger/presentation/cubit/passenger_profile_edit_cubit.dart';
+import '../../features/profile/passenger/presentation/views/passenger_email_edit_view.dart';
+import '../../features/profile/passenger/presentation/views/passenger_profile_edit_view.dart';
 import '../session/auth_session.dart';
 import 'route_names.dart';
 

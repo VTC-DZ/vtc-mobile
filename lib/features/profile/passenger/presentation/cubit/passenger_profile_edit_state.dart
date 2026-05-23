@@ -1,7 +1,7 @@
 import 'package:equatable/equatable.dart';
 
-import '../../../../../../../features/auth/data/models/gender.dart';
-import '../../../../../../../features/auth/data/models/passenger_profile_model.dart';
+import '../../../../../../features/auth/data/models/gender.dart';
+import '../../../../../../features/auth/data/models/passenger_profile_model.dart';
 
 enum GetProfileStatus { initial, loading, success, failure }
 enum UpdateProfileStatus { initial, loading, success, failure }
