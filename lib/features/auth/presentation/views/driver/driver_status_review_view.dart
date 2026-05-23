@@ -6,6 +6,7 @@ import 'package:lottie/lottie.dart';
 
 import '../../../../../core/constants/app_strings.dart';
 import '../../../../../core/router/route_names.dart';
+import '../../../../../core/session/auth_session.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_text_styles.dart';
 import '../../../../../shared/widgets/app_scaffold.dart';
@@ -27,7 +28,8 @@ class DriverStatusReviewView extends StatelessWidget {
             child: BlocConsumer<KycStatusCubit, KycStatusState>(
               listenWhen: (previous, current) =>
                   !previous.isApproved && current.isApproved,
-              listener: (context, state) {
+              listener: (context, state) async {
+                await AuthSession.setWaitingKycStatus(false);
                 context.go(RouteNames.driverHome);
               },
               builder: (context, state) {
@@ -129,7 +131,10 @@ class _PendingContent extends StatelessWidget {
         PrimaryButton(
           label: AppStrings.goToHome,
           isEnabled: true,
-          onPressed: () => context.go(RouteNames.passengerHome),
+          onPressed: () async {
+            await AuthSession.setLastRole(AuthSession.rolePassenger);
+            if (context.mounted) context.go(RouteNames.passengerHome);
+          },
         ),
       ],
     );

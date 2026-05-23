@@ -143,16 +143,18 @@ final class AuthSession {
 
   static String resolveInitialRoute() {
     if (!isLoggedIn) return RouteNames.phone;
-    print('lastRole: $_lastRole, hasDriverProfile: $hasDriverProfile');
-    if (_lastRole == roleDriver && hasDriverProfile) {
-      return RouteNames.driverHome;
+    // if (_lastRole == roleDriver && hasDriverProfile) {
+    //   return RouteNames.driverHome;
+    // }
+    if (lastRole == rolePassenger) {
+      return RouteNames.passengerHome;
+    } else if (lastRole == roleDriver) {
+      return RouteNames.driverStatusReview;
     }
+    if (waitingKycStatus) return RouteNames.driverStatusReview;
+
     if (isNewUser) {
-      if (waitingKycStatus) {
-        return RouteNames.driverStatusReview;
-      } else {
-        return RouteNames.modeSelection;
-      }
+      return RouteNames.modeSelection;
     }
 
     return RouteNames.passengerHome;

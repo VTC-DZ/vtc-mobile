@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 
 import 'gender.dart';
+import 'kyc_status.dart';
 
 class PassengerProfileModel extends Equatable {
   const PassengerProfileModel({
@@ -11,6 +12,10 @@ class PassengerProfileModel extends Equatable {
     required this.status,
     required this.hasDriverProfile,
     required this.profileCompleted,
+    required this.activeRole,
+    required this.hasPassengerProfile,
+    required this.savedAddressCount,
+    required this.driverKycStatus,
     this.email,
     this.phone,
   });
@@ -24,6 +29,10 @@ class PassengerProfileModel extends Equatable {
   final String status;
   final bool hasDriverProfile;
   final bool profileCompleted;
+  final String activeRole;
+  final bool hasPassengerProfile;
+  final int savedAddressCount;
+  final KycStatus driverKycStatus;
 
   factory PassengerProfileModel.fromJson(Map<String, dynamic> json) {
     return PassengerProfileModel(
@@ -36,8 +45,15 @@ class PassengerProfileModel extends Equatable {
       email: json['email'],
       phone: json['phone'],
       status: json['status'],
-      hasDriverProfile: json['hasDriverProfile'],
-      profileCompleted: json['profileCompleted'],
+      hasDriverProfile: json['hasDriverProfile'] as bool? ?? false,
+      profileCompleted: json['profileCompleted'] as bool? ?? false,
+      activeRole: json['activeRole'] as String? ?? 'PASSENGER',
+      hasPassengerProfile: json['hasPassengerProfile'] as bool? ?? false,
+      savedAddressCount:
+          json['passenger']?['savedAddressCount'] as int? ?? 0,
+      driverKycStatus: KycStatus.fromString(
+        json['driver']?['kycStatus'] as String?,
+      ),
     );
   }
 
@@ -51,6 +67,10 @@ class PassengerProfileModel extends Equatable {
     String? status,
     bool? hasDriverProfile,
     bool? profileCompleted,
+    String? activeRole,
+    bool? hasPassengerProfile,
+    int? savedAddressCount,
+    KycStatus? driverKycStatus,
   }) =>
       PassengerProfileModel(
         id: id ?? this.id,
@@ -62,6 +82,10 @@ class PassengerProfileModel extends Equatable {
         status: status ?? this.status,
         hasDriverProfile: hasDriverProfile ?? this.hasDriverProfile,
         profileCompleted: profileCompleted ?? this.profileCompleted,
+        activeRole: activeRole ?? this.activeRole,
+        hasPassengerProfile: hasPassengerProfile ?? this.hasPassengerProfile,
+        savedAddressCount: savedAddressCount ?? this.savedAddressCount,
+        driverKycStatus: driverKycStatus ?? this.driverKycStatus,
       );
 
   @override
@@ -75,5 +99,9 @@ class PassengerProfileModel extends Equatable {
         status,
         hasDriverProfile,
         profileCompleted,
+        activeRole,
+        hasPassengerProfile,
+        savedAddressCount,
+        driverKycStatus,
       ];
 }

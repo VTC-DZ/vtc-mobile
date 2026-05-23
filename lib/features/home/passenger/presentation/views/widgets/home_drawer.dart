@@ -12,6 +12,7 @@ import '../../../../../../core/widgets/app_toast.dart';
 import '../../../../../../shared/widgets/dashed_divider.dart';
 import '../../../../../../shared/widgets/drawer_item.dart';
 import '../../../../../../shared/widgets/drawer_menu_item_data.dart';
+import '../../../../../auth/data/models/kyc_status.dart';
 import '../../../../../auth/data/repo/auth_repository.dart';
 import '../../cubit/passenger_home_cubit.dart';
 import '../../cubit/passenger_home_state.dart';
@@ -111,9 +112,16 @@ class HomeDrawer extends StatelessWidget {
     );
   }
 
-  void _onSwitchRoleTap(BuildContext context) {
+  void _onSwitchRoleTap(BuildContext context) async {
     ZoomDrawer.of(context)?.close();
-    _performSwitch(context, targetRole: 'DRIVER');
+    final profile = context.read<PassengerHomeCubit>().state.profile;
+    if (profile?.driverKycStatus == KycStatus.approved) {
+      _performSwitch(context, targetRole: 'DRIVER');
+    } else {
+      await AuthSession.setWaitingKycStatus(true);
+      await AuthSession.setLastRole('DRIVER');
+      context.go(RouteNames.driverStatusReview);
+    }
   }
 
   Future<void> _performSwitch(
