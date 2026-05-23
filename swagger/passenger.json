@@ -47,6 +47,53 @@
         }
       }
     },
+    "/api/passenger/profile/addresses/{id}": {
+      "put": {
+        "tags": ["address-controller"],
+        "operationId": "updateAddress",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UpdateAddressRequest" }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/SavedAddressResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["address-controller"],
+        "operationId": "deleteAddress",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": { "200": { "description": "OK" } }
+      }
+    },
     "/api/passenger/profile/phone/request": {
       "post": {
         "tags": ["passenger-change-phone-controller"],
@@ -94,6 +141,56 @@
               "*/*": {
                 "schema": {
                   "$ref": "#/components/schemas/PassengerChangePhoneResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/passenger/profile/addresses": {
+      "get": {
+        "tags": ["address-controller"],
+        "operationId": "listAddresses",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/SavedAddressListResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["address-controller"],
+        "operationId": "addAddress",
+        "parameters": [
+          {
+            "name": "replace",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "boolean", "default": false }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/AddAddressRequest" }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/SavedAddressResponse"
                 }
               }
             }
@@ -256,6 +353,45 @@
           "profileCompleted": { "type": "boolean" }
         }
       },
+      "UpdateAddressRequest": {
+        "type": "object",
+        "properties": {
+          "type": { "type": "string", "enum": ["HOME", "WORK", "OTHER"] },
+          "label": { "type": "string", "maxLength": 100, "minLength": 0 },
+          "address": { "type": "string", "maxLength": 1024, "minLength": 0 },
+          "latitude": {
+            "type": "number",
+            "format": "double",
+            "maximum": 90.0,
+            "minimum": -90.0
+          },
+          "longitude": {
+            "type": "number",
+            "format": "double",
+            "maximum": 180.0,
+            "minimum": -180.0
+          },
+          "building": { "type": "string", "maxLength": 100, "minLength": 0 },
+          "floor": { "type": "string", "maxLength": 50, "minLength": 0 },
+          "door": { "type": "string", "maxLength": 50, "minLength": 0 },
+          "description": { "type": "string", "maxLength": 1024, "minLength": 0 }
+        }
+      },
+      "SavedAddressResponse": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "type": { "type": "string", "enum": ["HOME", "WORK", "OTHER"] },
+          "label": { "type": "string" },
+          "address": { "type": "string" },
+          "latitude": { "type": "number", "format": "double" },
+          "longitude": { "type": "number", "format": "double" },
+          "building": { "type": "string" },
+          "floor": { "type": "string" },
+          "door": { "type": "string" },
+          "description": { "type": "string" }
+        }
+      },
       "PassengerChangePhoneRequest": {
         "type": "object",
         "properties": { "newPhone": { "type": "string", "minLength": 1 } },
@@ -279,6 +415,31 @@
           "accessToken": { "type": "string" },
           "refreshToken": { "type": "string" }
         }
+      },
+      "AddAddressRequest": {
+        "type": "object",
+        "properties": {
+          "type": { "type": "string", "enum": ["HOME", "WORK", "OTHER"] },
+          "label": { "type": "string", "maxLength": 100, "minLength": 0 },
+          "address": { "type": "string", "maxLength": 1024, "minLength": 0 },
+          "latitude": {
+            "type": "number",
+            "format": "double",
+            "maximum": 90.0,
+            "minimum": -90.0
+          },
+          "longitude": {
+            "type": "number",
+            "format": "double",
+            "maximum": 180.0,
+            "minimum": -180.0
+          },
+          "building": { "type": "string", "maxLength": 100, "minLength": 0 },
+          "floor": { "type": "string", "maxLength": 50, "minLength": 0 },
+          "door": { "type": "string", "maxLength": 50, "minLength": 0 },
+          "description": { "type": "string", "maxLength": 1024, "minLength": 0 }
+        },
+        "required": ["address", "label", "type"]
       },
       "SwitchRoleRequest": {
         "type": "object",
@@ -320,6 +481,15 @@
       "EmailUpdateRequest": {
         "type": "object",
         "properties": { "email": { "type": "string" } }
+      },
+      "SavedAddressListResponse": {
+        "type": "object",
+        "properties": {
+          "addresses": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/SavedAddressResponse" }
+          }
+        }
       }
     }
   }

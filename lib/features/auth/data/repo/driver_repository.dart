@@ -3,7 +3,9 @@
 import 'package:dio/dio.dart';
 import 'package:khfif_drif/core/session/auth_session.dart';
 
+import '../../../../core/constants/auth_api_constants.dart';
 import '../../../../core/constants/driver_api_constants.dart';
+import '../../../../core/constants/me_api_constants.dart';
 import '../../../../core/network/dio_client.dart';
 import '../../../../core/utils/image_compressor.dart';
 import '../models/driver_profile_model.dart';
@@ -67,7 +69,7 @@ final class DriverRepository {
 
   Future<void> switchRole(String targetRole) async {
     final response = await DioClient.post(
-      path: DriverApiConstants.switchRole,
+      path: AuthApiConstants.switchRole,
       data: {'targetRole': targetRole},
     );
     final data = response.data as Map<String, dynamic>;
@@ -75,7 +77,7 @@ final class DriverRepository {
   }
 
   Future<DriverProfileModel> getDriverProfile() async {
-    final response = await DioClient.get(path: DriverApiConstants.profile);
+    final response = await DioClient.get(path: MeApiConstants.profile);
     return DriverProfileModel.fromJson(
       response.data as Map<String, dynamic>,
     );

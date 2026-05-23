@@ -1,7 +1,7 @@
 // lib/features/auth/data/models/auth_tokens_model.dart
 
-/// Response model for POST /api/passenger/auth/otp/verify
-/// and POST /api/passenger/auth/refresh.
+/// Response model for POST /api/auth/otp/verify
+/// and POST /api/auth/refresh.
 ///
 /// Expected JSON:
 /// { "accessToken": "...", "refreshToken": "...", "isNewUser": true, "profileCompleted": true }

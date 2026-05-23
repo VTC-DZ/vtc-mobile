@@ -2,7 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 
 import '../constants/api_constants.dart';
-import '../constants/passenger_api_constants.dart';
+import '../constants/auth_api_constants.dart';
 import '../router/app_router.dart';
 import '../router/route_names.dart';
 import '../session/auth_session.dart';
@@ -53,7 +53,7 @@ final class DioClient {
           _isRefreshing = true;
           try {
             final response = await _dio.post(
-              PassengerApiConstants.refresh,
+              AuthApiConstants.refresh,
               data: {'refreshToken': AuthSession.refreshToken},
               options: Options(
                 headers: {'Authorization': null},

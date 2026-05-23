@@ -1,6 +1,6 @@
 // lib/features/auth/data/repo/auth_repository.dart
 
-import '../../../../core/constants/passenger_api_constants.dart';
+import '../../../../core/constants/auth_api_constants.dart';
 import '../../../../core/network/dio_client.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/router/route_names.dart';
@@ -12,7 +12,7 @@ final class AuthRepository {
 
   /// Sends an OTP to [phoneE164] (e.g. "+213661234567").
   Future<void> sendOtp(String phoneE164) => DioClient.post(
-        path: PassengerApiConstants.otpRequest,
+        path: AuthApiConstants.otpRequest,
         data: {'phone': phoneE164},
       );
 
@@ -20,7 +20,7 @@ final class AuthRepository {
   /// the parsed tokens (including [AuthTokensModel.isNewUser]).
   Future<AuthTokensModel> verifyOtp(String phoneE164, String otp) async {
     final response = await DioClient.post(
-      path: PassengerApiConstants.otpVerify,
+      path: AuthApiConstants.otpVerify,
       data: {'phone': phoneE164, 'code': otp},
     );
     final tokens =
@@ -35,7 +35,7 @@ final class AuthRepository {
 
   Future<void> switchRole(String targetRole) async {
     final response = await DioClient.post(
-      path: PassengerApiConstants.switchRole,
+      path: AuthApiConstants.switchRole,
       data: {'targetRole': targetRole},
     );
     final data = response.data as Map<String, dynamic>;
@@ -49,7 +49,7 @@ final class AuthRepository {
   Future<void> logout() async {
     try {
       await DioClient.post(
-        path: PassengerApiConstants.logout,
+        path: AuthApiConstants.logout,
         data: {},
       );
     } catch (_) {}
