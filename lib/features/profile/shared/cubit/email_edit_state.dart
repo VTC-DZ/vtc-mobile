@@ -2,8 +2,8 @@ import 'package:equatable/equatable.dart';
 
 enum EmailEditStatus { initial, loading, success, failure }
 
-final class PassengerEmailEditState extends Equatable {
-  const PassengerEmailEditState({
+final class EmailEditState extends Equatable {
+  const EmailEditState({
     this.status = EmailEditStatus.initial,
     this.emailError = '',
     this.errorMessage = '',
@@ -17,13 +17,13 @@ final class PassengerEmailEditState extends Equatable {
 
   bool get canSave => emailError.isEmpty && status != EmailEditStatus.loading;
 
-  PassengerEmailEditState copyWith({
+  EmailEditState copyWith({
     EmailEditStatus? status,
     String? emailError,
     String? errorMessage,
     String? email,
   }) {
-    return PassengerEmailEditState(
+    return EmailEditState(
       status: status ?? this.status,
       emailError: emailError ?? this.emailError,
       errorMessage: errorMessage ?? this.errorMessage,

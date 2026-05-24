@@ -7,6 +7,7 @@ class DriverProfileModel {
     required this.phone,
     required this.kycStatus,
     required this.acceptsFemaleOnly,
+    this.email,
   });
 
   final String fullName;
@@ -14,6 +15,7 @@ class DriverProfileModel {
   final String phone;
   final KycStatus kycStatus;
   final bool acceptsFemaleOnly;
+  final String? email;
 
   factory DriverProfileModel.fromJson(Map<String, dynamic> json) {
     return DriverProfileModel(
@@ -22,6 +24,25 @@ class DriverProfileModel {
       phone: json['phone'] as String? ?? '',
       kycStatus: KycStatus.fromString(json['kycStatus'] as String?),
       acceptsFemaleOnly: json['acceptsFemaleOnly'] as bool? ?? false,
+      email: json['email'] as String?,
+    );
+  }
+
+  DriverProfileModel copyWith({
+    String? fullName,
+    String? gender,
+    String? phone,
+    KycStatus? kycStatus,
+    bool? acceptsFemaleOnly,
+    String? email,
+  }) {
+    return DriverProfileModel(
+      fullName: fullName ?? this.fullName,
+      gender: gender ?? this.gender,
+      phone: phone ?? this.phone,
+      kycStatus: kycStatus ?? this.kycStatus,
+      acceptsFemaleOnly: acceptsFemaleOnly ?? this.acceptsFemaleOnly,
+      email: email ?? this.email,
     );
   }
 }

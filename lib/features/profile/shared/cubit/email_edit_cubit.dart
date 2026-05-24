@@ -1,13 +1,13 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../../../../core/utils/validators.dart';
-import '../../../../../../features/auth/data/repo/profile_repository.dart';
-import 'passenger_email_edit_state.dart';
+import '../../../../core/utils/validators.dart';
+import '../../../../features/auth/data/repo/profile_repository.dart';
+import 'email_edit_state.dart';
 
-class PassengerEmailEditCubit extends Cubit<PassengerEmailEditState> {
-  PassengerEmailEditCubit(this._repository, {required String initialEmail})
-      : super(const PassengerEmailEditState()) {
+class EmailEditCubit extends Cubit<EmailEditState> {
+  EmailEditCubit(this._repository, {required String initialEmail})
+      : super(const EmailEditState()) {
     emailController.text = initialEmail;
     final error = Validators.email(initialEmail);
     if (error.isNotEmpty) emit(state.copyWith(emailError: error));

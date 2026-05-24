@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
-import 'package:khfif_drif/features/home/passenger/presentation/cubit/passenger_home_cubit.dart';
 
 import '../../../../../core/widgets/app_toast.dart';
 import '../../../../../features/auth/presentation/views/widgets/profile/passenger/profile_email_field_widget.dart';
@@ -10,21 +9,23 @@ import '../../../../../features/auth/presentation/views/widgets/profile/passenge
 import '../../../../../features/auth/presentation/views/widgets/profile/profile_field_label_widget.dart';
 import '../../../../../shared/widgets/app_scaffold.dart';
 import '../../../../../shared/widgets/primary_button.dart';
-import '../cubit/passenger_email_edit_cubit.dart';
-import '../cubit/passenger_email_edit_state.dart';
+import '../cubit/email_edit_cubit.dart';
+import '../cubit/email_edit_state.dart';
 
-class PassengerEmailEditView extends StatelessWidget {
-  const PassengerEmailEditView({super.key});
+class EmailEditView extends StatelessWidget {
+  const EmailEditView({super.key, required this.onSuccess});
+
+  final void Function(String email) onSuccess;
 
   @override
   Widget build(BuildContext context) {
-    final cubit = context.read<PassengerEmailEditCubit>();
+    final cubit = context.read<EmailEditCubit>();
 
-    return BlocListener<PassengerEmailEditCubit, PassengerEmailEditState>(
+    return BlocListener<EmailEditCubit, EmailEditState>(
       listenWhen: (prev, curr) => curr.status == EmailEditStatus.success,
       listener: (context, state) {
         AppToast.success('Email updated successfully');
-        context.read<PassengerHomeCubit>().updateEmail(state.email);
+        onSuccess(state.email);
         context.pop();
       },
       child: AppScaffold(
@@ -32,7 +33,7 @@ class PassengerEmailEditView extends StatelessWidget {
         appBarTitle: 'Edit Email',
         onLeadingTap: () => context.pop(),
         bottomNavigationBar:
-            BlocBuilder<PassengerEmailEditCubit, PassengerEmailEditState>(
+            BlocBuilder<EmailEditCubit, EmailEditState>(
           buildWhen: (prev, curr) =>
               prev.canSave != curr.canSave || prev.status != curr.status,
           builder: (context, state) => Padding(
@@ -45,7 +46,7 @@ class PassengerEmailEditView extends StatelessWidget {
             ),
           ),
         ),
-        body: BlocBuilder<PassengerEmailEditCubit, PassengerEmailEditState>(
+        body: BlocBuilder<EmailEditCubit, EmailEditState>(
           builder: (context, state) {
             return SingleChildScrollView(
               child: Padding(

@@ -29,4 +29,11 @@ class DriverHomeCubit extends Cubit<DriverHomeState> {
   void updateSelectedIndex(int index) {
     emit(state.copyWith(selectedIndex: index));
   }
+
+  void updateEmail(String email) {
+    if (state.profile == null) return;
+    emit(state.copyWith(
+      profile: state.profile!.copyWith(email: email),
+    ));
+  }
 }

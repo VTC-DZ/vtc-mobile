@@ -25,9 +25,9 @@ import '../../features/home/driver/presentation/views/driver_home_shell.dart';
 import '../../features/profile/driver/presentation/views/driver_profile_view.dart';
 import '../../features/home/passenger/presentation/cubit/passenger_home_cubit.dart';
 import '../../features/home/passenger/presentation/views/passenger_home_view.dart';
-import '../../features/profile/passenger/presentation/cubit/passenger_email_edit_cubit.dart';
+import '../../features/profile/shared/cubit/email_edit_cubit.dart';
 import '../../features/profile/passenger/presentation/cubit/passenger_profile_edit_cubit.dart';
-import '../../features/profile/passenger/presentation/views/passenger_email_edit_view.dart';
+import '../../features/profile/shared/views/email_edit_view.dart';
 import '../../features/profile/passenger/presentation/views/passenger_profile_edit_view.dart';
 import '../../features/saved_places/data/address_repository.dart';
 import '../../features/saved_places/presentation/cubit/saved_places_cubit.dart';
@@ -122,12 +122,16 @@ final class AppRouter {
               builder: (context, state) {
                 final currentEmail =
                     state.extra is String ? state.extra as String : '';
-                return BlocProvider<PassengerEmailEditCubit>(
-                  create: (_) => PassengerEmailEditCubit(
+                return BlocProvider<EmailEditCubit>(
+                  create: (_) => EmailEditCubit(
                     _profileRepository,
                     initialEmail: currentEmail,
                   ),
-                  child: const PassengerEmailEditView(),
+                  child: EmailEditView(
+                    onSuccess: (email) {
+                      context.read<PassengerHomeCubit>().updateEmail(email);
+                    },
+                  ),
                 );
               },
             ),
@@ -186,6 +190,24 @@ final class AppRouter {
             path: RouteNames.driverProfileEdit,
             builder: (context, state) {
               return const DriverProfileView();
+            },
+          ),
+          GoRoute(
+            path: RouteNames.driverEmailEdit,
+            builder: (context, state) {
+              final currentEmail =
+                  state.extra is String ? state.extra as String : '';
+              return BlocProvider<EmailEditCubit>(
+                create: (_) => EmailEditCubit(
+                  _profileRepository,
+                  initialEmail: currentEmail,
+                ),
+                child: EmailEditView(
+                  onSuccess: (email) {
+                    context.read<DriverHomeCubit>().updateEmail(email);
+                  },
+                ),
+              );
             },
           ),
         ],

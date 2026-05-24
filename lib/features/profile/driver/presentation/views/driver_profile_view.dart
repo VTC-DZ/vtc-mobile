@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../auth/presentation/views/widgets/profile/profile_field_label_widget.dart';
+import '../../../../../core/router/route_names.dart';
 import '../../../passenger/presentation/views/widgets/profile_edit_shimmer_widget.dart';
+import '../../../passenger/presentation/views/widgets/profile_email_edit_row_widget.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_text_styles.dart';
 import '../../../../../shared/widgets/app_scaffold.dart';
@@ -91,6 +94,19 @@ class DriverProfileView extends StatelessWidget {
                       _ReadOnlyField(
                         icon: Icons.phone_outlined,
                         value: profile.phone,
+                      ),
+                      SizedBox(height: 24.h),
+                      const ProfileFieldLabelWidget(
+                        label: 'Email',
+                        badge: 'Optional',
+                      ),
+                      SizedBox(height: 8.h),
+                      ProfileEmailEditRowWidget(
+                        email: profile.email,
+                        onTap: () => context.push(
+                          RouteNames.driverEmailEdit,
+                          extra: profile.email ?? '',
+                        ),
                       ),
                       SizedBox(height: 24.h),
                     ],
