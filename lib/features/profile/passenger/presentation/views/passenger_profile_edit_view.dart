@@ -10,6 +10,7 @@ import '../../../../../core/router/route_names.dart';
 import '../../../../../core/widgets/app_toast.dart';
 import 'widgets/profile_edit_shimmer_widget.dart';
 import 'widgets/profile_email_edit_row_widget.dart';
+import 'widgets/profile_phone_edit_row_widget.dart';
 import '../../../../../features/auth/presentation/views/widgets/profile/driver/fields/driver_date_picker_field_widget.dart';
 import '../../../../../features/auth/presentation/views/widgets/profile/passenger/profile_error_banner_widget.dart';
 import '../../../../../features/auth/presentation/views/widgets/profile/profile_field_label_widget.dart';
@@ -118,6 +119,22 @@ class PassengerProfileEditView extends StatelessWidget {
                                 onDateSelected: cubit.dateOfBirthChanged,
                                 enabled: state.updateProfileStatus !=
                                     UpdateProfileStatus.loading,
+                              ),
+                              SizedBox(height: 24.h),
+                              const ProfileFieldLabelWidget(label: 'Phone'),
+                              SizedBox(height: 8.h),
+                              BlocBuilder<PassengerProfileEditCubit,
+                                  PassengerProfileEditState>(
+                                buildWhen: (prev, curr) =>
+                                    prev.phone != curr.phone,
+                                builder: (context, state) =>
+                                    ProfilePhoneEditRowWidget(
+                                  phone: state.phone ?? '',
+                                  onTap: () => context.push(
+                                    RouteNames.passengerPhoneEdit,
+                                    extra: state.phone ?? '',
+                                  ),
+                                ),
                               ),
                               SizedBox(height: 24.h),
                               const ProfileFieldLabelWidget(

@@ -18,6 +18,8 @@ abstract final class RouteNames {
   static const String passengerProfileEdit = '/passenger-profile-edit';
   static const String passengerEmailEdit = '/passenger-email-edit';
   static const String driverEmailEdit = '/driver-email-edit';
+  static const String passengerPhoneEdit = '/passenger-phone-edit';
+  static const String driverPhoneEdit = '/driver-phone-edit';
   static const String savedPlaces = '/saved-places';
   static const String addressForm = '/address-form';
   static const String addressEdit = '/address-edit';

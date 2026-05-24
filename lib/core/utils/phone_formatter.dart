@@ -26,4 +26,12 @@ abstract final class PhoneFormatter {
     if (digits.length != AppConstants.phoneMaxLength) return localNumber;
     return '${digits.substring(0, 4)} ${digits.substring(4, 7)} ${digits.substring(7)}';
   }
+
+  /// Converts an E.164 number (e.g. "+213661234567") to local format ("0661234567").
+  /// Returns the input unchanged if it doesn't start with "+213" or "213".
+  static String toLocal(String phone) {
+    if (phone.startsWith('+213')) return '0${phone.substring(4)}';
+    if (phone.startsWith('213')) return '0${phone.substring(3)}';
+    return phone;
+  }
 }

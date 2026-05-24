@@ -28,6 +28,7 @@ class PassengerProfileEditCubit extends Cubit<PassengerProfileEditState> {
       gender: profile.gender,
       dateOfBirth: profile.dateOfBirth,
       email: profile.email,
+      phone: profile.phone,
       nameError: Validators.name(profile.fullName),
     ));
   }

@@ -13,6 +13,7 @@ final class PassengerProfileEditState extends Equatable {
     this.gender,
     this.dateOfBirth,
     this.email,
+    this.phone,
     this.nameError = '',
     this.errorMessage = '',
     this.savedProfile,
@@ -23,6 +24,7 @@ final class PassengerProfileEditState extends Equatable {
   final Gender? gender;
   final DateTime? dateOfBirth;
   final String? email;
+  final String? phone;
   final String nameError;
   final String errorMessage;
   final PassengerProfileModel? savedProfile;
@@ -39,6 +41,7 @@ final class PassengerProfileEditState extends Equatable {
     Gender? gender,
     DateTime? dateOfBirth,
     String? email,
+    String? phone,
     String? nameError,
     String? errorMessage,
     PassengerProfileModel? savedProfile,
@@ -49,6 +52,7 @@ final class PassengerProfileEditState extends Equatable {
       gender: gender ?? this.gender,
       dateOfBirth: dateOfBirth ?? this.dateOfBirth,
       email: email ?? this.email,
+      phone: phone ?? this.phone,
       nameError: nameError ?? this.nameError,
       errorMessage: errorMessage ?? this.errorMessage,
       savedProfile: savedProfile ?? this.savedProfile,
@@ -62,6 +66,7 @@ final class PassengerProfileEditState extends Equatable {
         gender,
         dateOfBirth,
         email,
+        phone,
         nameError,
         errorMessage,
         savedProfile,

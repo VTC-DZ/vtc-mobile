@@ -32,8 +32,7 @@ class EmailEditView extends StatelessWidget {
         showAppBar: true,
         appBarTitle: 'Edit Email',
         onLeadingTap: () => context.pop(),
-        bottomNavigationBar:
-            BlocBuilder<EmailEditCubit, EmailEditState>(
+        bottomNavigationBar: BlocBuilder<EmailEditCubit, EmailEditState>(
           buildWhen: (prev, curr) =>
               prev.canSave != curr.canSave || prev.status != curr.status,
           builder: (context, state) => Padding(

@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../auth/presentation/views/widgets/profile/profile_field_label_widget.dart';
 import '../../../../../core/router/route_names.dart';
+import '../../../passenger/presentation/views/widgets/profile_phone_edit_row_widget.dart';
 import '../../../passenger/presentation/views/widgets/profile_edit_shimmer_widget.dart';
 import '../../../passenger/presentation/views/widgets/profile_email_edit_row_widget.dart';
 import '../../../../../core/theme/app_colors.dart';
@@ -91,9 +92,12 @@ class DriverProfileView extends StatelessWidget {
                       SizedBox(height: 24.h),
                       const ProfileFieldLabelWidget(label: 'Phone'),
                       SizedBox(height: 8.h),
-                      _ReadOnlyField(
-                        icon: Icons.phone_outlined,
-                        value: profile.phone,
+                      ProfilePhoneEditRowWidget(
+                        phone: profile.phone,
+                        onTap: () => context.push(
+                          RouteNames.driverPhoneEdit,
+                          extra: profile.phone,
+                        ),
                       ),
                       SizedBox(height: 24.h),
                       const ProfileFieldLabelWidget(

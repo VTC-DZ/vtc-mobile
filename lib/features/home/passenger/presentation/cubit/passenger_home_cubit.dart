@@ -40,4 +40,10 @@ class PassengerHomeCubit extends Cubit<PassengerHomeState> {
       profile: state.profile!.copyWith(email: email),
     ));
   }
+
+  void updatePhone(String phone) {
+    emit(state.copyWith(
+      profile: state.profile!.copyWith(phone: phone),
+    ));
+  }
 }

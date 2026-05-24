@@ -1,0 +1,218 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "VTC API",
+    "description": "VTC platform API — auth, me, passenger, driver, and admin surfaces.",
+    "version": "0.1.0-SNAPSHOT"
+  },
+  "servers": [
+    { "url": "http://localhost:8080", "description": "Generated server url" }
+  ],
+  "paths": {
+    "/api/me/profile": {
+      "get": {
+        "tags": ["me-profile-controller"],
+        "operationId": "getProfile",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/MeProfileResponse" }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": ["me-profile-controller"],
+        "operationId": "updateProfile",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ProfileUpdateRequest" }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/MeProfileResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/me/phone/request": {
+      "post": {
+        "tags": ["me-phone-change-controller"],
+        "operationId": "requestPhoneChange",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ChangePhoneRequest" }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/OtpRequestResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/me/phone/confirm": {
+      "post": {
+        "tags": ["me-phone-change-controller"],
+        "operationId": "confirmPhoneChange",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChangePhoneConfirmRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/AuthTokensResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/me/email": {
+      "patch": {
+        "tags": ["me-profile-controller"],
+        "operationId": "updateEmail",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/EmailUpdateRequest" }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/MeProfileResponse" }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ProfileUpdateRequest": {
+        "type": "object",
+        "properties": {
+          "fullName": { "type": "string", "pattern": "^[\\p{L} '\\-]{2,100}$" },
+          "gender": { "type": "string", "enum": ["MALE", "FEMALE"] },
+          "dateOfBirth": { "type": "string", "format": "date" }
+        }
+      },
+      "DriverSummary": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "status": {
+            "type": "string",
+            "enum": ["ACTIVE", "BLOCKED", "SUSPENDED"]
+          },
+          "dateOfBirth": { "type": "string", "format": "date" },
+          "kycStatus": {
+            "type": "string",
+            "enum": ["NONE", "PENDING", "APPROVED", "REJECTED", "REVOKED"]
+          },
+          "acceptsFemaleOnly": { "type": "boolean" },
+          "vehicleCategory": {
+            "type": "string",
+            "enum": ["CAR", "MOTORCYCLE", "VAN"]
+          },
+          "vehicleTier": { "type": "string", "enum": ["STANDARD", "COMFORT"] },
+          "isOnline": { "type": "boolean" },
+          "requiresRekyc": { "type": "boolean" }
+        }
+      },
+      "MeProfileResponse": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "phone": { "type": "string" },
+          "fullName": { "type": "string" },
+          "gender": { "type": "string", "enum": ["MALE", "FEMALE"] },
+          "email": { "type": "string" },
+          "dateOfBirth": { "type": "string", "format": "date" },
+          "status": {
+            "type": "string",
+            "enum": ["ACTIVE", "BLOCKED", "SUSPENDED"]
+          },
+          "activeRole": { "type": "string" },
+          "profileCompleted": { "type": "boolean" },
+          "hasPassengerProfile": { "type": "boolean" },
+          "hasDriverProfile": { "type": "boolean" },
+          "passenger": { "$ref": "#/components/schemas/PassengerSummary" },
+          "driver": { "$ref": "#/components/schemas/DriverSummary" }
+        }
+      },
+      "PassengerSummary": {
+        "type": "object",
+        "properties": {
+          "savedAddressCount": { "type": "integer", "format": "int32" }
+        }
+      },
+      "ChangePhoneRequest": {
+        "type": "object",
+        "properties": { "newPhone": { "type": "string", "minLength": 1 } },
+        "required": ["newPhone"]
+      },
+      "OtpRequestResponse": {
+        "type": "object",
+        "properties": { "expiresIn": { "type": "integer", "format": "int32" } }
+      },
+      "ChangePhoneConfirmRequest": {
+        "type": "object",
+        "properties": {
+          "newPhone": { "type": "string", "minLength": 1 },
+          "code": { "type": "string", "minLength": 1, "pattern": "^\\d{6}$" }
+        },
+        "required": ["code", "newPhone"]
+      },
+      "AuthTokensResponse": {
+        "type": "object",
+        "properties": {
+          "accessToken": { "type": "string" },
+          "refreshToken": { "type": "string" },
+          "isNewUser": { "type": "boolean" },
+          "profileCompleted": { "type": "boolean" },
+          "hasDriverProfile": { "type": "boolean" }
+        }
+      },
+      "EmailUpdateRequest": {
+        "type": "object",
+        "properties": { "email": { "type": "string" } }
+      }
+    }
+  }
+}

@@ -26,8 +26,10 @@ import '../../features/profile/driver/presentation/views/driver_profile_view.dar
 import '../../features/home/passenger/presentation/cubit/passenger_home_cubit.dart';
 import '../../features/home/passenger/presentation/views/passenger_home_view.dart';
 import '../../features/profile/shared/cubit/email_edit_cubit.dart';
+import '../../features/profile/shared/cubit/phone_edit_cubit.dart';
 import '../../features/profile/passenger/presentation/cubit/passenger_profile_edit_cubit.dart';
 import '../../features/profile/shared/views/email_edit_view.dart';
+import '../../features/profile/shared/views/phone_edit_view.dart';
 import '../../features/profile/passenger/presentation/views/passenger_profile_edit_view.dart';
 import '../../features/saved_places/data/address_repository.dart';
 import '../../features/saved_places/presentation/cubit/saved_places_cubit.dart';
@@ -135,6 +137,24 @@ final class AppRouter {
                 );
               },
             ),
+            GoRoute(
+              path: RouteNames.passengerPhoneEdit,
+              builder: (context, state) {
+                final currentPhone =
+                    state.extra is String ? state.extra as String : '';
+                return BlocProvider<PhoneEditCubit>(
+                  create: (_) => PhoneEditCubit(
+                    _profileRepository,
+                    currentPhone: currentPhone,
+                  ),
+                  child: PhoneEditView(
+                    onSuccess: (phone) {
+                      context.read<PassengerHomeCubit>().updatePhone(phone);
+                    },
+                  ),
+                );
+              },
+            ),
             ShellRoute(
               builder: (context, state, child) => BlocProvider(
                 create: (_) => SavedPlacesCubit(const AddressRepository())
@@ -205,6 +225,24 @@ final class AppRouter {
                 child: EmailEditView(
                   onSuccess: (email) {
                     context.read<DriverHomeCubit>().updateEmail(email);
+                  },
+                ),
+              );
+            },
+          ),
+          GoRoute(
+            path: RouteNames.driverPhoneEdit,
+            builder: (context, state) {
+              final currentPhone =
+                  state.extra is String ? state.extra as String : '';
+              return BlocProvider<PhoneEditCubit>(
+                create: (_) => PhoneEditCubit(
+                  _profileRepository,
+                  currentPhone: currentPhone,
+                ),
+                child: PhoneEditView(
+                  onSuccess: (phone) {
+                    context.read<DriverHomeCubit>().updatePhone(phone);
                   },
                 ),
               );

@@ -36,4 +36,11 @@ class DriverHomeCubit extends Cubit<DriverHomeState> {
       profile: state.profile!.copyWith(email: email),
     ));
   }
+
+  void updatePhone(String phone) {
+    if (state.profile == null) return;
+    emit(state.copyWith(
+      profile: state.profile!.copyWith(phone: phone),
+    ));
+  }
 }
