@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 
 import '../constants/api_constants.dart';
 import '../constants/auth_api_constants.dart';
+import '../errors/api_error_model.dart';
 import '../router/app_router.dart';
 import '../router/route_names.dart';
 import '../session/auth_session.dart';
@@ -235,9 +236,9 @@ final class DioClient {
 
   static String _handleDioError(DioException e) {
     final data = e.response?.data;
-    if (data is Map) {
-      final msg = data['message'] ?? data['error'];
-      if (msg is String && msg.isNotEmpty) return msg;
+    final apiError = ApiErrorModel.tryParse(data);
+    if (apiError != null && apiError.message.isNotEmpty) {
+      return apiError.message;
     }
     return switch (e.type) {
       DioExceptionType.connectionTimeout ||
