@@ -5,6 +5,7 @@ import '../constants/api_constants.dart';
 import '../constants/auth_api_constants.dart';
 import '../errors/api_error_model.dart';
 import '../router/app_router.dart';
+import '../widgets/app_toast.dart';
 import '../router/route_names.dart';
 import '../session/auth_session.dart';
 import '../../features/auth/data/models/auth_tokens_model.dart';
@@ -234,10 +235,16 @@ final class DioClient {
     }
   }
 
-  static String _handleDioError(DioException e) {
+  static Future<String> _handleDioError(DioException e) async {
     final data = e.response?.data;
     final apiError = ApiErrorModel.tryParse(data);
     if (apiError != null && apiError.message.isNotEmpty) {
+      final statusCode = e.response?.statusCode;
+      if (statusCode != null && (statusCode == 401 || statusCode == 403)) {
+        AppToast.error(apiError.message);
+        await AuthSession.clearSession();
+        AppRouter.router.go(RouteNames.phone);
+      }
       return apiError.message;
     }
     return switch (e.type) {

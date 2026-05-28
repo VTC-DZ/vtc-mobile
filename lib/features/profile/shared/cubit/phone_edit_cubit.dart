@@ -23,8 +23,9 @@ class PhoneEditCubit extends Cubit<PhoneEditState> {
 
   void phoneChanged(String value) {
     final error = Validators.dzPhonePartial(value);
-    final fullError =
-        value.length == AppConstants.phoneMaxLength ? Validators.dzPhone(value) : null;
+    final fullError = value.length == AppConstants.phoneMaxLength
+        ? Validators.dzPhone(value)
+        : null;
     emit(state.copyWith(
       newPhone: value,
       phoneError: error ?? fullError ?? '',
@@ -72,7 +73,7 @@ class PhoneEditCubit extends Cubit<PhoneEditState> {
       _resendTimer?.cancel();
       _blockTimer?.cancel();
       emit(state.copyWith(status: PhoneEditStatus.success));
-    } catch (_) {
+    } catch (e) {
       _failedAttempts++;
       if (_failedAttempts >= AppConstants.otpMaxFailedAttempts) {
         _startBlockTimer();
@@ -84,7 +85,7 @@ class PhoneEditCubit extends Cubit<PhoneEditState> {
       } else {
         emit(state.copyWith(
           status: PhoneEditStatus.failure,
-          errorMessage: 'Incorrect code, try again',
+          errorMessage: e is String ? e : 'Incorrect code, try again',
         ));
       }
     }

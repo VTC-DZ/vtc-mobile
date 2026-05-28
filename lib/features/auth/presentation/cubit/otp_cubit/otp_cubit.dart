@@ -41,7 +41,7 @@ final class OtpCubit extends Cubit<OtpState> {
         isNewUser: tokens.isNewUser,
         hasDriverProfile: tokens.hasDriverProfile,
       ));
-    } catch (_) {
+    } catch (e) {
       _failedAttempts++;
       if (_failedAttempts >= AppConstants.otpMaxFailedAttempts) {
         _startBlockTimer();
@@ -53,7 +53,7 @@ final class OtpCubit extends Cubit<OtpState> {
       } else {
         emit(state.copyWith(
           status: OtpStatus.failure,
-          errorMessage: 'Incorrect code, try again',
+          errorMessage: e is String ? e : 'Incorrect code, try again',
         ));
       }
     }
