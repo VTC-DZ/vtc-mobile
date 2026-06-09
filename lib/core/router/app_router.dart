@@ -37,6 +37,9 @@ import '../../features/saved_places/presentation/views/saved_places_view.dart';
 import '../../features/saved_places/data/address_model.dart';
 import '../../features/saved_places/presentation/views/address_create_view.dart';
 import '../../features/saved_places/presentation/views/address_edit_view.dart';
+import '../../features/ride/data/ride_repository.dart';
+import '../../features/ride/presentation/cubit/ride_request_cubit.dart';
+import '../../features/ride/presentation/views/ride_request_view.dart';
 import '../session/auth_session.dart';
 import 'route_names.dart';
 
@@ -152,6 +155,15 @@ final class AppRouter {
                       context.read<PassengerHomeCubit>().updatePhone(phone);
                     },
                   ),
+                );
+              },
+            ),
+            GoRoute(
+              path: RouteNames.rideRequest,
+              builder: (context, state) {
+                return BlocProvider<RideRequestCubit>(
+                  create: (_) => RideRequestCubit(const RideRepository()),
+                  child: const RideRequestView(),
                 );
               },
             ),

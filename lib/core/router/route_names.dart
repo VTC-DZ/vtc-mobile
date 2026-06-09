@@ -23,4 +23,5 @@ abstract final class RouteNames {
   static const String savedPlaces = '/saved-places';
   static const String addressForm = '/address-form';
   static const String addressEdit = '/address-edit';
+  static const String rideRequest = '/ride-request';
 }

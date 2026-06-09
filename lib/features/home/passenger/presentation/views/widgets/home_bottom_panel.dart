@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../../../../core/router/route_names.dart';
 import '../../../../../../core/theme/app_colors.dart';
 import '../../../../../../core/theme/app_text_styles.dart';
 
@@ -73,39 +75,45 @@ class HomeBottomPanel extends StatelessWidget {
 class _SearchBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
-      decoration: BoxDecoration(
-        color: AppColors.surface(context),
-        borderRadius: BorderRadius.circular(16.r),
-        border: Border.all(color: AppColors.borderDefault(context), width: 1.5.w),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.black.withValues(alpha: 0.04),
-            blurRadius: 8.r,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Icon(Icons.search_rounded, size: 20.w, color: AppColors.textSecondary(context)),
-          SizedBox(width: 12.w),
-          Expanded(
-            child: Text(
-              'Where do you want to go?',
-              style: AppTextStyles.bodyMedium(context),
+    return GestureDetector(
+      onTap: () => context.push(RouteNames.rideRequest),
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
+        decoration: BoxDecoration(
+          color: AppColors.surface(context),
+          borderRadius: BorderRadius.circular(16.r),
+          border:
+              Border.all(color: AppColors.borderDefault(context), width: 1.5.w),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.black.withValues(alpha: 0.04),
+              blurRadius: 8.r,
+              offset: const Offset(0, 2),
             ),
-          ),
-          Container(
-            padding: EdgeInsets.all(8.w),
-            decoration: BoxDecoration(
-              color: AppColors.primary,
-              borderRadius: BorderRadius.circular(10.r),
+          ],
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.search_rounded,
+                size: 20.w, color: AppColors.textSecondary(context)),
+            SizedBox(width: 12.w),
+            Expanded(
+              child: Text(
+                'Where do you want to go?',
+                style: AppTextStyles.bodyMedium(context),
+              ),
             ),
-            child: Icon(Icons.near_me_rounded, size: 16.w, color: AppColors.white),
-          ),
-        ],
+            Container(
+              padding: EdgeInsets.all(8.w),
+              decoration: BoxDecoration(
+                color: AppColors.primary,
+                borderRadius: BorderRadius.circular(10.r),
+              ),
+              child: Icon(Icons.near_me_rounded,
+                  size: 16.w, color: AppColors.white),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -133,7 +141,8 @@ class _QuickDestination extends StatelessWidget {
           decoration: BoxDecoration(
             color: AppColors.surface(context),
             borderRadius: BorderRadius.circular(12.r),
-            border: Border.all(color: AppColors.borderDefault(context), width: 1.w),
+            border:
+                Border.all(color: AppColors.borderDefault(context), width: 1.w),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,

@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "VTC API",
-    "description": "VTC platform API — passenger, driver, and admin surfaces.",
+    "description": "VTC platform API — account, passenger, driver, and admin surfaces.",
     "version": "0.1.0-SNAPSHOT"
   },
   "servers": [
@@ -56,6 +56,152 @@
         "responses": { "200": { "description": "OK" } }
       }
     },
+    "/api/passenger/rides": {
+      "post": {
+        "tags": ["passenger-ride-controller"],
+        "operationId": "createRide",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateRideRequest" }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/CreateRideResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/passenger/rides/{rideRequestId}/offers/{offerId}/accept": {
+      "post": {
+        "tags": ["passenger-ride-controller"],
+        "operationId": "acceptOffer",
+        "parameters": [
+          {
+            "name": "rideRequestId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          },
+          {
+            "name": "offerId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/AcceptOfferResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/passenger/rides/{rideRequestId}/counter-offer": {
+      "post": {
+        "tags": ["passenger-ride-controller"],
+        "operationId": "counterOffer",
+        "parameters": [
+          {
+            "name": "rideRequestId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CounterOfferRequest" }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CounterOfferResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/passenger/rides/{rideRequestId}/cancel": {
+      "post": {
+        "tags": ["passenger-ride-controller"],
+        "operationId": "cancel",
+        "parameters": [
+          {
+            "name": "rideRequestId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CancelRideRequest" }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/CancelRideResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/passenger/addresses": {
       "get": {
         "tags": ["passenger-address-controller"],
@@ -105,6 +251,163 @@
           }
         }
       }
+    },
+    "/api/passenger/rides/{rideRequestId}/offers": {
+      "get": {
+        "tags": ["passenger-ride-controller"],
+        "operationId": "listOffers",
+        "parameters": [
+          {
+            "name": "rideRequestId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/OfferListResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/passenger/rides/{rideId}": {
+      "get": {
+        "tags": ["passenger-ride-controller"],
+        "operationId": "getRide",
+        "parameters": [
+          {
+            "name": "rideId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/RideDetailResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/passenger/rides/active": {
+      "get": {
+        "tags": ["passenger-ride-controller"],
+        "operationId": "getActive",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/ActiveRideResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/passenger/places/{placeId}": {
+      "get": {
+        "tags": ["passenger-places-controller"],
+        "operationId": "resolve",
+        "parameters": [
+          {
+            "name": "placeId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "minLength": 1 }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/PlaceDetailResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/passenger/places/search": {
+      "get": {
+        "tags": ["passenger-places-controller"],
+        "operationId": "search",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string", "maxLength": 200, "minLength": 2 }
+          },
+          {
+            "name": "sessionToken",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "format": "uuid" }
+          },
+          {
+            "name": "bias",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^-?\\d+\\.?\\d*,-?\\d+\\.?\\d*$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/PlaceSearchResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/passenger/places/reverse-geocode": {
+      "get": {
+        "tags": ["passenger-places-controller"],
+        "operationId": "reverseGeocode",
+        "parameters": [
+          {
+            "name": "lat",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "number", "maximum": 90.0, "minimum": -90.0 }
+          },
+          {
+            "name": "lng",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "number", "maximum": 180.0, "minimum": -180.0 }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/PlaceDetailResponse" }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -148,6 +451,141 @@
           "description": { "type": "string" }
         }
       },
+      "CoordinatePoint": {
+        "type": "object",
+        "properties": {
+          "lat": { "type": "number", "maximum": 90, "minimum": -90 },
+          "lng": { "type": "number", "maximum": 180, "minimum": -180 },
+          "address": { "type": "string", "maxLength": 500, "minLength": 0 }
+        },
+        "required": ["address", "lat", "lng"]
+      },
+      "CreateRideRequest": {
+        "type": "object",
+        "properties": {
+          "pickup": { "$ref": "#/components/schemas/CoordinatePoint" },
+          "dropoff": { "$ref": "#/components/schemas/CoordinatePoint" },
+          "serviceType": { "type": "string", "enum": ["RIDE", "DELIVERY"] },
+          "vehicleCategory": {
+            "type": "string",
+            "enum": ["CAR", "MOTORCYCLE", "VAN"]
+          },
+          "femaleOnly": { "type": "boolean" },
+          "proposedFare": {
+            "type": "integer",
+            "format": "int64",
+            "maximum": 50000,
+            "minimum": 100
+          }
+        },
+        "required": [
+          "dropoff",
+          "femaleOnly",
+          "pickup",
+          "proposedFare",
+          "serviceType",
+          "vehicleCategory"
+        ]
+      },
+      "CreateRideResponse": {
+        "type": "object",
+        "properties": {
+          "rideRequestId": { "type": "string", "format": "uuid" },
+          "state": {
+            "type": "string",
+            "enum": ["REQUESTED", "NEGOTIATING", "ACCEPTED", "CANCELLED"]
+          },
+          "proposedFare": { "type": "integer", "format": "int64" },
+          "expiresAt": { "type": "string", "format": "date-time" },
+          "broadcastDriverCount": { "type": "integer", "format": "int32" }
+        }
+      },
+      "AcceptOfferResponse": {
+        "type": "object",
+        "properties": {
+          "rideId": { "type": "string", "format": "uuid" },
+          "state": {
+            "type": "string",
+            "enum": [
+              "ACCEPTED",
+              "ARRIVED",
+              "IN_PROGRESS",
+              "COMPLETED",
+              "CANCELLED"
+            ]
+          },
+          "finalFare": { "type": "integer", "format": "int64" }
+        }
+      },
+      "CounterOfferRequest": {
+        "type": "object",
+        "properties": {
+          "parentOfferId": { "type": "string", "format": "uuid" },
+          "fare": {
+            "type": "integer",
+            "format": "int64",
+            "maximum": 50000,
+            "minimum": 100
+          }
+        },
+        "required": ["fare", "parentOfferId"]
+      },
+      "CounterOfferResponse": {
+        "type": "object",
+        "properties": {
+          "offerId": { "type": "string", "format": "uuid" },
+          "rideRequestId": { "type": "string", "format": "uuid" },
+          "driverId": { "type": "string", "format": "uuid" },
+          "fare": { "type": "integer", "format": "int64" },
+          "direction": {
+            "type": "string",
+            "enum": ["DRIVER_TO_PASSENGER", "PASSENGER_TO_DRIVER"]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ACTIVE",
+              "ACCEPTED",
+              "REJECTED",
+              "COUNTERED",
+              "EXPIRED",
+              "WITHDRAWN"
+            ]
+          },
+          "round": { "type": "integer", "format": "int32" },
+          "previousOfferId": { "type": "string", "format": "uuid" },
+          "expiresAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "CancelRideRequest": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "enum": [
+              "PASSENGER_CHANGED_MIND",
+              "PASSENGER_NO_SHOW",
+              "DRIVER_TOO_FAR",
+              "DRIVER_VEHICLE_ISSUE",
+              "ADMIN_FORCED",
+              "SYSTEM_TIMEOUT",
+              "SYSTEM_NO_DRIVERS"
+            ]
+          },
+          "note": { "type": "string", "maxLength": 500, "minLength": 0 }
+        },
+        "required": ["reason"]
+      },
+      "CancelRideResponse": {
+        "type": "object",
+        "properties": {
+          "state": {
+            "type": "string",
+            "enum": ["REQUESTED", "NEGOTIATING", "ACCEPTED", "CANCELLED"]
+          },
+          "cancelledAt": { "type": "string", "format": "date-time" }
+        }
+      },
       "AddAddressRequest": {
         "type": "object",
         "properties": {
@@ -172,6 +610,164 @@
           "description": { "type": "string", "maxLength": 1024, "minLength": 0 }
         },
         "required": ["address", "label", "type"]
+      },
+      "OfferEntry": {
+        "type": "object",
+        "properties": {
+          "offerId": { "type": "string", "format": "uuid" },
+          "driverId": { "type": "string", "format": "uuid" },
+          "driverFullName": { "type": "string" },
+          "driverRatingAvg": { "type": "number" },
+          "vehicleModel": { "type": "string" },
+          "vehiclePlate": { "type": "string" },
+          "fare": { "type": "integer", "format": "int64" },
+          "direction": {
+            "type": "string",
+            "enum": ["DRIVER_TO_PASSENGER", "PASSENGER_TO_DRIVER"]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ACTIVE",
+              "ACCEPTED",
+              "REJECTED",
+              "COUNTERED",
+              "EXPIRED",
+              "WITHDRAWN"
+            ]
+          },
+          "round": { "type": "integer", "format": "int32" },
+          "etaSeconds": { "type": "integer", "format": "int32" },
+          "previousOfferId": { "type": "string", "format": "uuid" },
+          "expiresAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "OfferListResponse": {
+        "type": "object",
+        "properties": {
+          "offers": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/OfferEntry" }
+          }
+        }
+      },
+      "Coordinate": {
+        "type": "object",
+        "properties": {
+          "lat": { "type": "number" },
+          "lng": { "type": "number" }
+        }
+      },
+      "DriverInRide": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "fullName": { "type": "string" },
+          "phone": { "type": "string" },
+          "vehicleModel": { "type": "string" },
+          "vehiclePlate": { "type": "string" },
+          "currentPosition": { "$ref": "#/components/schemas/Coordinate" }
+        }
+      },
+      "RideDetailResponse": {
+        "type": "object",
+        "properties": {
+          "rideId": { "type": "string", "format": "uuid" },
+          "state": {
+            "type": "string",
+            "enum": [
+              "ACCEPTED",
+              "ARRIVED",
+              "IN_PROGRESS",
+              "COMPLETED",
+              "CANCELLED"
+            ]
+          },
+          "finalFare": { "type": "integer", "format": "int64" },
+          "driver": { "$ref": "#/components/schemas/DriverInRide" },
+          "acceptedAt": { "type": "string", "format": "date-time" },
+          "arrivedAt": { "type": "string", "format": "date-time" },
+          "startedAt": { "type": "string", "format": "date-time" },
+          "completedAt": { "type": "string", "format": "date-time" },
+          "cancelledAt": { "type": "string", "format": "date-time" },
+          "distanceMeters": { "type": "integer", "format": "int32" },
+          "durationSeconds": { "type": "integer", "format": "int32" },
+          "routeGeometryGeoJson": {}
+        }
+      },
+      "ActiveRequestSummary": {
+        "type": "object",
+        "properties": {
+          "rideRequestId": { "type": "string", "format": "uuid" },
+          "state": {
+            "type": "string",
+            "enum": ["REQUESTED", "NEGOTIATING", "ACCEPTED", "CANCELLED"]
+          },
+          "proposedFare": { "type": "integer", "format": "int64" },
+          "expiresAt": { "type": "string", "format": "date-time" },
+          "offerCount": { "type": "integer", "format": "int32" }
+        }
+      },
+      "ActiveRideResponse": {
+        "type": "object",
+        "properties": {
+          "request": { "$ref": "#/components/schemas/ActiveRequestSummary" },
+          "ride": { "$ref": "#/components/schemas/ActiveRideSummary" }
+        }
+      },
+      "ActiveRideSummary": {
+        "type": "object",
+        "properties": {
+          "rideId": { "type": "string", "format": "uuid" },
+          "state": {
+            "type": "string",
+            "enum": [
+              "ACCEPTED",
+              "ARRIVED",
+              "IN_PROGRESS",
+              "COMPLETED",
+              "CANCELLED"
+            ]
+          },
+          "finalFare": { "type": "integer", "format": "int64" },
+          "driver": { "$ref": "#/components/schemas/DriverInRide" },
+          "acceptedAt": { "type": "string", "format": "date-time" },
+          "arrivedAt": { "type": "string", "format": "date-time" },
+          "startedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "Coordinates": {
+        "type": "object",
+        "properties": {
+          "lat": { "type": "number" },
+          "lng": { "type": "number" }
+        }
+      },
+      "PlaceDetailResponse": {
+        "type": "object",
+        "properties": {
+          "placeId": { "type": "string" },
+          "displayName": { "type": "string" },
+          "formattedAddress": { "type": "string" },
+          "coordinates": { "$ref": "#/components/schemas/Coordinates" }
+        }
+      },
+      "PlaceSearchResponse": {
+        "type": "object",
+        "properties": {
+          "results": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/PlaceSummary" }
+          }
+        }
+      },
+      "PlaceSummary": {
+        "type": "object",
+        "properties": {
+          "placeId": { "type": "string" },
+          "displayName": { "type": "string" },
+          "formattedAddress": { "type": "string" }
+        }
       },
       "SavedAddressListResponse": {
         "type": "object",

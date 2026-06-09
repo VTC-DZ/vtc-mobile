@@ -26,6 +26,7 @@ class AppTextField extends StatelessWidget {
     this.error = '',
     this.enabled = true,
     this.unfocusOnTapOutside = true,
+    this.validator,
   });
 
   final TextEditingController controller;
@@ -44,6 +45,7 @@ class AppTextField extends StatelessWidget {
   final bool unfocusOnTapOutside;
   final String error;
   final bool enabled;
+  final String? Function(String?)? validator;
 
   @override
   Widget build(BuildContext context) {
@@ -63,6 +65,7 @@ class AppTextField extends StatelessWidget {
           inputFormatters: inputFormatters,
           onChanged: onChanged,
           onFieldSubmitted: onSubmitted,
+          validator: validator,
           onTapOutside: (_) {
             if (unfocusOnTapOutside) {
               FocusManager.instance.primaryFocus?.unfocus();
