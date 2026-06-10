@@ -15,8 +15,7 @@ final class RideRequestCubit extends Cubit<RideRequestState> {
   void setVehicleCategory(VehicleCategory value) =>
       emit(state.copyWith(vehicleCategory: value));
 
-  void setFemaleOnly(bool value) =>
-      emit(state.copyWith(femaleOnly: value));
+  void setFemaleOnly(bool value) => emit(state.copyWith(femaleOnly: value));
 
   Future<void> submitRide(CreateRideRequest request) async {
     emit(state.copyWith(status: RideRequestStatus.loading, errorMessage: ''));

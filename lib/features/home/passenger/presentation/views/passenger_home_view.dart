@@ -6,7 +6,6 @@ import '../../../../../core/theme/app_colors.dart';
 import '../../../../../shared/widgets/top_bar.dart';
 import 'widgets/home_bottom_panel.dart';
 import 'widgets/home_drawer.dart';
-import 'widgets/home_map_section.dart';
 
 class PassengerHomeShell extends StatelessWidget {
   const PassengerHomeShell({
@@ -52,7 +51,6 @@ class PassengerHomeView extends StatelessWidget {
         child: Column(
           children: [
             TopBar(),
-            Expanded(child: HomeMapSection()),
             HomeBottomPanel(),
           ],
         ),

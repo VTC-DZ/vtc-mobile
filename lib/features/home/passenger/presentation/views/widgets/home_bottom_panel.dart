@@ -27,17 +27,6 @@ class HomeBottomPanel extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Handle bar
-          Container(
-            width: 36.w,
-            height: 4.h,
-            decoration: BoxDecoration(
-              color: AppColors.borderDefault(context),
-              borderRadius: BorderRadius.circular(4.r),
-            ),
-          ),
-          SizedBox(height: 16.h),
-
           // Search bar
           _SearchBar(),
 

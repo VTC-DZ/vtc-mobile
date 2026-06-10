@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_toast.dart';
 import '../../../../shared/widgets/app_slim_app_bar.dart';
@@ -14,7 +15,7 @@ import '../cubit/ride_request_cubit.dart';
 import '../cubit/ride_request_state.dart';
 import 'widgets/dashed_connector_widget.dart';
 import 'widgets/female_only_widget.dart';
-import 'widgets/location_section_widget.dart';
+import 'widgets/location_picker_card.dart';
 import 'widgets/section_label_widget.dart';
 import 'widgets/service_type_selector.dart';
 import 'widgets/vehicle_category_selector.dart';
@@ -28,42 +29,49 @@ class RideRequestView extends StatefulWidget {
 
 class _RideRequestViewState extends State<RideRequestView> {
   final _formKey = GlobalKey<FormState>();
-
-  final _pickupAddressCtrl = TextEditingController();
-  final _pickupLatCtrl = TextEditingController();
-  final _pickupLngCtrl = TextEditingController();
-  final _dropoffAddressCtrl = TextEditingController();
-  final _dropoffLatCtrl = TextEditingController();
-  final _dropoffLngCtrl = TextEditingController();
   final _fareCtrl = TextEditingController();
+
+  CoordinatePoint? _pickup;
+  CoordinatePoint? _dropoff;
 
   @override
   void dispose() {
-    _pickupAddressCtrl.dispose();
-    _pickupLatCtrl.dispose();
-    _pickupLngCtrl.dispose();
-    _dropoffAddressCtrl.dispose();
-    _dropoffLatCtrl.dispose();
-    _dropoffLngCtrl.dispose();
     _fareCtrl.dispose();
     super.dispose();
   }
 
+  Future<void> _pickLocation({required bool isPickup}) async {
+    final label = isPickup ? 'Pickup Location' : 'Drop-off Location';
+    final result = await context.push<CoordinatePoint>(
+      RouteNames.locationPicker,
+      extra: label,
+    );
+    if (result != null) {
+      setState(() {
+        if (isPickup) {
+          _pickup = result;
+        } else {
+          _dropoff = result;
+        }
+      });
+    }
+  }
+
   void _submit(RideRequestCubit cubit, RideRequestState state) {
+    if (_pickup == null) {
+      AppToast.error('Please set a pickup location');
+      return;
+    }
+    if (_dropoff == null) {
+      AppToast.error('Please set a drop-off location');
+      return;
+    }
     if (!_formKey.currentState!.validate()) return;
 
     cubit.submitRide(
       CreateRideRequest(
-        pickup: CoordinatePoint(
-          address: _pickupAddressCtrl.text.trim(),
-          lat: double.parse(_pickupLatCtrl.text),
-          lng: double.parse(_pickupLngCtrl.text),
-        ),
-        dropoff: CoordinatePoint(
-          address: _dropoffAddressCtrl.text.trim(),
-          lat: double.parse(_dropoffLatCtrl.text),
-          lng: double.parse(_dropoffLngCtrl.text),
-        ),
+        pickup: _pickup!,
+        dropoff: _dropoff!,
         serviceType: state.serviceType,
         vehicleCategory: state.vehicleCategory,
         femaleOnly: state.femaleOnly,
@@ -111,29 +119,7 @@ class _RideRequestViewState extends State<RideRequestView> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          LocationSectionWidget(
-                            label: 'Pickup',
-                            icon: Icons.trip_origin_rounded,
-                            iconColor: AppColors.primary,
-                            addressController: _pickupAddressCtrl,
-                            latController: _pickupLatCtrl,
-                            lngController: _pickupLngCtrl,
-                          ),
-
-                          SizedBox(height: 8.h),
-                          const DashedConnectorWidget(),
-                          SizedBox(height: 8.h),
-
-                          LocationSectionWidget(
-                            label: 'Dropoff',
-                            icon: Icons.location_on_rounded,
-                            iconColor: const Color(0xFFEF4444),
-                            addressController: _dropoffAddressCtrl,
-                            latController: _dropoffLatCtrl,
-                            lngController: _dropoffLngCtrl,
-                          ),
-
-                          SizedBox(height: 24.h),
+                          // ── Service Type ─────────────────────────────────
                           const SectionLabelWidget(label: 'Service Type'),
                           SizedBox(height: 10.h),
                           ServiceTypeSelector(
@@ -142,6 +128,8 @@ class _RideRequestViewState extends State<RideRequestView> {
                           ),
 
                           SizedBox(height: 20.h),
+
+                          // ── Vehicle ───────────────────────────────────────
                           const SectionLabelWidget(label: 'Vehicle'),
                           SizedBox(height: 10.h),
                           VehicleCategorySelector(
@@ -149,13 +137,43 @@ class _RideRequestViewState extends State<RideRequestView> {
                             onChanged: cubit.setVehicleCategory,
                           ),
 
+                          SizedBox(height: 24.h),
+
+                          // ── Locations ─────────────────────────────────────
+                          const SectionLabelWidget(label: 'Locations'),
+                          SizedBox(height: 10.h),
+
+                          LocationPickerCard(
+                            label: 'Pickup',
+                            icon: Icons.trip_origin_rounded,
+                            iconColor: AppColors.primary,
+                            address: _pickup?.address,
+                            onTap: () => _pickLocation(isPickup: true),
+                          ),
+
+                          SizedBox(height: 6.h),
+                          const DashedConnectorWidget(),
+                          SizedBox(height: 6.h),
+
+                          LocationPickerCard(
+                            label: 'Drop-off',
+                            icon: Icons.location_on_rounded,
+                            iconColor: const Color(0xFFEF4444),
+                            address: _dropoff?.address,
+                            onTap: () => _pickLocation(isPickup: false),
+                          ),
+
                           SizedBox(height: 20.h),
+
+                          // ── Female only ───────────────────────────────────
                           FemaleOnlyWidget(
                             value: state.femaleOnly,
                             onChanged: cubit.setFemaleOnly,
                           ),
 
                           SizedBox(height: 20.h),
+
+                          // ── Proposed Fare ─────────────────────────────────
                           const SectionLabelWidget(label: 'Proposed Fare (DZD)'),
                           SizedBox(height: 10.h),
                           AppTextField(
