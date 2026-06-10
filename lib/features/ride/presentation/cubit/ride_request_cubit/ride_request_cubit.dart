@@ -1,7 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../data/models/ride_models.dart';
-import '../../data/ride_repository.dart';
+import '../../../data/models/ride_models.dart';
+import '../../../data/ride_repository.dart';
 import 'ride_request_state.dart';
 
 final class RideRequestCubit extends Cubit<RideRequestState> {
@@ -20,8 +20,11 @@ final class RideRequestCubit extends Cubit<RideRequestState> {
   Future<void> submitRide(CreateRideRequest request) async {
     emit(state.copyWith(status: RideRequestStatus.loading, errorMessage: ''));
     try {
-      await _repository.createRide(request);
-      emit(state.copyWith(status: RideRequestStatus.success));
+      final response = await _repository.createRide(request);
+      emit(state.copyWith(
+        status: RideRequestStatus.success,
+        createRideResponse: response,
+      ));
     } catch (e) {
       emit(state.copyWith(
         status: RideRequestStatus.failure,

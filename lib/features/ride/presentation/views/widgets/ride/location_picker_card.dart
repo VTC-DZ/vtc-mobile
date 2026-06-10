@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-import '../../../../../../core/theme/app_colors.dart';
-import '../../../../../../core/theme/app_text_styles.dart';
+import '../../../../../../../core/theme/app_colors.dart';
+import '../../../../../../../core/theme/app_text_styles.dart';
 
 class LocationPickerCard extends StatelessWidget {
   const LocationPickerCard({
@@ -75,7 +75,8 @@ class LocationPickerCard extends StatelessWidget {
                       color: hasLocation
                           ? AppColors.text(context)
                           : AppColors.textSecondary(context),
-                      fontWeight: hasLocation ? FontWeight.w600 : FontWeight.w400,
+                      fontWeight:
+                          hasLocation ? FontWeight.w600 : FontWeight.w400,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -85,9 +86,13 @@ class LocationPickerCard extends StatelessWidget {
             ),
             SizedBox(width: 8.w),
             Icon(
-              hasLocation ? Icons.edit_location_alt_rounded : Icons.map_rounded,
+              hasLocation
+                  ? Icons.edit_location_alt_rounded
+                  : Icons.map_rounded,
               size: 20.w,
-              color: hasLocation ? iconColor : AppColors.textSecondary(context),
+              color: hasLocation
+                  ? iconColor
+                  : AppColors.textSecondary(context),
             ),
           ],
         ),

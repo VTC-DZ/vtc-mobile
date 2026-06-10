@@ -1,0 +1,16 @@
+{
+  "pickup": {
+    "address": "Aïn El Bey, Constantine ⵇⵙⴻⵟⵉⵏⴰ قسنطينة, Daïra Constantine, قسنطينة Constantine ⵇⵙⴻⵏⵟⵉⵏⴰ, 25000, ⵍⵣⵣⴰⵢⴻⵔ الجزائر",
+    "lat": 36.32273971674848,
+    "lng": 6.630593386230463
+  },
+  "dropoff": {
+    "address": "CW 175, Aïn El Bey, Ben Abdelmalek, Constantine ⵇⵙⴻⵟⵉⵏⴰ قسنطينة, Daïra Constantine, قسنطينة Constantine ⵇⵙⴻⵏⵟⵉⵏⴰ, 25003, ⵍⵣⵣⴰⵢⴻⵔ الجزائر",
+    "lat": 36.326450850497686,
+    "lng": 6.636401262817363
+  },
+  "serviceType": "RIDE",
+  "vehicleCategory": "CAR",
+  "femaleOnly": false,
+  "proposedFare": 2000
+}

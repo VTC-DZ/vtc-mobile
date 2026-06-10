@@ -7,6 +7,8 @@ abstract final class RideApiConstants {
   static String offers(String rideRequestId) => '$_base/$rideRequestId/offers';
   static String acceptOffer(String rideRequestId, String offerId) =>
       '$_base/$rideRequestId/offers/$offerId/accept';
+  static String refuseOffer(String rideRequestId, String offerId) =>
+      '$_base/$rideRequestId/offers/$offerId/refuse';
   static String counterOffer(String rideRequestId) =>
       '$_base/$rideRequestId/counter-offer';
   static String cancel(String rideRequestId) => '$_base/$rideRequestId/cancel';

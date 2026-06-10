@@ -11,14 +11,14 @@ import '../../../../shared/widgets/app_slim_app_bar.dart';
 import '../../../../shared/widgets/app_text_field.dart';
 import '../../../../shared/widgets/primary_button.dart';
 import '../../data/models/ride_models.dart';
-import '../cubit/ride_request_cubit.dart';
-import '../cubit/ride_request_state.dart';
-import 'widgets/dashed_connector_widget.dart';
-import 'widgets/female_only_widget.dart';
-import 'widgets/location_picker_card.dart';
-import 'widgets/section_label_widget.dart';
-import 'widgets/service_type_selector.dart';
-import 'widgets/vehicle_category_selector.dart';
+import '../cubit/ride_request_cubit/ride_request_cubit.dart';
+import '../cubit/ride_request_cubit/ride_request_state.dart';
+import 'widgets/ride/dashed_connector_widget.dart';
+import 'widgets/ride/female_only_widget.dart';
+import 'widgets/ride/location_picker_card.dart';
+import 'widgets/ride/section_label_widget.dart';
+import 'widgets/ride/service_type_selector.dart';
+import 'widgets/ride/vehicle_category_selector.dart';
 
 class RideRequestView extends StatefulWidget {
   const RideRequestView({super.key});
@@ -86,8 +86,17 @@ class _RideRequestViewState extends State<RideRequestView> {
       listenWhen: (prev, curr) => prev.status != curr.status,
       listener: (context, state) {
         if (state.status == RideRequestStatus.success) {
-          AppToast.success('Ride requested! Looking for drivers…');
-          context.pop();
+          context.pushReplacement(
+            RouteNames.waitingOffers,
+            extra: WaitingOffersArgs(
+              pickup: _pickup!,
+              dropoff: _dropoff!,
+              proposedFare: int.parse(_fareCtrl.text),
+              serviceType: state.serviceType,
+              vehicleCategory: state.vehicleCategory,
+              response: state.createRideResponse!,
+            ),
+          );
         } else if (state.status == RideRequestStatus.failure) {
           AppToast.error(
             state.errorMessage.isNotEmpty
@@ -174,7 +183,8 @@ class _RideRequestViewState extends State<RideRequestView> {
                           SizedBox(height: 20.h),
 
                           // ── Proposed Fare ─────────────────────────────────
-                          const SectionLabelWidget(label: 'Proposed Fare (DZD)'),
+                          const SectionLabelWidget(
+                              label: 'Proposed Fare (DZD)'),
                           SizedBox(height: 10.h),
                           AppTextField(
                             controller: _fareCtrl,
@@ -188,7 +198,9 @@ class _RideRequestViewState extends State<RideRequestView> {
                               final fare = int.tryParse(v ?? '');
                               if (fare == null) return 'Enter a valid amount';
                               if (fare < 100) return 'Minimum fare is 100 DZD';
-                              if (fare > 50000) return 'Maximum fare is 50,000 DZD';
+                              if (fare > 50000) {
+                                return 'Maximum fare is 50,000 DZD';
+                              }
                               return null;
                             },
                           ),
@@ -198,7 +210,6 @@ class _RideRequestViewState extends State<RideRequestView> {
                       ),
                     ),
                   ),
-
                   Container(
                     padding: EdgeInsets.fromLTRB(
                       20.w,

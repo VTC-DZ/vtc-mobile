@@ -10,8 +10,11 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../shared/widgets/primary_button.dart';
 import '../../data/models/ride_models.dart';
-import '../cubit/location_picker_cubit.dart';
-import '../cubit/location_picker_state.dart';
+import '../cubit/location_cubit/location_picker_cubit.dart';
+import '../cubit/location_cubit/location_picker_state.dart';
+import 'widgets/location/location_search_bar.dart';
+import 'widgets/location/map_button.dart';
+import 'widgets/location/search_results_list.dart';
 
 class LocationPickerView extends StatefulWidget {
   const LocationPickerView({super.key, this.label = 'Location'});
@@ -64,7 +67,6 @@ class _LocationPickerViewState extends State<LocationPickerView> {
   @override
   Widget build(BuildContext context) {
     return BlocListener<LocationPickerCubit, LocationPickerState>(
-      // Only move the camera when init() or selectResult() changes mapCenter.
       listenWhen: (prev, curr) => prev.mapCenter != curr.mapCenter,
       listener: (context, state) {
         _mapController.move(state.mapCenter, _mapController.camera.zoom);
@@ -76,7 +78,7 @@ class _LocationPickerViewState extends State<LocationPickerView> {
 
             return Stack(
               children: [
-                // ── Map ────────────────────────────────────────────────────
+                // ── Map ──────────────────────────────────────────────────────
                 FlutterMap(
                   mapController: _mapController,
                   options: MapOptions(
@@ -90,7 +92,6 @@ class _LocationPickerViewState extends State<LocationPickerView> {
                           'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                       userAgentPackageName: 'com.khfif.drif',
                     ),
-                    // Pin marker at the tapped position
                     if (state.selectedPosition != null)
                       MarkerLayer(
                         markers: [
@@ -105,7 +106,8 @@ class _LocationPickerViewState extends State<LocationPickerView> {
                               color: AppColors.primary,
                               shadows: [
                                 Shadow(
-                                  color: AppColors.black.withValues(alpha: 0.3),
+                                  color:
+                                      AppColors.black.withValues(alpha: 0.3),
                                   blurRadius: 8,
                                   offset: const Offset(0, 2),
                                 ),
@@ -117,7 +119,7 @@ class _LocationPickerViewState extends State<LocationPickerView> {
                   ],
                 ),
 
-                // ── Geocoding indicator ────────────────────────────────────
+                // ── Geocoding indicator ───────────────────────────────────────
                 if (state.isGeocoding)
                   const Center(
                     child: CircularProgressIndicator(
@@ -126,7 +128,7 @@ class _LocationPickerViewState extends State<LocationPickerView> {
                     ),
                   ),
 
-                // ── Top overlay (back + search) ────────────────────────────
+                // ── Top overlay (back + search) ───────────────────────────────
                 Positioned(
                   top: MediaQuery.of(context).padding.top + 12.h,
                   left: 16.w,
@@ -135,13 +137,13 @@ class _LocationPickerViewState extends State<LocationPickerView> {
                     children: [
                       Row(
                         children: [
-                          _MapButton(
+                          MapButton(
                             icon: Icons.arrow_back_rounded,
                             onTap: () => context.pop(),
                           ),
                           SizedBox(width: 10.w),
                           Expanded(
-                            child: _SearchBar(
+                            child: LocationSearchBar(
                               controller: _searchCtrl,
                               focusNode: _searchFocus,
                               hint: 'Search for a location…',
@@ -156,10 +158,8 @@ class _LocationPickerViewState extends State<LocationPickerView> {
                           ),
                         ],
                       ),
-
-                      // Search results dropdown
                       if (state.searchResults.isNotEmpty)
-                        _SearchResultsList(
+                        SearchResultsList(
                           results: state.searchResults,
                           onSelect: (place) {
                             _searchCtrl.text = place.displayName;
@@ -171,14 +171,14 @@ class _LocationPickerViewState extends State<LocationPickerView> {
                   ),
                 ),
 
-                // ── Bottom confirm card ────────────────────────────────────
+                // ── Bottom confirm card ───────────────────────────────────────
                 Positioned(
                   bottom: MediaQuery.of(context).padding.bottom + 16.h,
                   left: 16.w,
                   right: 16.w,
                   child: Container(
-                    padding:
-                        EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
+                    padding: EdgeInsets.symmetric(
+                        horizontal: 16.w, vertical: 14.h),
                     decoration: BoxDecoration(
                       color: AppColors.background(context),
                       borderRadius: BorderRadius.circular(20.r),
@@ -204,7 +204,8 @@ class _LocationPickerViewState extends State<LocationPickerView> {
                             SizedBox(width: 6.w),
                             Text(
                               widget.label,
-                              style: AppTextStyles.labelSmall(context).copyWith(
+                              style:
+                                  AppTextStyles.labelSmall(context).copyWith(
                                 color: AppColors.primary,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -237,181 +238,6 @@ class _LocationPickerViewState extends State<LocationPickerView> {
               ],
             );
           },
-        ),
-      ),
-    );
-  }
-}
-
-// ── Small icon button on map overlay ────────────────────────────────────────
-
-class _MapButton extends StatelessWidget {
-  const _MapButton({required this.icon, required this.onTap});
-
-  final IconData icon;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: AppColors.background(context),
-      borderRadius: BorderRadius.circular(12.r),
-      elevation: 2,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12.r),
-        onTap: onTap,
-        child: SizedBox(
-          width: 44.w,
-          height: 44.w,
-          child: Icon(icon, size: 20.w, color: AppColors.text(context)),
-        ),
-      ),
-    );
-  }
-}
-
-// ── Search bar widget ────────────────────────────────────────────────────────
-
-class _SearchBar extends StatelessWidget {
-  const _SearchBar({
-    required this.controller,
-    required this.focusNode,
-    required this.hint,
-    required this.isLoading,
-    required this.onChanged,
-    required this.onClear,
-  });
-
-  final TextEditingController controller;
-  final FocusNode focusNode;
-  final String hint;
-  final bool isLoading;
-  final ValueChanged<String> onChanged;
-  final VoidCallback onClear;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: AppColors.background(context),
-      borderRadius: BorderRadius.circular(12.r),
-      elevation: 2,
-      child: SizedBox(
-        height: 44.w,
-        child: TextField(
-          controller: controller,
-          focusNode: focusNode,
-          onChanged: onChanged,
-          style: AppTextStyles.bodyMedium(context)
-              .copyWith(color: AppColors.text(context)),
-          decoration: InputDecoration(
-            hintText: hint,
-            hintStyle: AppTextStyles.bodyMedium(context),
-            prefixIcon: Icon(
-              Icons.search_rounded,
-              size: 18.w,
-              color: AppColors.textSecondary(context),
-            ),
-            suffixIcon: isLoading
-                ? Padding(
-                    padding: EdgeInsets.all(12.w),
-                    child: SizedBox(
-                      width: 16.w,
-                      height: 16.w,
-                      child: const CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: AppColors.primary,
-                      ),
-                    ),
-                  )
-                : controller.text.isNotEmpty
-                    ? IconButton(
-                        icon: Icon(Icons.close_rounded,
-                            size: 16.w,
-                            color: AppColors.textSecondary(context)),
-                        onPressed: onClear,
-                      )
-                    : null,
-            border: InputBorder.none,
-            contentPadding:
-                EdgeInsets.symmetric(horizontal: 4.w, vertical: 12.h),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ── Search results list ──────────────────────────────────────────────────────
-
-class _SearchResultsList extends StatelessWidget {
-  const _SearchResultsList({
-    required this.results,
-    required this.onSelect,
-  });
-
-  final List<NominatimPlace> results;
-  final void Function(NominatimPlace) onSelect;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: EdgeInsets.only(top: 6.h),
-      decoration: BoxDecoration(
-        color: AppColors.background(context),
-        borderRadius: BorderRadius.circular(12.r),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.black.withValues(alpha: 0.1),
-            blurRadius: 12.r,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(12.r),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: results.map((place) {
-            final isLast = place == results.last;
-            return Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                InkWell(
-                  onTap: () => onSelect(place),
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(
-                        horizontal: 14.w, vertical: 12.h),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.location_on_outlined,
-                          size: 16.w,
-                          color: AppColors.textSecondary(context),
-                        ),
-                        SizedBox(width: 10.w),
-                        Expanded(
-                          child: Text(
-                            place.displayName,
-                            style: AppTextStyles.bodySmall(context).copyWith(
-                              color: AppColors.text(context),
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                if (!isLast)
-                  Divider(
-                    height: 1,
-                    indent: 40.w,
-                    color: AppColors.borderDefault(context),
-                  ),
-              ],
-            );
-          }).toList(),
         ),
       ),
     );

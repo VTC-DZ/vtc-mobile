@@ -8,10 +8,23 @@
   "servers": [
     { "url": "http://localhost:8080", "description": "Generated server url" }
   ],
+  "tags": [
+    {
+      "name": "Passenger Places",
+      "description": "Search places, reverse-geocode, and resolve place details"
+    },
+    { "name": "Passenger Addresses", "description": "Manage saved addresses" },
+    {
+      "name": "Passenger Rides",
+      "description": "Create rides, review offers, and manage active rides"
+    }
+  ],
   "paths": {
     "/api/passenger/addresses/{id}": {
       "put": {
-        "tags": ["passenger-address-controller"],
+        "tags": ["Passenger Addresses"],
+        "summary": "Update address",
+        "description": "Updates an existing saved address.",
         "operationId": "updateAddress",
         "parameters": [
           {
@@ -31,7 +44,37 @@
         },
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "Address updated",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/SavedAddressResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/SavedAddressResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/SavedAddressResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Address not found",
             "content": {
               "*/*": {
                 "schema": {
@@ -40,10 +83,13 @@
               }
             }
           }
-        }
+        },
+        "security": [{ "bearerAuth": [] }]
       },
       "delete": {
-        "tags": ["passenger-address-controller"],
+        "tags": ["Passenger Addresses"],
+        "summary": "Delete address",
+        "description": "Deletes a saved address.",
         "operationId": "deleteAddress",
         "parameters": [
           {
@@ -53,12 +99,19 @@
             "schema": { "type": "string", "format": "uuid" }
           }
         ],
-        "responses": { "200": { "description": "OK" } }
+        "responses": {
+          "204": { "description": "Address deleted" },
+          "401": { "description": "Unauthorized" },
+          "404": { "description": "Address not found" }
+        },
+        "security": [{ "bearerAuth": [] }]
       }
     },
     "/api/passenger/rides": {
       "post": {
-        "tags": ["passenger-ride-controller"],
+        "tags": ["Passenger Rides"],
+        "summary": "Create ride",
+        "description": "Creates a new ride request with pickup/dropoff details.",
         "operationId": "createRide",
         "parameters": [
           {
@@ -77,20 +130,88 @@
           "required": true
         },
         "responses": {
-          "200": {
-            "description": "OK",
+          "202": {
+            "description": "Ride request created",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/CreateRideResponse" }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/CreateRideResponse" }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
             "content": {
               "*/*": {
                 "schema": { "$ref": "#/components/schemas/CreateRideResponse" }
               }
             }
           }
-        }
+        },
+        "security": [{ "bearerAuth": [] }]
+      }
+    },
+    "/api/passenger/rides/{rideRequestId}/offers/{offerId}/refuse": {
+      "post": {
+        "tags": ["Passenger Rides"],
+        "summary": "Refuse offer",
+        "description": "Refuses a driver's offer for a ride request.",
+        "operationId": "refuseOffer",
+        "parameters": [
+          {
+            "name": "rideRequestId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          },
+          {
+            "name": "offerId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Offer refused",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/RefuseOfferResponse" }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/RefuseOfferResponse" }
+              }
+            }
+          },
+          "404": {
+            "description": "Offer or ride request not found",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/RefuseOfferResponse" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }]
       }
     },
     "/api/passenger/rides/{rideRequestId}/offers/{offerId}/accept": {
       "post": {
-        "tags": ["passenger-ride-controller"],
+        "tags": ["Passenger Rides"],
+        "summary": "Accept offer",
+        "description": "Accepts a driver's offer for a ride request.",
         "operationId": "acceptOffer",
         "parameters": [
           {
@@ -114,59 +235,38 @@
         ],
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "Offer accepted",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/AcceptOfferResponse" }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/AcceptOfferResponse" }
+              }
+            }
+          },
+          "404": {
+            "description": "Offer or ride request not found",
             "content": {
               "*/*": {
                 "schema": { "$ref": "#/components/schemas/AcceptOfferResponse" }
               }
             }
           }
-        }
-      }
-    },
-    "/api/passenger/rides/{rideRequestId}/counter-offer": {
-      "post": {
-        "tags": ["passenger-ride-controller"],
-        "operationId": "counterOffer",
-        "parameters": [
-          {
-            "name": "rideRequestId",
-            "in": "path",
-            "required": true,
-            "schema": { "type": "string", "format": "uuid" }
-          },
-          {
-            "name": "Idempotency-Key",
-            "in": "header",
-            "required": false,
-            "schema": { "type": "string" }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": { "$ref": "#/components/schemas/CounterOfferRequest" }
-            }
-          },
-          "required": true
         },
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/CounterOfferResponse"
-                }
-              }
-            }
-          }
-        }
+        "security": [{ "bearerAuth": [] }]
       }
     },
     "/api/passenger/rides/{rideRequestId}/cancel": {
       "post": {
-        "tags": ["passenger-ride-controller"],
+        "tags": ["Passenger Rides"],
+        "summary": "Cancel ride",
+        "description": "Cancels a ride request from the passenger's side.",
         "operationId": "cancel",
         "parameters": [
           {
@@ -192,23 +292,60 @@
         },
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "Ride cancelled",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/CancelRideResponse" }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/CancelRideResponse" }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/CancelRideResponse" }
+              }
+            }
+          },
+          "404": {
+            "description": "Ride not found",
             "content": {
               "*/*": {
                 "schema": { "$ref": "#/components/schemas/CancelRideResponse" }
               }
             }
           }
-        }
+        },
+        "security": [{ "bearerAuth": [] }]
       }
     },
     "/api/passenger/addresses": {
       "get": {
-        "tags": ["passenger-address-controller"],
+        "tags": ["Passenger Addresses"],
+        "summary": "List saved addresses",
+        "description": "Returns all saved addresses for the authenticated passenger.",
         "operationId": "listAddresses",
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "Address list",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/SavedAddressListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
             "content": {
               "*/*": {
                 "schema": {
@@ -217,10 +354,13 @@
               }
             }
           }
-        }
+        },
+        "security": [{ "bearerAuth": [] }]
       },
       "post": {
-        "tags": ["passenger-address-controller"],
+        "tags": ["Passenger Addresses"],
+        "summary": "Add address",
+        "description": "Saves a new address for the authenticated passenger.",
         "operationId": "addAddress",
         "parameters": [
           {
@@ -239,8 +379,28 @@
           "required": true
         },
         "responses": {
-          "200": {
-            "description": "OK",
+          "201": {
+            "description": "Address created",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/SavedAddressResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/SavedAddressResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
             "content": {
               "*/*": {
                 "schema": {
@@ -249,12 +409,58 @@
               }
             }
           }
-        }
+        },
+        "security": [{ "bearerAuth": [] }]
+      }
+    },
+    "/api/passenger/rides/{rideRequestId}": {
+      "get": {
+        "tags": ["Passenger Rides"],
+        "summary": "Get ride detail",
+        "description": "Returns detailed information about a specific ride request.",
+        "operationId": "getRide",
+        "parameters": [
+          {
+            "name": "rideRequestId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Ride detail",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/RideDetailResponse" }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/RideDetailResponse" }
+              }
+            }
+          },
+          "404": {
+            "description": "Ride not found",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/RideDetailResponse" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }]
       }
     },
     "/api/passenger/rides/{rideRequestId}/offers": {
       "get": {
-        "tags": ["passenger-ride-controller"],
+        "tags": ["Passenger Rides"],
+        "summary": "List offers",
+        "description": "Returns all offers for a ride request.",
         "operationId": "listOffers",
         "parameters": [
           {
@@ -266,59 +472,73 @@
         ],
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "Offer list",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/OfferListResponse" }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/OfferListResponse" }
+              }
+            }
+          },
+          "404": {
+            "description": "Ride request not found",
             "content": {
               "*/*": {
                 "schema": { "$ref": "#/components/schemas/OfferListResponse" }
               }
             }
           }
-        }
-      }
-    },
-    "/api/passenger/rides/{rideId}": {
-      "get": {
-        "tags": ["passenger-ride-controller"],
-        "operationId": "getRide",
-        "parameters": [
-          {
-            "name": "rideId",
-            "in": "path",
-            "required": true,
-            "schema": { "type": "string", "format": "uuid" }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "*/*": {
-                "schema": { "$ref": "#/components/schemas/RideDetailResponse" }
-              }
-            }
-          }
-        }
+        },
+        "security": [{ "bearerAuth": [] }]
       }
     },
     "/api/passenger/rides/active": {
       "get": {
-        "tags": ["passenger-ride-controller"],
+        "tags": ["Passenger Rides"],
+        "summary": "Get active ride",
+        "description": "Returns the passenger's currently active ride, if any.",
         "operationId": "getActive",
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "Active ride found",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/ActiveRideResponse" }
+              }
+            }
+          },
+          "204": {
+            "description": "No active ride",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/ActiveRideResponse" }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
             "content": {
               "*/*": {
                 "schema": { "$ref": "#/components/schemas/ActiveRideResponse" }
               }
             }
           }
-        }
+        },
+        "security": [{ "bearerAuth": [] }]
       }
     },
     "/api/passenger/places/{placeId}": {
       "get": {
-        "tags": ["passenger-places-controller"],
+        "tags": ["Passenger Places"],
+        "summary": "Resolve place",
+        "description": "Returns details for a specific place by ID.",
         "operationId": "resolve",
         "parameters": [
           {
@@ -330,19 +550,38 @@
         ],
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "Place detail",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/PlaceDetailResponse" }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/PlaceDetailResponse" }
+              }
+            }
+          },
+          "404": {
+            "description": "Place not found",
             "content": {
               "*/*": {
                 "schema": { "$ref": "#/components/schemas/PlaceDetailResponse" }
               }
             }
           }
-        }
+        },
+        "security": [{ "bearerAuth": [] }]
       }
     },
     "/api/passenger/places/search": {
       "get": {
-        "tags": ["passenger-places-controller"],
+        "tags": ["Passenger Places"],
+        "summary": "Search places",
+        "description": "Full-text place search with optional location bias.",
         "operationId": "search",
         "parameters": [
           {
@@ -369,19 +608,38 @@
         ],
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "Search results",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/PlaceSearchResponse" }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/PlaceSearchResponse" }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
             "content": {
               "*/*": {
                 "schema": { "$ref": "#/components/schemas/PlaceSearchResponse" }
               }
             }
           }
-        }
+        },
+        "security": [{ "bearerAuth": [] }]
       }
     },
     "/api/passenger/places/reverse-geocode": {
       "get": {
-        "tags": ["passenger-places-controller"],
+        "tags": ["Passenger Places"],
+        "summary": "Reverse geocode",
+        "description": "Resolves coordinates to a place description.",
         "operationId": "reverseGeocode",
         "parameters": [
           {
@@ -399,14 +657,31 @@
         ],
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "Place detail",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/PlaceDetailResponse" }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/PlaceDetailResponse" }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
             "content": {
               "*/*": {
                 "schema": { "$ref": "#/components/schemas/PlaceDetailResponse" }
               }
             }
           }
-        }
+        },
+        "security": [{ "bearerAuth": [] }]
       }
     }
   },
@@ -476,15 +751,17 @@
             "format": "int64",
             "maximum": 50000,
             "minimum": 100
-          }
+          },
+          "recipientName": { "type": "string" },
+          "recipientPhone": { "type": "string" },
+          "packageNote": { "type": "string" }
         },
         "required": [
           "dropoff",
           "femaleOnly",
           "pickup",
           "proposedFare",
-          "serviceType",
-          "vehicleCategory"
+          "serviceType"
         ]
       },
       "CreateRideResponse": {
@@ -498,6 +775,23 @@
           "proposedFare": { "type": "integer", "format": "int64" },
           "expiresAt": { "type": "string", "format": "date-time" },
           "broadcastDriverCount": { "type": "integer", "format": "int32" }
+        }
+      },
+      "RefuseOfferResponse": {
+        "type": "object",
+        "properties": {
+          "offerId": { "type": "string", "format": "uuid" },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ACTIVE",
+              "ACCEPTED",
+              "REJECTED",
+              "COUNTERED",
+              "EXPIRED",
+              "WITHDRAWN"
+            ]
+          }
         }
       },
       "AcceptOfferResponse": {
@@ -515,46 +809,6 @@
             ]
           },
           "finalFare": { "type": "integer", "format": "int64" }
-        }
-      },
-      "CounterOfferRequest": {
-        "type": "object",
-        "properties": {
-          "parentOfferId": { "type": "string", "format": "uuid" },
-          "fare": {
-            "type": "integer",
-            "format": "int64",
-            "maximum": 50000,
-            "minimum": 100
-          }
-        },
-        "required": ["fare", "parentOfferId"]
-      },
-      "CounterOfferResponse": {
-        "type": "object",
-        "properties": {
-          "offerId": { "type": "string", "format": "uuid" },
-          "rideRequestId": { "type": "string", "format": "uuid" },
-          "driverId": { "type": "string", "format": "uuid" },
-          "fare": { "type": "integer", "format": "int64" },
-          "direction": {
-            "type": "string",
-            "enum": ["DRIVER_TO_PASSENGER", "PASSENGER_TO_DRIVER"]
-          },
-          "status": {
-            "type": "string",
-            "enum": [
-              "ACTIVE",
-              "ACCEPTED",
-              "REJECTED",
-              "COUNTERED",
-              "EXPIRED",
-              "WITHDRAWN"
-            ]
-          },
-          "round": { "type": "integer", "format": "int32" },
-          "previousOfferId": { "type": "string", "format": "uuid" },
-          "expiresAt": { "type": "string", "format": "date-time" }
         }
       },
       "CancelRideRequest": {
@@ -611,46 +865,6 @@
         },
         "required": ["address", "label", "type"]
       },
-      "OfferEntry": {
-        "type": "object",
-        "properties": {
-          "offerId": { "type": "string", "format": "uuid" },
-          "driverId": { "type": "string", "format": "uuid" },
-          "driverFullName": { "type": "string" },
-          "driverRatingAvg": { "type": "number" },
-          "vehicleModel": { "type": "string" },
-          "vehiclePlate": { "type": "string" },
-          "fare": { "type": "integer", "format": "int64" },
-          "direction": {
-            "type": "string",
-            "enum": ["DRIVER_TO_PASSENGER", "PASSENGER_TO_DRIVER"]
-          },
-          "status": {
-            "type": "string",
-            "enum": [
-              "ACTIVE",
-              "ACCEPTED",
-              "REJECTED",
-              "COUNTERED",
-              "EXPIRED",
-              "WITHDRAWN"
-            ]
-          },
-          "round": { "type": "integer", "format": "int32" },
-          "etaSeconds": { "type": "integer", "format": "int32" },
-          "previousOfferId": { "type": "string", "format": "uuid" },
-          "expiresAt": { "type": "string", "format": "date-time" }
-        }
-      },
-      "OfferListResponse": {
-        "type": "object",
-        "properties": {
-          "offers": {
-            "type": "array",
-            "items": { "$ref": "#/components/schemas/OfferEntry" }
-          }
-        }
-      },
       "Coordinate": {
         "type": "object",
         "properties": {
@@ -693,6 +907,46 @@
           "distanceMeters": { "type": "integer", "format": "int32" },
           "durationSeconds": { "type": "integer", "format": "int32" },
           "routeGeometryGeoJson": {}
+        }
+      },
+      "OfferEntry": {
+        "type": "object",
+        "properties": {
+          "offerId": { "type": "string", "format": "uuid" },
+          "driverId": { "type": "string", "format": "uuid" },
+          "driverFullName": { "type": "string" },
+          "driverRatingAvg": { "type": "number" },
+          "vehicleModel": { "type": "string" },
+          "vehiclePlate": { "type": "string" },
+          "fare": { "type": "integer", "format": "int64" },
+          "direction": {
+            "type": "string",
+            "enum": ["DRIVER_TO_PASSENGER", "PASSENGER_TO_DRIVER"]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ACTIVE",
+              "ACCEPTED",
+              "REJECTED",
+              "COUNTERED",
+              "EXPIRED",
+              "WITHDRAWN"
+            ]
+          },
+          "round": { "type": "integer", "format": "int32" },
+          "etaSeconds": { "type": "integer", "format": "int32" },
+          "previousOfferId": { "type": "string", "format": "uuid" },
+          "expiresAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "OfferListResponse": {
+        "type": "object",
+        "properties": {
+          "offers": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/OfferEntry" }
+          }
         }
       },
       "ActiveRequestSummary": {
@@ -777,6 +1031,20 @@
             "items": { "$ref": "#/components/schemas/SavedAddressResponse" }
           }
         }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "description": "Mobile JWT (passenger/driver)",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      },
+      "adminBearerAuth": {
+        "type": "http",
+        "description": "Admin dashboard JWT",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
       }
     }
   }

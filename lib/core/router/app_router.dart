@@ -37,11 +37,14 @@ import '../../features/saved_places/presentation/views/saved_places_view.dart';
 import '../../features/saved_places/data/address_model.dart';
 import '../../features/saved_places/presentation/views/address_create_view.dart';
 import '../../features/saved_places/presentation/views/address_edit_view.dart';
+import '../../features/ride/data/models/ride_models.dart';
 import '../../features/ride/data/ride_repository.dart';
-import '../../features/ride/presentation/cubit/location_picker_cubit.dart';
-import '../../features/ride/presentation/cubit/ride_request_cubit.dart';
+import '../../features/ride/presentation/cubit/location_cubit/location_picker_cubit.dart';
+import '../../features/ride/presentation/cubit/ride_request_cubit/ride_request_cubit.dart';
+import '../../features/ride/presentation/cubit/waiting_offers_cubit/waiting_offers_cubit.dart';
 import '../../features/ride/presentation/views/location_picker_view.dart';
 import '../../features/ride/presentation/views/ride_request_view.dart';
+import '../../features/ride/presentation/views/waiting_offers_view.dart';
 import '../session/auth_session.dart';
 import 'route_names.dart';
 
@@ -104,8 +107,9 @@ final class AppRouter {
       ),
       ShellRoute(
           builder: (context, state, child) => BlocProvider(
-                create: (context) =>
-                    PassengerHomeCubit(_profileRepository)..getProfile(),
+                create: (context) => PassengerHomeCubit(_profileRepository)
+                  ..getProfile()
+                  ..checkActiveRide(),
                 child: PassengerHomeShell(child: child),
               ),
           routes: [
@@ -179,10 +183,23 @@ final class AppRouter {
                 );
               },
             ),
+            GoRoute(
+              path: RouteNames.waitingOffers,
+              builder: (context, state) {
+                final args = state.extra as WaitingOffersArgs;
+                return BlocProvider<WaitingOffersCubit>(
+                  create: (_) => WaitingOffersCubit(
+                    const RideRepository(),
+                    args.response.rideRequestId,
+                  )..startPolling(),
+                  child: WaitingOffersView(args: args),
+                );
+              },
+            ),
             ShellRoute(
               builder: (context, state, child) => BlocProvider(
-                create: (_) => SavedPlacesCubit(const AddressRepository())
-                  ..getAddresses(),
+                create: (_) =>
+                    SavedPlacesCubit(const AddressRepository())..getAddresses(),
                 child: child,
               ),
               routes: [
@@ -219,8 +236,7 @@ final class AppRouter {
       ),
       ShellRoute(
         builder: (context, state, child) => BlocProvider(
-          create: (context) =>
-              DriverHomeCubit(_driverRepository)..getProfile(),
+          create: (context) => DriverHomeCubit(_driverRepository)..getProfile(),
           child: DriverHomeShell(child: child),
         ),
         routes: [

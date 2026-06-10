@@ -1,6 +1,6 @@
 import 'package:equatable/equatable.dart';
 
-import '../../data/models/ride_models.dart';
+import '../../../data/models/ride_models.dart';
 
 enum RideRequestStatus { initial, loading, success, failure }
 
@@ -11,6 +11,7 @@ final class RideRequestState extends Equatable {
     this.femaleOnly = false,
     this.status = RideRequestStatus.initial,
     this.errorMessage = '',
+    this.createRideResponse,
   });
 
   final ServiceType serviceType;
@@ -18,6 +19,7 @@ final class RideRequestState extends Equatable {
   final bool femaleOnly;
   final RideRequestStatus status;
   final String errorMessage;
+  final CreateRideResponse? createRideResponse;
 
   RideRequestState copyWith({
     ServiceType? serviceType,
@@ -25,6 +27,7 @@ final class RideRequestState extends Equatable {
     bool? femaleOnly,
     RideRequestStatus? status,
     String? errorMessage,
+    CreateRideResponse? createRideResponse,
   }) =>
       RideRequestState(
         serviceType: serviceType ?? this.serviceType,
@@ -32,6 +35,7 @@ final class RideRequestState extends Equatable {
         femaleOnly: femaleOnly ?? this.femaleOnly,
         status: status ?? this.status,
         errorMessage: errorMessage ?? this.errorMessage,
+        createRideResponse: createRideResponse ?? this.createRideResponse,
       );
 
   @override
@@ -41,5 +45,6 @@ final class RideRequestState extends Equatable {
         femaleOnly,
         status,
         errorMessage,
+        createRideResponse,
       ];
 }
