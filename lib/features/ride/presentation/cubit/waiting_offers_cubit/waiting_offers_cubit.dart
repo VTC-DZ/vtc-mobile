@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../data/models/ride_models.dart';
 import '../../../data/ride_repository.dart';
 import 'waiting_offers_state.dart';
 
@@ -19,7 +20,11 @@ final class WaitingOffersCubit extends Cubit<WaitingOffersState> {
   }
 
   Future<void> _poll() async {
-    if (state.status == WaitingOffersStatus.accepted) return;
+    if (state.status == WaitingOffersStatus.accepted ||
+        state.status == WaitingOffersStatus.cancelling ||
+        state.status == WaitingOffersStatus.cancelled) {
+      return;
+    }
     try {
       final result = await _repository.listOffers(_rideRequestId);
       final active = result.offers.where((o) => o.status == 'ACTIVE').toList();
@@ -60,6 +65,23 @@ final class WaitingOffersCubit extends Cubit<WaitingOffersState> {
       emit(state.copyWith(offers: remaining, rideRequestPhase: phase));
     } catch (e) {
       emit(state.copyWith(errorMessage: e.toString()));
+    }
+  }
+
+  Future<void> cancelRide(CancelReason reason, {String? note}) async {
+    emit(state.copyWith(status: WaitingOffersStatus.cancelling));
+    try {
+      await _repository.cancelRide(
+        _rideRequestId,
+        CancelRideRequest(reason: reason.apiValue, note: note),
+      );
+      _timer?.cancel();
+      emit(state.copyWith(status: WaitingOffersStatus.cancelled));
+    } catch (e) {
+      emit(state.copyWith(
+        status: WaitingOffersStatus.polling,
+        errorMessage: e.toString(),
+      ));
     }
   }
 

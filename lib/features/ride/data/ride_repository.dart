@@ -42,6 +42,17 @@ final class RideRepository {
     return RefuseOfferResponse.fromJson(response.data as Map<String, dynamic>);
   }
 
+  Future<CancelRideResponse> cancelRide(
+    String rideRequestId,
+    CancelRideRequest request,
+  ) async {
+    final response = await DioClient.post(
+      path: RideApiConstants.cancel(rideRequestId),
+      data: request.toJson(),
+    );
+    return CancelRideResponse.fromJson(response.data as Map<String, dynamic>);
+  }
+
   Future<ActiveRideResponse> getActiveRide() async {
     final response = await DioClient.get(path: RideApiConstants.active);
     return ActiveRideResponse.fromJson(response.data as Map<String, dynamic>);

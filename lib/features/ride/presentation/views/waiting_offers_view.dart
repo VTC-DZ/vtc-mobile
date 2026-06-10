@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/widgets/cancel_ride_dialog.dart';
 import '../../../../shared/widgets/app_slim_app_bar.dart';
 import '../../data/models/ride_models.dart';
 import '../cubit/waiting_offers_cubit/waiting_offers_cubit.dart';
@@ -28,6 +29,9 @@ class WaitingOffersView extends StatelessWidget {
         if (state.status == WaitingOffersStatus.accepted) {
           _showAcceptedSheet(context, state);
         }
+        if (state.status == WaitingOffersStatus.cancelled) {
+          context.go(RouteNames.passengerHome);
+        }
         if (state.errorMessage.isNotEmpty &&
             state.status == WaitingOffersStatus.polling) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -38,6 +42,7 @@ class WaitingOffersView extends StatelessWidget {
       builder: (context, state) {
         final isAccepted = state.status == WaitingOffersStatus.accepted;
         final isAccepting = state.status == WaitingOffersStatus.accepting;
+        final isCancelling = state.status == WaitingOffersStatus.cancelling;
 
         return Scaffold(
           backgroundColor: AppColors.background(context),
@@ -103,16 +108,33 @@ class WaitingOffersView extends StatelessWidget {
                     MediaQuery.of(context).padding.bottom + 16.h,
                   ),
                   child: TextButton(
-                    onPressed: isAccepting
+                    onPressed: (isAccepting || isCancelling)
                         ? null
-                        : () => context.go(RouteNames.passengerHome),
-                    child: Text(
-                      'Cancel Ride Request',
-                      style: AppTextStyles.bodyMedium(context).copyWith(
-                        color: AppColors.error,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+                        : () async {
+                            final reason =
+                                await showCancelRideDialog(context);
+                            if (reason != null && context.mounted) {
+                              context
+                                  .read<WaitingOffersCubit>()
+                                  .cancelRide(reason);
+                            }
+                          },
+                    child: isCancelling
+                        ? SizedBox(
+                            width: 18.w,
+                            height: 18.w,
+                            child: const CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: AppColors.error,
+                            ),
+                          )
+                        : Text(
+                            'Cancel Ride Request',
+                            style: AppTextStyles.bodyMedium(context).copyWith(
+                              color: AppColors.error,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
                   ),
                 ),
             ],

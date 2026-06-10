@@ -291,3 +291,51 @@ final class ActiveRideSummary {
         startedAt: json['startedAt'] as String?,
       );
 }
+
+enum CancelReason {
+  passengerChangedMind,
+  passengerNoShow,
+  driverTooFar,
+  driverVehicleIssue,
+}
+
+extension CancelReasonX on CancelReason {
+  String get apiValue => switch (this) {
+        CancelReason.passengerChangedMind => 'PASSENGER_CHANGED_MIND',
+        CancelReason.passengerNoShow => 'PASSENGER_NO_SHOW',
+        CancelReason.driverTooFar => 'DRIVER_TOO_FAR',
+        CancelReason.driverVehicleIssue => 'DRIVER_VEHICLE_ISSUE',
+      };
+
+  String get label => switch (this) {
+        CancelReason.passengerChangedMind => 'Changed my mind',
+        CancelReason.passengerNoShow => "I can't be reached",
+        CancelReason.driverTooFar => 'Driver is too far',
+        CancelReason.driverVehicleIssue => 'Driver has a vehicle issue',
+      };
+}
+
+final class CancelRideRequest {
+  const CancelRideRequest({required this.reason, this.note});
+
+  final String reason;
+  final String? note;
+
+  Map<String, dynamic> toJson() => {
+        'reason': reason,
+        if (note != null) 'note': note,
+      };
+}
+
+final class CancelRideResponse {
+  const CancelRideResponse({required this.state, required this.cancelledAt});
+
+  final String state;
+  final String cancelledAt;
+
+  factory CancelRideResponse.fromJson(Map<String, dynamic> json) =>
+      CancelRideResponse(
+        state: json['state'] as String,
+        cancelledAt: json['cancelledAt'] as String,
+      );
+}

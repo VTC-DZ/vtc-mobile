@@ -2,7 +2,7 @@ import 'package:equatable/equatable.dart';
 
 import '../../../data/models/ride_models.dart';
 
-enum WaitingOffersStatus { polling, accepting, accepted, error }
+enum WaitingOffersStatus { polling, accepting, accepted, cancelling, cancelled, error }
 
 final class WaitingOffersState extends Equatable {
   const WaitingOffersState({
