@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../shared/widgets/top_bar.dart';
+import 'widgets/driver_availability_toggle_widget.dart';
 
 class DriverHomeView extends StatelessWidget {
   const DriverHomeView({super.key});
@@ -17,11 +18,7 @@ class DriverHomeView extends StatelessWidget {
               title: 'Driver Mode',
               subtitle: 'Ready to drive',
             ),
-            Expanded(
-              child: Center(
-                child: Text('Driver Home Content'),
-              ),
-            ),
+            DriverAvailabilityToggleWidget(compact: false),
           ],
         ),
       ),

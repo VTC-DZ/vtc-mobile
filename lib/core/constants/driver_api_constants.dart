@@ -9,4 +9,8 @@ abstract final class DriverApiConstants {
   // KYC
   static const String kycSubmit = '$_base/kyc/submit';
   static const String kycStatus = '$_base/kyc/status';
+
+  // Availability
+  static const String goOnline = '$_base/availability/online';
+  static const String goOffline = '$_base/availability/offline';
 }

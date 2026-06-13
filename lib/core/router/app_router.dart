@@ -45,9 +45,11 @@ import '../../features/ride/passenger/presentation/cubit/waiting_offers_cubit/wa
 import '../../features/ride/passenger/presentation/views/location_picker_view.dart';
 import '../../features/ride/passenger/presentation/views/ride_request_view.dart';
 import '../../features/ride/passenger/presentation/views/waiting_offers_view.dart';
+import '../../features/ride/driver/data/driver_availability_repository.dart';
 import '../../features/ride/driver/data/driver_ride_repository.dart';
 import '../../features/ride/driver/presentation/cubit/available_rides_cubit/available_rides_cubit.dart';
 import '../../features/ride/driver/presentation/cubit/driver_active_ride_cubit/driver_active_ride_cubit.dart';
+import '../../features/ride/driver/presentation/cubit/driver_availability_cubit/driver_availability_cubit.dart';
 import '../../features/ride/driver/presentation/views/available_rides_view.dart';
 import '../../features/ride/driver/presentation/views/driver_active_ride_view.dart';
 import '../session/auth_session.dart';
@@ -240,8 +242,16 @@ final class AppRouter {
         },
       ),
       ShellRoute(
-        builder: (context, state, child) => BlocProvider(
-          create: (context) => DriverHomeCubit(_driverRepository)..getProfile(),
+        builder: (context, state, child) => MultiBlocProvider(
+          providers: [
+            BlocProvider(
+              create: (_) => DriverHomeCubit(_driverRepository)..getProfile(),
+            ),
+            BlocProvider(
+              create: (_) =>
+                  DriverAvailabilityCubit(const DriverAvailabilityRepository()),
+            ),
+          ],
           child: DriverHomeShell(child: child),
         ),
         routes: [

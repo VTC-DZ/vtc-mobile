@@ -14,10 +14,14 @@ import '../../../../../../shared/widgets/drawer_item.dart';
 import '../../../../../../shared/widgets/drawer_menu_item_data.dart';
 import '../../../../../auth/data/repo/auth_repository.dart';
 import '../../../../../auth/data/repo/driver_repository.dart';
+import '../../../../../ride/driver/presentation/cubit/driver_availability_cubit/driver_availability_cubit.dart';
+import '../../../../../ride/driver/presentation/cubit/driver_availability_cubit/driver_availability_state.dart';
 import '../../cubit/driver_home_cubit.dart';
 import '../../cubit/driver_home_state.dart';
+import 'driver_availability_toggle_widget.dart';
 
 const int _profileIndex = 1;
+const int _ridesIndex = 2;
 const int _switchRoleIndex = 7;
 const int _logoutIndex = 8;
 
@@ -29,7 +33,7 @@ class DriverHomeDrawer extends StatelessWidget {
     final menuItems = <DrawerMenuItemData>[
       const DrawerMenuItemData(Icons.home_outlined, 'Home'),
       const DrawerMenuItemData(Icons.person_outline_rounded, 'Profile'),
-      const DrawerMenuItemData(Icons.directions_car_rounded, 'My Rides'),
+      const DrawerMenuItemData(Icons.directions_car_rounded, 'Rides'),
       const DrawerMenuItemData(Icons.account_balance_wallet_outlined, 'Earnings'),
       const DrawerMenuItemData(Icons.motorcycle_outlined, 'Vehicle Info'),
     ];
@@ -123,8 +127,11 @@ class DriverHomeDrawer extends StatelessWidget {
 
     final route = index == _profileIndex
         ? RouteNames.driverProfileEdit
-        : RouteNames.driverHome;
-    final selectedIndex = index == _profileIndex ? _profileIndex : 0;
+        : index == _ridesIndex
+            ? RouteNames.availableRides
+            : RouteNames.driverHome;
+    final selectedIndex =
+        index == _profileIndex || index == _ridesIndex ? index : 0;
 
     context.read<DriverHomeCubit>().updateSelectedIndex(selectedIndex);
     ZoomDrawer.of(context)?.close();
@@ -155,49 +162,57 @@ class DriverHomeDrawer extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Container(
-          width: 70.w,
-          height: 70.w,
-          decoration: BoxDecoration(
-            color:
-                AppColors.isDark(context) ? AppColors.white : AppColors.black,
-            borderRadius: BorderRadius.circular(20.r),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.primary.withValues(alpha: 0.28),
-                blurRadius: 24.r,
-                offset: Offset(0, 10.h),
-              ),
-            ],
-          ),
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              Icon(
-                Icons.person_rounded,
+        BlocBuilder<DriverAvailabilityCubit, DriverAvailabilityState>(
+          builder: (context, availState) {
+            return Container(
+              width: 70.w,
+              height: 70.w,
+              decoration: BoxDecoration(
                 color: AppColors.isDark(context)
-                    ? AppColors.black
-                    : AppColors.white,
-                size: 36.w,
+                    ? AppColors.white
+                    : AppColors.black,
+                borderRadius: BorderRadius.circular(20.r),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.primary.withValues(alpha: 0.28),
+                    blurRadius: 24.r,
+                    offset: Offset(0, 10.h),
+                  ),
+                ],
               ),
-              Positioned(
-                right: 9.w,
-                bottom: 9.w,
-                child: Container(
-                  width: 12.w,
-                  height: 12.w,
-                  decoration: BoxDecoration(
-                    color: AppColors.primary,
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: AppColors.drawerBackground(context),
-                      width: 2.w,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Icon(
+                    Icons.person_rounded,
+                    color: AppColors.isDark(context)
+                        ? AppColors.black
+                        : AppColors.white,
+                    size: 36.w,
+                  ),
+                  Positioned(
+                    right: 9.w,
+                    bottom: 9.w,
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 300),
+                      width: 12.w,
+                      height: 12.w,
+                      decoration: BoxDecoration(
+                        color: availState.isOnline
+                            ? AppColors.primary
+                            : AppColors.textSecondary(context),
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: AppColors.drawerBackground(context),
+                          width: 2.w,
+                        ),
+                      ),
                     ),
                   ),
-                ),
+                ],
               ),
-            ],
-          ),
+            );
+          },
         ),
         SizedBox(height: 20.h),
         Text(
@@ -209,13 +224,7 @@ class DriverHomeDrawer extends StatelessWidget {
           ),
         ),
         SizedBox(height: 6.h),
-        Text(
-          "Let's get on the road!",
-          style: AppTextStyles.bodySmall(context).copyWith(
-            color: AppColors.drawerTextMuted(context),
-            fontWeight: FontWeight.w500,
-          ),
-        ),
+        const DriverAvailabilityToggleWidget(compact: true),
       ],
     );
   }
