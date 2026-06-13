@@ -1,5 +1,5 @@
-abstract final class RideApiConstants {
-  RideApiConstants._();
+abstract final class PassengerRideApiConstants {
+  PassengerRideApiConstants._();
 
   static const String _base = '/api/passenger/rides';
 

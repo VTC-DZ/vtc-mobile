@@ -1,7 +1,7 @@
 import 'package:equatable/equatable.dart';
+import 'package:khfif_drif/features/ride/passenger/data/models/passenger_ride_models.dart';
 
 import '../../../../../features/auth/data/models/passenger_profile_model.dart';
-import '../../../../../features/ride/data/models/ride_models.dart';
 
 enum PassengerHomeStatus { initial, loading, success, failure }
 

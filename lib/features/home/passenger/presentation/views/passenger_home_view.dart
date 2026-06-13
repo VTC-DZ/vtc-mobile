@@ -4,11 +4,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_zoom_drawer/flutter_zoom_drawer.dart';
 import 'package:go_router/go_router.dart';
+import 'package:khfif_drif/features/ride/passenger/data/models/passenger_ride_models.dart';
 
 import '../../../../../core/router/route_names.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_text_styles.dart';
-import '../../../../../features/ride/data/models/ride_models.dart';
 import '../../../../../shared/widgets/top_bar.dart';
 import '../cubit/passenger_home_cubit.dart';
 import '../cubit/passenger_home_state.dart';

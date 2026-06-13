@@ -1,8 +1,8 @@
 import '../../../data/models/gender.dart';
 import '../../../data/models/driver_document.dart';
-import '../../../../../../../../features/ride/data/models/vehicle_category.dart';
+import '../../../../ride/shared/models/shared_ride_models.dart';
 
-export '../../../../../../../../features/ride/data/models/vehicle_category.dart';
+export '../../../../ride/shared/models/shared_ride_models.dart';
 
 enum DriverRegistrationStatus { initial, loading, success, failure }
 

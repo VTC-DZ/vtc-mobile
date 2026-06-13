@@ -3,17 +3,17 @@ import 'package:khfif_drif/core/session/auth_session.dart';
 import 'package:khfif_drif/features/auth/data/models/passenger_profile_model.dart';
 
 import '../../../../../features/auth/data/repo/profile_repository.dart';
-import '../../../../../features/ride/data/ride_repository.dart';
+import '../../../../../features/ride/passenger/data/passenger_ride_repository.dart';
 import 'passenger_home_state.dart';
 
 class PassengerHomeCubit extends Cubit<PassengerHomeState> {
   PassengerHomeCubit(
     this._repository, [
-    this._rideRepository = const RideRepository(),
+    this._rideRepository = const PassengerRideRepository(),
   ]) : super(const PassengerHomeState());
 
   final ProfileRepository _repository;
-  final RideRepository _rideRepository;
+  final PassengerRideRepository _rideRepository;
 
   Future<void> getProfile() async {
     emit(state.copyWith(status: PassengerHomeStatus.loading));

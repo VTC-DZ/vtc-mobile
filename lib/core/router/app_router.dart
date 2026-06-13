@@ -37,14 +37,19 @@ import '../../features/saved_places/presentation/views/saved_places_view.dart';
 import '../../features/saved_places/data/address_model.dart';
 import '../../features/saved_places/presentation/views/address_create_view.dart';
 import '../../features/saved_places/presentation/views/address_edit_view.dart';
-import '../../features/ride/data/models/ride_models.dart';
-import '../../features/ride/data/ride_repository.dart';
-import '../../features/ride/presentation/cubit/location_cubit/location_picker_cubit.dart';
-import '../../features/ride/presentation/cubit/ride_request_cubit/ride_request_cubit.dart';
-import '../../features/ride/presentation/cubit/waiting_offers_cubit/waiting_offers_cubit.dart';
-import '../../features/ride/presentation/views/location_picker_view.dart';
-import '../../features/ride/presentation/views/ride_request_view.dart';
-import '../../features/ride/presentation/views/waiting_offers_view.dart';
+import '../../features/ride/passenger/data/models/passenger_ride_models.dart';
+import '../../features/ride/passenger/data/passenger_ride_repository.dart';
+import '../../features/ride/passenger/presentation/cubit/location_cubit/location_picker_cubit.dart';
+import '../../features/ride/passenger/presentation/cubit/ride_request_cubit/ride_request_cubit.dart';
+import '../../features/ride/passenger/presentation/cubit/waiting_offers_cubit/waiting_offers_cubit.dart';
+import '../../features/ride/passenger/presentation/views/location_picker_view.dart';
+import '../../features/ride/passenger/presentation/views/ride_request_view.dart';
+import '../../features/ride/passenger/presentation/views/waiting_offers_view.dart';
+import '../../features/ride/driver/data/driver_ride_repository.dart';
+import '../../features/ride/driver/presentation/cubit/available_rides_cubit/available_rides_cubit.dart';
+import '../../features/ride/driver/presentation/cubit/driver_active_ride_cubit/driver_active_ride_cubit.dart';
+import '../../features/ride/driver/presentation/views/available_rides_view.dart';
+import '../../features/ride/driver/presentation/views/driver_active_ride_view.dart';
 import '../session/auth_session.dart';
 import 'route_names.dart';
 
@@ -168,7 +173,7 @@ final class AppRouter {
               path: RouteNames.rideRequest,
               builder: (context, state) {
                 return BlocProvider<RideRequestCubit>(
-                  create: (_) => RideRequestCubit(const RideRepository()),
+                  create: (_) => RideRequestCubit(const PassengerRideRepository()),
                   child: const RideRequestView(),
                 );
               },
@@ -189,7 +194,7 @@ final class AppRouter {
                 final args = state.extra as WaitingOffersArgs;
                 return BlocProvider<WaitingOffersCubit>(
                   create: (_) => WaitingOffersCubit(
-                    const RideRepository(),
+                    const PassengerRideRepository(),
                     args.response.rideRequestId,
                   )..startPolling(),
                   child: WaitingOffersView(args: args),
@@ -285,6 +290,26 @@ final class AppRouter {
                     context.read<DriverHomeCubit>().updatePhone(phone);
                   },
                 ),
+              );
+            },
+          ),
+          GoRoute(
+            path: RouteNames.availableRides,
+            builder: (context, state) {
+              return BlocProvider<AvailableRidesCubit>(
+                create: (_) =>
+                    AvailableRidesCubit(const DriverRideRepository()),
+                child: const AvailableRidesView(),
+              );
+            },
+          ),
+          GoRoute(
+            path: RouteNames.driverActiveRide,
+            builder: (context, state) {
+              return BlocProvider<DriverActiveRideCubit>(
+                create: (_) =>
+                    DriverActiveRideCubit(const DriverRideRepository()),
+                child: const DriverActiveRideView(),
               );
             },
           ),

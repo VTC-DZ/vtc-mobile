@@ -1,0 +1,35 @@
+import 'package:flutter_bloc/flutter_bloc.dart';
+
+import '../../../data/models/passenger_ride_models.dart';
+import '../../../data/passenger_ride_repository.dart';
+import 'ride_request_state.dart';
+
+final class RideRequestCubit extends Cubit<RideRequestState> {
+  RideRequestCubit(this._repository) : super(const RideRequestState());
+
+  final PassengerRideRepository _repository;
+
+  void setServiceType(ServiceType value) =>
+      emit(state.copyWith(serviceType: value));
+
+  void setVehicleCategory(VehicleCategory value) =>
+      emit(state.copyWith(vehicleCategory: value));
+
+  void setFemaleOnly(bool value) => emit(state.copyWith(femaleOnly: value));
+
+  Future<void> submitRide(CreateRideRequest request) async {
+    emit(state.copyWith(status: RideRequestStatus.loading, errorMessage: ''));
+    try {
+      final response = await _repository.createRide(request);
+      emit(state.copyWith(
+        status: RideRequestStatus.success,
+        createRideResponse: response,
+      ));
+    } catch (e) {
+      emit(state.copyWith(
+        status: RideRequestStatus.failure,
+        errorMessage: e.toString(),
+      ));
+    }
+  }
+}

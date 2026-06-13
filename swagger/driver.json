@@ -2,16 +2,31 @@
   "openapi": "3.1.0",
   "info": {
     "title": "VTC API",
-    "description": "VTC platform API — passenger, driver, and admin surfaces.",
+    "description": "VTC platform API — account, passenger, driver, and admin surfaces.",
     "version": "0.1.0-SNAPSHOT"
   },
   "servers": [
     { "url": "http://localhost:8080", "description": "Generated server url" }
   ],
+  "tags": [
+    {
+      "name": "Driver Profile",
+      "description": "Update driver profile and service types"
+    },
+    { "name": "Driver Location", "description": "Ingest driver GPS position" },
+    { "name": "Driver KYC", "description": "Submit and check KYC documents" },
+    { "name": "Driver Availability", "description": "Go online or offline" },
+    {
+      "name": "Driver Rides",
+      "description": "Browse available requests, bid, and manage active rides"
+    }
+  ],
   "paths": {
     "/api/driver/profile": {
       "put": {
-        "tags": ["driver-profile-controller"],
+        "tags": ["Driver Profile"],
+        "summary": "Update profile",
+        "description": "Updates the driver's profile (e.g. female-only preference).",
         "operationId": "updateProfile",
         "requestBody": {
           "content": {
@@ -25,7 +40,37 @@
         },
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "Profile updated",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/DriverProfileResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/DriverProfileResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/DriverProfileResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "activeRole is not DRIVER",
             "content": {
               "*/*": {
                 "schema": {
@@ -34,12 +79,383 @@
               }
             }
           }
-        }
+        },
+        "security": [{ "bearerAuth": [] }]
+      }
+    },
+    "/api/driver/profile/service-types": {
+      "put": {
+        "tags": ["Driver Profile"],
+        "summary": "Update service types",
+        "description": "Enables or disables a service type for the driver.",
+        "operationId": "updateServiceTypes",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DriverServiceTypeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Service types updated",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/DriverServiceTypesResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/DriverServiceTypesResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/DriverServiceTypesResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "activeRole is not DRIVER",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/DriverServiceTypesResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }]
+      }
+    },
+    "/api/driver/rides/{rideRequestId}/bid": {
+      "post": {
+        "tags": ["Driver Rides"],
+        "summary": "Submit bid",
+        "description": "Places a fare bid on a ride request.",
+        "operationId": "bid",
+        "parameters": [
+          {
+            "name": "rideRequestId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/BidRequest" }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Bid submitted",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/BidResponse" }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/BidResponse" }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/BidResponse" }
+              }
+            }
+          },
+          "404": {
+            "description": "Ride request not found",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/BidResponse" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }]
+      }
+    },
+    "/api/driver/rides/{rideId}/start": {
+      "post": {
+        "tags": ["Driver Rides"],
+        "summary": "Start ride",
+        "description": "Starts the ride (driver confirms passenger is on board).",
+        "operationId": "start",
+        "parameters": [
+          {
+            "name": "rideId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Ride started",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/StartResponse" }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/StartResponse" }
+              }
+            }
+          },
+          "404": {
+            "description": "Ride not found",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/StartResponse" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }]
+      }
+    },
+    "/api/driver/rides/{rideId}/complete": {
+      "post": {
+        "tags": ["Driver Rides"],
+        "summary": "Complete ride",
+        "description": "Marks the ride as completed.",
+        "operationId": "complete",
+        "parameters": [
+          {
+            "name": "rideId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Ride completed",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/CompleteResponse" }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/CompleteResponse" }
+              }
+            }
+          },
+          "404": {
+            "description": "Ride not found",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/CompleteResponse" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }]
+      }
+    },
+    "/api/driver/rides/{rideId}/cancel": {
+      "post": {
+        "tags": ["Driver Rides"],
+        "summary": "Cancel ride",
+        "description": "Cancels the ride from the driver's side.",
+        "operationId": "cancel",
+        "parameters": [
+          {
+            "name": "rideId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/DriverCancelRequest" }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Ride cancelled",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/DriverCancelResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/DriverCancelResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/DriverCancelResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Ride not found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/DriverCancelResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }]
+      }
+    },
+    "/api/driver/rides/{rideId}/arrived": {
+      "post": {
+        "tags": ["Driver Rides"],
+        "summary": "Mark arrived",
+        "description": "Marks the driver as arrived at the pickup location.",
+        "operationId": "arrived",
+        "parameters": [
+          {
+            "name": "rideId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Arrived",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/ArrivedResponse" }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/ArrivedResponse" }
+              }
+            }
+          },
+          "404": {
+            "description": "Ride not found",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/ArrivedResponse" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }]
+      }
+    },
+    "/api/driver/location": {
+      "post": {
+        "tags": ["Driver Location"],
+        "summary": "Ingest location",
+        "description": "Submits a GPS position update for the authenticated driver.",
+        "operationId": "ingest",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/DriverLocationRequest" }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": { "description": "Position ingested" },
+          "400": { "description": "Validation error" },
+          "401": { "description": "Unauthorized" }
+        },
+        "security": [{ "bearerAuth": [] }]
       }
     },
     "/api/driver/kyc/submit": {
       "post": {
-        "tags": ["driver-kyc-controller"],
+        "tags": ["Driver KYC"],
+        "summary": "Submit KYC",
+        "description": "Submits a KYC document bundle (multipart form data) for review.",
         "operationId": "submitKyc",
         "requestBody": {
           "content": {
@@ -75,31 +491,193 @@
           }
         },
         "responses": {
-          "200": {
-            "description": "OK",
+          "201": {
+            "description": "KYC submission created",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/KycSubmitResponse" }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/KycSubmitResponse" }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
             "content": {
               "*/*": {
                 "schema": { "$ref": "#/components/schemas/KycSubmitResponse" }
               }
             }
           }
-        }
+        },
+        "security": [{ "bearerAuth": [] }]
+      }
+    },
+    "/api/driver/availability/online": {
+      "post": {
+        "tags": ["Driver Availability"],
+        "summary": "Go online",
+        "description": "Sets the driver's status to online, making them available for ride requests.",
+        "operationId": "goOnline",
+        "responses": {
+          "200": {
+            "description": "Driver is now online",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/DriverAvailabilityResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/DriverAvailabilityResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }]
+      }
+    },
+    "/api/driver/availability/offline": {
+      "post": {
+        "tags": ["Driver Availability"],
+        "summary": "Go offline",
+        "description": "Sets the driver's status to offline.",
+        "operationId": "goOffline",
+        "responses": {
+          "200": {
+            "description": "Driver is now offline",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/DriverAvailabilityResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/DriverAvailabilityResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }]
+      }
+    },
+    "/api/driver/rides/available": {
+      "get": {
+        "tags": ["Driver Rides"],
+        "summary": "List available requests",
+        "description": "Returns ride requests currently open for bidding.",
+        "operationId": "listAvailable",
+        "responses": {
+          "200": {
+            "description": "Available requests list",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AvailableRequestsResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AvailableRequestsResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }]
+      }
+    },
+    "/api/driver/rides/active": {
+      "get": {
+        "tags": ["Driver Rides"],
+        "summary": "Get active ride",
+        "description": "Returns the driver's currently active ride, if any.",
+        "operationId": "getActive",
+        "responses": {
+          "200": {
+            "description": "Active ride found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActiveDriverRideResponse"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "No active ride",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActiveDriverRideResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActiveDriverRideResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }]
       }
     },
     "/api/driver/kyc/status": {
       "get": {
-        "tags": ["driver-kyc-controller"],
+        "tags": ["Driver KYC"],
+        "summary": "Get KYC status",
+        "description": "Returns the current KYC status for the authenticated driver.",
         "operationId": "getStatus",
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "KYC status returned",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/KycStatusResponse" }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
             "content": {
               "*/*": {
                 "schema": { "$ref": "#/components/schemas/KycStatusResponse" }
               }
             }
           }
-        }
+        },
+        "security": [{ "bearerAuth": [] }]
       }
     }
   },
@@ -135,6 +713,150 @@
           "isOnline": { "type": "boolean" },
           "requiresRekyc": { "type": "boolean" }
         }
+      },
+      "DriverServiceTypeRequest": {
+        "type": "object",
+        "properties": {
+          "type": { "type": "string", "enum": ["RIDE", "DELIVERY"] },
+          "enabled": { "type": "boolean" }
+        },
+        "required": ["type"]
+      },
+      "DriverServiceTypesResponse": {
+        "type": "object",
+        "properties": {
+          "activeServiceTypes": {
+            "type": "array",
+            "items": { "type": "string", "enum": ["RIDE", "DELIVERY"] },
+            "uniqueItems": true
+          }
+        }
+      },
+      "BidRequest": {
+        "type": "object",
+        "properties": {
+          "fare": {
+            "type": "integer",
+            "format": "int64",
+            "maximum": 50000,
+            "minimum": 100
+          }
+        },
+        "required": ["fare"]
+      },
+      "BidResponse": {
+        "type": "object",
+        "properties": {
+          "offerId": { "type": "string", "format": "uuid" },
+          "rideRequestId": { "type": "string", "format": "uuid" },
+          "fare": { "type": "integer", "format": "int64" },
+          "direction": {
+            "type": "string",
+            "enum": ["DRIVER_TO_PASSENGER", "PASSENGER_TO_DRIVER"]
+          },
+          "round": { "type": "integer", "format": "int32" },
+          "expiresAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "StartResponse": {
+        "type": "object",
+        "properties": {
+          "rideId": { "type": "string", "format": "uuid" },
+          "state": {
+            "type": "string",
+            "enum": [
+              "ACCEPTED",
+              "ARRIVED",
+              "IN_PROGRESS",
+              "COMPLETED",
+              "CANCELLED"
+            ]
+          },
+          "startedAt": { "type": "string", "format": "date-time" },
+          "inProgressDeadline": { "type": "string", "format": "date-time" }
+        }
+      },
+      "CompleteResponse": {
+        "type": "object",
+        "properties": {
+          "rideId": { "type": "string", "format": "uuid" },
+          "state": {
+            "type": "string",
+            "enum": [
+              "ACCEPTED",
+              "ARRIVED",
+              "IN_PROGRESS",
+              "COMPLETED",
+              "CANCELLED"
+            ]
+          },
+          "completedAt": { "type": "string", "format": "date-time" },
+          "finalFare": { "type": "integer", "format": "int64" }
+        }
+      },
+      "DriverCancelRequest": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "enum": [
+              "PASSENGER_CHANGED_MIND",
+              "PASSENGER_NO_SHOW",
+              "DRIVER_TOO_FAR",
+              "DRIVER_VEHICLE_ISSUE",
+              "ADMIN_FORCED",
+              "SYSTEM_TIMEOUT",
+              "SYSTEM_NO_DRIVERS"
+            ]
+          },
+          "note": { "type": "string", "maxLength": 500, "minLength": 0 }
+        },
+        "required": ["reason"]
+      },
+      "DriverCancelResponse": {
+        "type": "object",
+        "properties": {
+          "rideId": { "type": "string", "format": "uuid" },
+          "state": {
+            "type": "string",
+            "enum": [
+              "ACCEPTED",
+              "ARRIVED",
+              "IN_PROGRESS",
+              "COMPLETED",
+              "CANCELLED"
+            ]
+          },
+          "cancelledAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "ArrivedResponse": {
+        "type": "object",
+        "properties": {
+          "rideId": { "type": "string", "format": "uuid" },
+          "state": {
+            "type": "string",
+            "enum": [
+              "ACCEPTED",
+              "ARRIVED",
+              "IN_PROGRESS",
+              "COMPLETED",
+              "CANCELLED"
+            ]
+          },
+          "arrivedAt": { "type": "string", "format": "date-time" },
+          "arrivalWaitDeadline": { "type": "string", "format": "date-time" }
+        }
+      },
+      "DriverLocationRequest": {
+        "type": "object",
+        "properties": {
+          "lat": { "type": "number", "maximum": 90, "minimum": -90 },
+          "lng": { "type": "number", "maximum": 180, "minimum": -180 },
+          "capturedAt": { "type": "string", "format": "date-time" },
+          "accuracyM": { "type": "number", "maximum": 10000, "minimum": 0 }
+        },
+        "required": ["capturedAt", "lat", "lng"]
       },
       "KycSubmitRequest": {
         "type": "object",
@@ -180,6 +902,68 @@
           "submittedAt": { "type": "string", "format": "date-time" }
         }
       },
+      "DriverAvailabilityResponse": {
+        "type": "object",
+        "properties": { "isOnline": { "type": "boolean" } }
+      },
+      "AvailableRequestCard": {
+        "type": "object",
+        "properties": {
+          "rideRequestId": { "type": "string", "format": "uuid" },
+          "pickup": { "$ref": "#/components/schemas/CoordinatePoint" },
+          "dropoff": { "$ref": "#/components/schemas/CoordinatePoint" },
+          "proposedFare": { "type": "integer", "format": "int64" },
+          "serviceType": { "type": "string" },
+          "vehicleCategory": { "type": "string" },
+          "femaleOnly": { "type": "boolean" },
+          "distanceMeters": { "type": "integer", "format": "int64" },
+          "expiresAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "AvailableRequestsResponse": {
+        "type": "object",
+        "properties": {
+          "requests": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/AvailableRequestCard" }
+          }
+        }
+      },
+      "CoordinatePoint": {
+        "type": "object",
+        "properties": {
+          "lat": { "type": "number" },
+          "lng": { "type": "number" },
+          "address": { "type": "string" }
+        }
+      },
+      "ActiveDriverRideResponse": {
+        "type": "object",
+        "properties": {
+          "rideId": { "type": "string", "format": "uuid" },
+          "rideRequestId": { "type": "string", "format": "uuid" },
+          "passengerId": { "type": "string", "format": "uuid" },
+          "passengerFullName": { "type": "string" },
+          "passengerPhone": { "type": "string" },
+          "pickup": { "$ref": "#/components/schemas/CoordinatePoint" },
+          "dropoff": { "$ref": "#/components/schemas/CoordinatePoint" },
+          "finalFare": { "type": "integer", "format": "int64" },
+          "state": {
+            "type": "string",
+            "enum": [
+              "ACCEPTED",
+              "ARRIVED",
+              "IN_PROGRESS",
+              "COMPLETED",
+              "CANCELLED"
+            ]
+          },
+          "acceptedAt": { "type": "string", "format": "date-time" },
+          "arrivedAt": { "type": "string", "format": "date-time" },
+          "startedAt": { "type": "string", "format": "date-time" },
+          "arrivalWaitDeadline": { "type": "string", "format": "date-time" }
+        }
+      },
       "KycStatusResponse": {
         "type": "object",
         "properties": {
@@ -196,6 +980,20 @@
           "reviewedAt": { "type": "string", "format": "date-time" },
           "resubmissionNote": { "type": "string" }
         }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "description": "Mobile JWT (passenger/driver)",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      },
+      "adminBearerAuth": {
+        "type": "http",
+        "description": "Admin dashboard JWT",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
       }
     }
   }

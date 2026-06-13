@@ -26,4 +26,6 @@ abstract final class RouteNames {
   static const String rideRequest = '/ride-request';
   static const String locationPicker = '/location-picker';
   static const String waitingOffers = '/waiting-offers';
+  static const String availableRides = '/available-rides';
+  static const String driverActiveRide = '/driver-active-ride';
 }
