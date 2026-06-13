@@ -18,7 +18,7 @@ import '../../../../../ride/driver/presentation/cubit/driver_availability_cubit/
 import '../../../../../ride/driver/presentation/cubit/driver_availability_cubit/driver_availability_state.dart';
 import '../../cubit/driver_home_cubit.dart';
 import '../../cubit/driver_home_state.dart';
-import 'driver_availability_toggle_widget.dart';
+import '../../../../../ride/driver/presentation/views/widgets/driver_availability_toggle_widget.dart';
 
 const int _profileIndex = 1;
 const int _ridesIndex = 2;
@@ -224,7 +224,7 @@ class DriverHomeDrawer extends StatelessWidget {
           ),
         ),
         SizedBox(height: 6.h),
-        const DriverAvailabilityToggleWidget(compact: true),
+        const DriverAvailabilityToggleWidget(),
       ],
     );
   }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../../shared/widgets/top_bar.dart';
 import '../cubit/available_rides_cubit/available_rides_cubit.dart';
 import '../cubit/available_rides_cubit/available_rides_state.dart';
 
@@ -21,8 +22,12 @@ class _AvailableRidesViewState extends State<AvailableRidesView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Available Rides')),
-      body: BlocBuilder<AvailableRidesCubit, AvailableRidesState>(
+      body: SafeArea(
+        child: Column(
+          children: [
+            const TopBar(title: 'Available Rides'),
+            Expanded(
+              child: BlocBuilder<AvailableRidesCubit, AvailableRidesState>(
         builder: (context, state) {
           if (state.status == AvailableRidesStatus.loading) {
             return const Center(child: CircularProgressIndicator());
@@ -46,6 +51,10 @@ class _AvailableRidesViewState extends State<AvailableRidesView> {
             },
           );
         },
+      ),
+            ),
+          ],
+        ),
       ),
     );
   }
