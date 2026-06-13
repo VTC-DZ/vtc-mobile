@@ -115,7 +115,7 @@ final class DioClient {
         onReceiveProgress: onReceiveProgress,
       );
     } on DioException catch (e) {
-      throw _handleDioError(e);
+      throw await _handleDioError(e);
     }
   }
 
@@ -139,7 +139,7 @@ final class DioClient {
         onReceiveProgress: onReceiveProgress,
       );
     } on DioException catch (e) {
-      throw _handleDioError(e);
+      throw await _handleDioError(e);
     }
   }
 
@@ -163,7 +163,7 @@ final class DioClient {
         onReceiveProgress: onReceiveProgress,
       );
     } on DioException catch (e) {
-      throw _handleDioError(e);
+      throw await _handleDioError(e);
     }
   }
 
@@ -183,7 +183,7 @@ final class DioClient {
         cancelToken: cancelToken,
       );
     } on DioException catch (e) {
-      throw _handleDioError(e);
+      throw await _handleDioError(e);
     }
   }
 
@@ -207,7 +207,7 @@ final class DioClient {
         onReceiveProgress: onReceiveProgress,
       );
     } on DioException catch (e) {
-      throw _handleDioError(e);
+      throw await _handleDioError(e);
     }
   }
 
@@ -231,7 +231,7 @@ final class DioClient {
         onReceiveProgress: onReceiveProgress,
       );
     } on DioException catch (e) {
-      throw _handleDioError(e);
+      throw await _handleDioError(e);
     }
   }
 

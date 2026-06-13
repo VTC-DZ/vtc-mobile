@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../../../../../../../core/theme/app_colors.dart';
 import '../../../../../../../core/theme/app_text_styles.dart';
+import '../../../cubit/waiting_offers_cubit/waiting_offers_state.dart';
 
 class PhaseBadge extends StatelessWidget {
   const PhaseBadge({
@@ -12,13 +13,13 @@ class PhaseBadge extends StatelessWidget {
     required this.offerCount,
   });
 
-  final String phase;
+  final RideRequestPhase phase;
   final int broadcastCount;
   final int offerCount;
 
   @override
   Widget build(BuildContext context) {
-    final isRequested = phase == 'REQUESTED';
+    final isRequested = phase == RideRequestPhase.requested;
 
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),

@@ -20,66 +20,73 @@ final class WaitingOffersCubit extends Cubit<WaitingOffersState> {
   }
 
   Future<void> _poll() async {
-    if (state.status == WaitingOffersStatus.accepted ||
-        state.status == WaitingOffersStatus.cancelling ||
-        state.status == WaitingOffersStatus.cancelled) {
+    if (state.acceptStatus == AcceptStatus.success ||
+        state.cancelStatus == CancelStatus.loading ||
+        state.cancelStatus == CancelStatus.success) {
       return;
     }
     try {
       final result = await _repository.listOffers(_rideRequestId);
       final active = result.offers.where((o) => o.status == 'ACTIVE').toList();
-      final phase = active.isEmpty ? 'REQUESTED' : 'NEGOTIATING';
-      emit(state.copyWith(
-        status: WaitingOffersStatus.polling,
-        offers: active,
-        rideRequestPhase: phase,
-      ));
+      final phase = active.isEmpty ? RideRequestPhase.requested : RideRequestPhase.negotiating;
+      emit(state.copyWith(offers: active, rideRequestPhase: phase));
     } catch (_) {
       // silently skip failed polls; show last known offers
     }
   }
 
   Future<void> acceptOffer(String offerId) async {
-    emit(state.copyWith(status: WaitingOffersStatus.accepting));
+    emit(state.copyWith(acceptStatus: AcceptStatus.loading));
     try {
       await _repository.acceptOffer(_rideRequestId, offerId);
       _timer?.cancel();
       emit(state.copyWith(
-        status: WaitingOffersStatus.accepted,
-        rideRequestPhase: 'ACCEPTED',
+        acceptStatus: AcceptStatus.success,
+        rideRequestPhase: RideRequestPhase.accepted,
       ));
     } catch (e) {
       emit(state.copyWith(
-        status: WaitingOffersStatus.polling,
+        acceptStatus: AcceptStatus.failure,
         errorMessage: e.toString(),
       ));
     }
   }
 
   Future<void> refuseOffer(String offerId) async {
+    emit(state.copyWith(refuseStatus: RefuseStatus.loading));
     try {
       await _repository.refuseOffer(_rideRequestId, offerId);
       final remaining =
           state.offers.where((o) => o.offerId != offerId).toList();
-      final phase = remaining.isEmpty ? 'REQUESTED' : 'NEGOTIATING';
-      emit(state.copyWith(offers: remaining, rideRequestPhase: phase));
+      final phase = remaining.isEmpty ? RideRequestPhase.requested : RideRequestPhase.negotiating;
+      emit(state.copyWith(
+        refuseStatus: RefuseStatus.success,
+        offers: remaining,
+        rideRequestPhase: phase,
+      ));
     } catch (e) {
-      emit(state.copyWith(errorMessage: e.toString()));
+      emit(state.copyWith(
+        refuseStatus: RefuseStatus.failure,
+        errorMessage: e.toString(),
+      ));
     }
   }
 
   Future<void> cancelRide(CancelReason reason, {String? note}) async {
-    emit(state.copyWith(status: WaitingOffersStatus.cancelling));
+    emit(state.copyWith(cancelStatus: CancelStatus.loading));
     try {
       await _repository.cancelRide(
         _rideRequestId,
         CancelRideRequest(reason: reason.apiValue, note: note),
       );
       _timer?.cancel();
-      emit(state.copyWith(status: WaitingOffersStatus.cancelled));
+      emit(state.copyWith(
+        cancelStatus: CancelStatus.success,
+        rideRequestPhase: RideRequestPhase.cancelled,
+      ));
     } catch (e) {
       emit(state.copyWith(
-        status: WaitingOffersStatus.polling,
+        cancelStatus: CancelStatus.failure,
         errorMessage: e.toString(),
       ));
     }

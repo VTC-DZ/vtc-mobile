@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/widgets/app_toast.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/cancel_ride_dialog.dart';
 import '../../../../shared/widgets/app_slim_app_bar.dart';
@@ -24,30 +25,34 @@ class WaitingOffersView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<WaitingOffersCubit, WaitingOffersState>(
-      listenWhen: (prev, curr) => prev.status != curr.status,
+      listenWhen: (prev, curr) =>
+          prev.acceptStatus != curr.acceptStatus ||
+          prev.cancelStatus != curr.cancelStatus ||
+          prev.refuseStatus != curr.refuseStatus,
       listener: (context, state) {
-        if (state.status == WaitingOffersStatus.accepted) {
+        if (state.acceptStatus == AcceptStatus.success) {
           _showAcceptedSheet(context, state);
         }
-        if (state.status == WaitingOffersStatus.cancelled) {
+        if (state.cancelStatus == CancelStatus.success) {
           context.go(RouteNames.passengerHome);
         }
-        if (state.errorMessage.isNotEmpty &&
-            state.status == WaitingOffersStatus.polling) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(state.errorMessage)),
-          );
+        if (state.acceptStatus == AcceptStatus.failure ||
+            state.cancelStatus == CancelStatus.failure ||
+            state.refuseStatus == RefuseStatus.failure) {
+          if (state.errorMessage.isNotEmpty) {
+            AppToast.error(state.errorMessage);
+          }
         }
       },
       builder: (context, state) {
-        final isAccepted = state.status == WaitingOffersStatus.accepted;
-        final isAccepting = state.status == WaitingOffersStatus.accepting;
-        final isCancelling = state.status == WaitingOffersStatus.cancelling;
+        final isAccepted = state.acceptStatus == AcceptStatus.success;
+        final isAccepting = state.acceptStatus == AcceptStatus.loading;
+        final isCancelling = state.cancelStatus == CancelStatus.loading;
 
         return Scaffold(
           backgroundColor: AppColors.background(context),
           appBar: AppSlimAppBar(
-            title: state.rideRequestPhase == 'NEGOTIATING'
+            title: state.rideRequestPhase == RideRequestPhase.negotiating
                 ? 'Review Offers'
                 : 'Waiting for Drivers',
             onLeadingTap:
@@ -71,7 +76,7 @@ class WaitingOffersView extends StatelessWidget {
                       ),
                       SizedBox(height: 20.h),
                       if (state.offers.isEmpty &&
-                          state.rideRequestPhase == 'REQUESTED') ...[
+                          state.rideRequestPhase == RideRequestPhase.requested) ...[
                         const EmptyOffersPlaceholder(),
                       ] else ...[
                         Text(
