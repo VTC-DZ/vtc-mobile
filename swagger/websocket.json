@@ -1,0 +1,77 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "VTC API",
+    "description": "VTC platform API — account, passenger, driver, and admin surfaces.",
+    "version": "0.1.0-SNAPSHOT"
+  },
+  "servers": [
+    { "url": "http://localhost:8080", "description": "Generated server url" }
+  ],
+  "paths": {
+    "/ws/passenger": {
+      "get": {
+        "summary": "Passenger WebSocket",
+        "description": "Raw WebSocket upgrade for the **passenger** mobile surface.\n\n**Handshake:** `Authorization: Bearer <JWT>` where the token has\n`activeRole=PASSENGER`.\n\n**Envelope** — every message (both directions) is:\n\n```json\n{ \"type\": \"event.name\", \"payload\": { … }, \"timestamp\": \"2026-05-30T10:00:00Z\" }\n```\n\n**Server → Passenger events:**\n\n| Type | Payload highlights |\n|------|-------------------|\n| `driver.location` | `{ rideId, driverId, lat, lng, capturedAt }` |\n| `offer.created` | `{ offerId, rideRequestId, driverId, fare, direction, round, expiresAt }` |\n| `offer.countered` | `{ offerId, parentOfferId, rideRequestId, driverId, fare, round, expiresAt }` |\n| `offer.accepted` | `{ offerId, rideRequestId, rideId, driverId, fare }` |\n| `offer.rejected` | `{ offerId, rideRequestId, reason }` |\n| `offer.expired` | `{ offerId, rideRequestId }` |\n| `ride.state_changed` | `{ rideId, state, occurredAt }` |\n| `ride.cancelled` | `{ rideId, actorType, reason, occurredAt }` |\n| `system.token_expiring` | `{ expiresAt }` |\n| `system.auth_refresh` | `{ ok: true }` |\n\n**Close codes:** `1000` normal · `4001` token expired · `4002` rate limit · `4003` auth revoked · `4004` server shutdown\n\n**Heartbeat:** server sends ping every 30 s; 2 missed pongs → close.\n\nSee `docs/api/websocket.md` for the full protocol specification.",
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "Bearer &lt;accessToken&gt; — mobile JWT with activeRole=PASSENGER",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "101": {
+            "description": "WebSocket upgrade — connection established"
+          },
+          "401": { "description": "Missing, expired, or invalid JWT" },
+          "403": {
+            "description": "Wrong surface for this role (e.g. PASSENGER token on /ws/driver)"
+          }
+        }
+      }
+    },
+    "/ws/driver": {
+      "get": {
+        "summary": "Driver WebSocket",
+        "description": "Raw WebSocket upgrade for the **driver** mobile surface.\n\n**Handshake:** `Authorization: Bearer <JWT>` where the token has\n`activeRole=DRIVER`.\n\n**Envelope** — every message (both directions) is:\n\n```json\n{ \"type\": \"event.name\", \"payload\": { … }, \"timestamp\": \"2026-05-30T10:00:00Z\" }\n```\n\n**Server → Driver events:**\n\n| Type | Payload highlights |\n|------|-------------------|\n| `ride.broadcast` | `{ rideRequestId, pickup, dropoff, proposedFare, femaleOnly, serviceType, vehicleCategory, expiresAt }` |\n| `ride.broadcast_cancelled` | `{ rideRequestId, reason }` |\n| `offer.countered` | `{ offerId, parentOfferId, rideRequestId, passengerId, fare, round, expiresAt }` |\n| `offer.accepted` | `{ offerId, rideRequestId, rideId, fare }` |\n| `offer.rejected` | `{ offerId, rideRequestId, reason }` |\n| `offer.expired` | `{ offerId, rideRequestId }` |\n| `ride.state_changed` | `{ rideId, state, occurredAt }` |\n| `ride.cancelled` | `{ rideId, actorType, reason, occurredAt }` |\n| `system.token_expiring` | `{ expiresAt }` |\n\n**Client → Server (driver upstream):**\n\n| Type | Payload |\n|------|---------|\n| `driver.location` | `{ lat, lng, capturedAt, accuracyM? }` |\n| `system.auth_refresh` | `{ token }` |\n\n**Close codes:** `1000` normal · `4001` token expired · `4002` rate limit · `4003` auth revoked · `4004` server shutdown\n\n**Heartbeat:** server sends ping every 30 s; 2 missed pongs → close.\n\nSee `docs/api/websocket.md` for the full protocol specification.",
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "Bearer &lt;accessToken&gt; — mobile JWT with activeRole=DRIVER",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "101": {
+            "description": "WebSocket upgrade — connection established"
+          },
+          "401": { "description": "Missing, expired, or invalid JWT" },
+          "403": {
+            "description": "Wrong surface for this role (e.g. PASSENGER token on /ws/driver)"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "description": "Mobile JWT (passenger/driver)",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      },
+      "adminBearerAuth": {
+        "type": "http",
+        "description": "Admin dashboard JWT",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  }
+}
