@@ -1,9 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import '../../../../../core/theme/app_colors.dart';
+import '../../../../../core/theme/app_text_styles.dart';
 import '../../../../../shared/widgets/top_bar.dart';
+import '../../data/models/driver_ride_models.dart';
 import '../cubit/available_rides_cubit/available_rides_cubit.dart';
 import '../cubit/available_rides_cubit/available_rides_state.dart';
+import 'widgets/available_ride_card.dart';
+import 'widgets/bid_sheet.dart';
 
 class AvailableRidesView extends StatefulWidget {
   const AvailableRidesView({super.key});
@@ -27,31 +33,40 @@ class _AvailableRidesViewState extends State<AvailableRidesView> {
           children: [
             const TopBar(title: 'Available Rides'),
             Expanded(
-              child: BlocBuilder<AvailableRidesCubit, AvailableRidesState>(
-        builder: (context, state) {
-          if (state.status == AvailableRidesStatus.loading) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (state.status == AvailableRidesStatus.failure) {
-            return Center(child: Text(state.errorMessage));
-          }
-          if (state.rides.isEmpty) {
-            return const Center(child: Text('No rides available'));
-          }
-          return ListView.builder(
-            itemCount: state.rides.length,
-            itemBuilder: (context, index) {
-              final ride = state.rides[index];
-              return ListTile(
-                title: Text(ride.pickup.address),
-                subtitle: Text(ride.dropoff.address),
-                trailing: Text('${ride.proposedFare} DZD'),
-                onTap: () => _showBidDialog(context, ride.rideRequestId),
-              );
-            },
-          );
-        },
-      ),
+              child: BlocConsumer<AvailableRidesCubit, AvailableRidesState>(
+                listenWhen: (prev, curr) => prev.status != curr.status,
+                listener: _onStateChanged,
+                builder: (context, state) {
+                  if (state.rides.isEmpty) {
+                    if (state.status == AvailableRidesStatus.loading) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+                    if (state.status == AvailableRidesStatus.failure) {
+                      return _Message(
+                        icon: Icons.error_outline_rounded,
+                        text: state.errorMessage.isEmpty
+                            ? 'Something went wrong'
+                            : state.errorMessage,
+                      );
+                    }
+                    return const _Message(
+                      icon: Icons.directions_car_filled_outlined,
+                      text: "You're online — waiting for ride requests…",
+                    );
+                  }
+                  return ListView.builder(
+                    padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 24.h),
+                    itemCount: state.rides.length,
+                    itemBuilder: (context, index) {
+                      final ride = state.rides[index];
+                      return AvailableRideCard(
+                        ride: ride,
+                        onBid: () => _openBidSheet(context, ride),
+                      );
+                    },
+                  );
+                },
+              ),
             ),
           ],
         ),
@@ -59,35 +74,73 @@ class _AvailableRidesViewState extends State<AvailableRidesView> {
     );
   }
 
-  void _showBidDialog(BuildContext context, String rideRequestId) {
-    final controller = TextEditingController();
-    showDialog<void>(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Submit Bid'),
-        content: TextField(
-          controller: controller,
-          keyboardType: TextInputType.number,
-          decoration: const InputDecoration(labelText: 'Your fare (DZD)'),
+  void _onStateChanged(BuildContext context, AvailableRidesState state) {
+    switch (state.status) {
+      case AvailableRidesStatus.bidSuccess:
+        _showSnack(context, 'Bid submitted', AppColors.primary);
+      case AvailableRidesStatus.failure when state.rides.isNotEmpty:
+        // List is still on screen; surface the bid/refresh error as a snackbar
+        // instead of wiping the cards.
+        _showSnack(
+          context,
+          state.errorMessage.isEmpty ? 'Bid failed' : state.errorMessage,
+          AppColors.error,
+        );
+      default:
+        break;
+    }
+  }
+
+  Future<void> _openBidSheet(
+    BuildContext context,
+    AvailableRequestCard ride,
+  ) async {
+    // Capture the shell-scoped cubit before the modal swaps the context.
+    final cubit = context.read<AvailableRidesCubit>();
+    final fare = await showBidSheet(context, proposedFare: ride.proposedFare);
+    if (fare != null) {
+      cubit.submitBid(ride.rideRequestId, fare);
+    }
+  }
+
+  void _showSnack(BuildContext context, String message, Color color) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: color,
+          behavior: SnackBarBehavior.floating,
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              final fare = int.tryParse(controller.text);
-              if (fare != null) {
-                context
-                    .read<AvailableRidesCubit>()
-                    .submitBid(rideRequestId, fare);
-                Navigator.of(context).pop();
-              }
-            },
-            child: const Text('Bid'),
-          ),
-        ],
+      );
+  }
+}
+
+class _Message extends StatelessWidget {
+  const _Message({required this.icon, required this.text});
+
+  final IconData icon;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: 32.w),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 48.w, color: AppColors.textSecondary(context)),
+            SizedBox(height: 12.h),
+            Text(
+              text,
+              textAlign: TextAlign.center,
+              style: AppTextStyles.bodyMedium(context).copyWith(
+                color: AppColors.textSecondary(context),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
