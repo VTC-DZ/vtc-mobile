@@ -1,12 +1,28 @@
+import 'dart:async';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../../../core/network/ride_socket_service.dart';
 import '../../../data/driver_ride_repository.dart';
+import '../../../data/models/driver_ride_models.dart';
+import '../../../data/models/ride_socket_event.dart';
 import 'available_rides_state.dart';
 
 final class AvailableRidesCubit extends Cubit<AvailableRidesState> {
-  AvailableRidesCubit(this._repository) : super(const AvailableRidesState());
+  AvailableRidesCubit(this._repository) : super(const AvailableRidesState()) {
+    _frameSub = RideSocketService.frameStream.listen(_onFrame);
+    _statusSub = RideSocketService.statusStream.listen(_onStatus);
+    // The socket may already be live when this cubit mounts (e.g. the driver was
+    // online before navigating here) — seed straight away so we don't wait for
+    // the next connect event.
+    if (RideSocketService.status == RideSocketStatus.connected) {
+      loadAvailableRides();
+    }
+  }
 
   final DriverRideRepository _repository;
+  late final StreamSubscription<String> _frameSub;
+  late final StreamSubscription<RideSocketStatus> _statusSub;
 
   Future<void> loadAvailableRides() async {
     emit(state.copyWith(status: AvailableRidesStatus.loading, errorMessage: ''));
@@ -35,5 +51,51 @@ final class AvailableRidesCubit extends Cubit<AvailableRidesState> {
         errorMessage: e.toString(),
       ));
     }
+  }
+
+  // REST is truth, WS is hints: reconcile against REST on every (re)connect, then
+  // apply the live broadcast deltas on top.
+  void _onStatus(RideSocketStatus status) {
+    if (status == RideSocketStatus.connected) loadAvailableRides();
+  }
+
+  void _onFrame(String frame) {
+    final event = RideSocketEvent.tryParse(frame);
+    switch (event) {
+      case RideBroadcast(:final request):
+        _upsertRide(request);
+      case RideBroadcastCancelled(:final rideRequestId):
+        _removeRide(rideRequestId);
+      case null:
+        break;
+    }
+  }
+
+  // Dedupe by rideRequestId: the re-broadcast sweeper re-emits the same request
+  // as the cohort grows, so replace an existing card rather than appending.
+  void _upsertRide(AvailableRequestCard request) {
+    final rides = List<AvailableRequestCard>.from(state.rides);
+    final index =
+        rides.indexWhere((r) => r.rideRequestId == request.rideRequestId);
+    if (index >= 0) {
+      rides[index] = request;
+    } else {
+      rides.add(request);
+    }
+    emit(state.copyWith(status: AvailableRidesStatus.loaded, rides: rides));
+  }
+
+  void _removeRide(String rideRequestId) {
+    final rides = state.rides
+        .where((r) => r.rideRequestId != rideRequestId)
+        .toList();
+    emit(state.copyWith(status: AvailableRidesStatus.loaded, rides: rides));
+  }
+
+  @override
+  Future<void> close() {
+    _frameSub.cancel();
+    _statusSub.cancel();
+    return super.close();
   }
 }

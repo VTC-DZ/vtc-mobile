@@ -39,7 +39,7 @@ final class AvailableRequestCard {
   final ServiceType serviceType;
   final VehicleCategory vehicleCategory;
   final bool femaleOnly;
-  final int distanceMeters;
+  final int? distanceMeters;
   final String expiresAt;
 
   factory AvailableRequestCard.fromJson(Map<String, dynamic> json) =>
@@ -52,7 +52,7 @@ final class AvailableRequestCard {
         vehicleCategory:
             VehicleCategory.fromJson(json['vehicleCategory'] as String),
         femaleOnly: json['femaleOnly'] as bool,
-        distanceMeters: json['distanceMeters'] as int,
+        distanceMeters: json['distanceMeters'] as int?,
         expiresAt: json['expiresAt'] as String,
       );
 }

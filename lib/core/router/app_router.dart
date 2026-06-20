@@ -255,6 +255,11 @@ final class AppRouter {
             BlocProvider<WebSocketConnectionCubit>(
               create: (_) => WebSocketConnectionCubit(),
             ),
+            // Shell-scoped so it keeps collecting `ride.broadcast` events while
+            // the driver is online, regardless of which screen is showing.
+            BlocProvider<AvailableRidesCubit>(
+              create: (_) => AvailableRidesCubit(const DriverRideRepository()),
+            ),
           ],
           child: DriverHomeShell(child: child),
         ),
@@ -310,11 +315,7 @@ final class AppRouter {
           GoRoute(
             path: RouteNames.availableRides,
             builder: (context, state) {
-              return BlocProvider<AvailableRidesCubit>(
-                create: (_) =>
-                    AvailableRidesCubit(const DriverRideRepository()),
-                child: const AvailableRidesView(),
-              );
+              return const AvailableRidesView();
             },
           ),
           GoRoute(
