@@ -926,7 +926,12 @@
           "requests": {
             "type": "array",
             "items": { "$ref": "#/components/schemas/AvailableRequestCard" }
-          }
+          },
+          "status": {
+            "type": "string",
+            "enum": ["AVAILABLE", "OFFLINE", "ACTIVE_RIDE", "BID_LIMIT_REACHED"]
+          },
+          "activeRideId": { "type": "string", "format": "uuid" }
         }
       },
       "CoordinatePoint": {

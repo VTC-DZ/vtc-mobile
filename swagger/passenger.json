@@ -880,7 +880,8 @@
           "phone": { "type": "string" },
           "vehicleModel": { "type": "string" },
           "vehiclePlate": { "type": "string" },
-          "currentPosition": { "$ref": "#/components/schemas/Coordinate" }
+          "currentPosition": { "$ref": "#/components/schemas/Coordinate" },
+          "etaSeconds": { "type": "integer", "format": "int64" }
         }
       },
       "RideDetailResponse": {
@@ -959,7 +960,9 @@
           },
           "proposedFare": { "type": "integer", "format": "int64" },
           "expiresAt": { "type": "string", "format": "date-time" },
-          "offerCount": { "type": "integer", "format": "int32" }
+          "offerCount": { "type": "integer", "format": "int32" },
+          "pickup": { "$ref": "#/components/schemas/LocationPoint" },
+          "dropoff": { "$ref": "#/components/schemas/LocationPoint" }
         }
       },
       "ActiveRideResponse": {
@@ -973,6 +976,7 @@
         "type": "object",
         "properties": {
           "rideId": { "type": "string", "format": "uuid" },
+          "rideRequestId": { "type": "string", "format": "uuid" },
           "state": {
             "type": "string",
             "enum": [
@@ -985,9 +989,20 @@
           },
           "finalFare": { "type": "integer", "format": "int64" },
           "driver": { "$ref": "#/components/schemas/DriverInRide" },
+          "pickup": { "$ref": "#/components/schemas/LocationPoint" },
+          "dropoff": { "$ref": "#/components/schemas/LocationPoint" },
           "acceptedAt": { "type": "string", "format": "date-time" },
           "arrivedAt": { "type": "string", "format": "date-time" },
-          "startedAt": { "type": "string", "format": "date-time" }
+          "startedAt": { "type": "string", "format": "date-time" },
+          "arrivalWaitDeadline": { "type": "string", "format": "date-time" }
+        }
+      },
+      "LocationPoint": {
+        "type": "object",
+        "properties": {
+          "lat": { "type": "number" },
+          "lng": { "type": "number" },
+          "address": { "type": "string" }
         }
       },
       "Coordinates": {

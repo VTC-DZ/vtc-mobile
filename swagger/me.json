@@ -2,30 +2,57 @@
   "openapi": "3.1.0",
   "info": {
     "title": "VTC API",
-    "description": "VTC platform API — auth, me, passenger, driver, and admin surfaces.",
+    "description": "VTC platform API — account, passenger, driver, and admin surfaces.",
     "version": "0.1.0-SNAPSHOT"
   },
   "servers": [
     { "url": "http://localhost:8080", "description": "Generated server url" }
   ],
+  "tags": [
+    {
+      "name": "Account Profile",
+      "description": "View and update the authenticated user's profile"
+    },
+    {
+      "name": "Account Phone",
+      "description": "Request and confirm a phone number change"
+    },
+    {
+      "name": "Auth",
+      "description": "Authentication — OTP login, token refresh, role switching"
+    }
+  ],
   "paths": {
     "/api/me/profile": {
       "get": {
-        "tags": ["me-profile-controller"],
+        "tags": ["Account Profile"],
+        "summary": "Get profile",
+        "description": "Returns the authenticated user's profile.",
         "operationId": "getProfile",
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "Profile found",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/MeProfileResponse" }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
             "content": {
               "*/*": {
                 "schema": { "$ref": "#/components/schemas/MeProfileResponse" }
               }
             }
           }
-        }
+        },
+        "security": [{ "bearerAuth": [] }]
       },
       "put": {
-        "tags": ["me-profile-controller"],
+        "tags": ["Account Profile"],
+        "summary": "Update profile",
+        "description": "Updates the authenticated user's profile fields.",
         "operationId": "updateProfile",
         "requestBody": {
           "content": {
@@ -37,19 +64,38 @@
         },
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "Profile updated",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/MeProfileResponse" }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/MeProfileResponse" }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
             "content": {
               "*/*": {
                 "schema": { "$ref": "#/components/schemas/MeProfileResponse" }
               }
             }
           }
-        }
+        },
+        "security": [{ "bearerAuth": [] }]
       }
     },
     "/api/me/phone/request": {
       "post": {
-        "tags": ["me-phone-change-controller"],
+        "tags": ["Account Phone"],
+        "summary": "Request phone change",
+        "description": "Sends an OTP to the new phone number to initiate a phone change.",
         "operationId": "requestPhoneChange",
         "requestBody": {
           "content": {
@@ -61,19 +107,38 @@
         },
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "OTP sent to new phone",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/OtpRequestResponse" }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/OtpRequestResponse" }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
             "content": {
               "*/*": {
                 "schema": { "$ref": "#/components/schemas/OtpRequestResponse" }
               }
             }
           }
-        }
+        },
+        "security": [{ "bearerAuth": [] }]
       }
     },
     "/api/me/phone/confirm": {
       "post": {
-        "tags": ["me-phone-change-controller"],
+        "tags": ["Account Phone"],
+        "summary": "Confirm phone change",
+        "description": "Verifies the OTP and completes the phone number change.",
         "operationId": "confirmPhoneChange",
         "requestBody": {
           "content": {
@@ -87,7 +152,101 @@
         },
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "Phone changed, new tokens issued",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/AuthTokensResponse" }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid OTP or validation error",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/AuthTokensResponse" }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/AuthTokensResponse" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }]
+      }
+    },
+    "/api/auth/switch-role": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Switch active role",
+        "description": "Switches the user's active role between DRIVER and PASSENGER.",
+        "operationId": "switchRole",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/SwitchRoleRequest" }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Role switched",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/AccessTokenResponse" }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid target role",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/AccessTokenResponse" }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/AccessTokenResponse" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }]
+      }
+    },
+    "/api/auth/refresh": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Refresh token",
+        "description": "Exchanges a valid refresh token for a new token pair.",
+        "operationId": "refresh",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/RefreshTokenRequest" }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Tokens refreshed",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/AuthTokensResponse" }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid or expired refresh token",
             "content": {
               "*/*": {
                 "schema": { "$ref": "#/components/schemas/AuthTokensResponse" }
@@ -97,9 +256,92 @@
         }
       }
     },
+    "/api/auth/otp/verify": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Verify OTP",
+        "description": "Verifies the OTP code and returns authentication tokens.",
+        "operationId": "verifyOtp",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/OtpVerifyRequest" }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Authentication successful",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/AuthTokensResponse" }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid or expired OTP",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/AuthTokensResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/otp/request": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Request OTP",
+        "description": "Sends a one-time password to the given phone number.",
+        "operationId": "requestOtp",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/OtpRequest" }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OTP sent successfully",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/OtpRequestResponse" }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/OtpRequestResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/logout": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Logout",
+        "description": "Invalidates the current user session.",
+        "operationId": "logout",
+        "responses": {
+          "204": { "description": "Logged out" },
+          "401": { "description": "Unauthorized" }
+        },
+        "security": [{ "bearerAuth": [] }]
+      }
+    },
     "/api/me/email": {
       "patch": {
-        "tags": ["me-profile-controller"],
+        "tags": ["Account Profile"],
+        "summary": "Update email",
+        "description": "Changes the authenticated user's email address.",
         "operationId": "updateEmail",
         "requestBody": {
           "content": {
@@ -111,14 +353,31 @@
         },
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "Email updated",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/MeProfileResponse" }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/MeProfileResponse" }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
             "content": {
               "*/*": {
                 "schema": { "$ref": "#/components/schemas/MeProfileResponse" }
               }
             }
           }
-        }
+        },
+        "security": [{ "bearerAuth": [] }]
       }
     }
   },
@@ -209,9 +468,50 @@
           "hasDriverProfile": { "type": "boolean" }
         }
       },
+      "SwitchRoleRequest": {
+        "type": "object",
+        "properties": { "targetRole": { "type": "string" } },
+        "required": ["targetRole"]
+      },
+      "AccessTokenResponse": {
+        "type": "object",
+        "properties": { "accessToken": { "type": "string" } }
+      },
+      "RefreshTokenRequest": {
+        "type": "object",
+        "properties": { "refreshToken": { "type": "string", "minLength": 1 } },
+        "required": ["refreshToken"]
+      },
+      "OtpVerifyRequest": {
+        "type": "object",
+        "properties": {
+          "phone": { "type": "string", "minLength": 1 },
+          "code": { "type": "string", "minLength": 1, "pattern": "^\\d{6}$" }
+        },
+        "required": ["code", "phone"]
+      },
+      "OtpRequest": {
+        "type": "object",
+        "properties": { "phone": { "type": "string", "minLength": 1 } },
+        "required": ["phone"]
+      },
       "EmailUpdateRequest": {
         "type": "object",
         "properties": { "email": { "type": "string" } }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "description": "Mobile JWT (passenger/driver)",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      },
+      "adminBearerAuth": {
+        "type": "http",
+        "description": "Admin dashboard JWT",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
       }
     }
   }

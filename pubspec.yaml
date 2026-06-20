@@ -22,6 +22,9 @@ dependencies:
   dio: ^5.7.0
   http_parser: ^4.1.0
 
+  # Realtime — raw WebSocket transport (see swagger/epic-03-ride.md §4)
+  web_socket_channel: ^3.0.1
+
   # Responsive sizing
   flutter_screenutil: ^5.9.3
   flutter_zoom_drawer: ^3.2.0

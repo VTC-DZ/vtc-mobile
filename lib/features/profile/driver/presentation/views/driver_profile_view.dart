@@ -14,6 +14,9 @@ import '../../../../../shared/widgets/app_scaffold.dart';
 import '../../../../home/passenger/presentation/views/widgets/top_bar.dart';
 import '../../../../home/driver/presentation/cubit/driver_home_cubit.dart';
 import '../../../../home/driver/presentation/cubit/driver_home_state.dart';
+import '../../data/driver_service_types_repository.dart';
+import '../cubit/driver_service_types_cubit/driver_service_types_cubit.dart';
+import 'widgets/driver_service_types_widget.dart';
 
 class DriverProfileView extends StatelessWidget {
   const DriverProfileView({super.key});
@@ -111,6 +114,15 @@ class DriverProfileView extends StatelessWidget {
                           RouteNames.driverEmailEdit,
                           extra: profile.email ?? '',
                         ),
+                      ),
+                      SizedBox(height: 24.h),
+                      const ProfileFieldLabelWidget(label: 'Service Types'),
+                      SizedBox(height: 8.h),
+                      BlocProvider(
+                        create: (_) => DriverServiceTypesCubit(
+                          const DriverServiceTypesRepository(),
+                        ),
+                        child: const DriverServiceTypesWidget(),
                       ),
                       SizedBox(height: 24.h),
                     ],
