@@ -2,6 +2,8 @@
 
 import '../../../../core/constants/auth_api_constants.dart';
 import '../../../../core/network/dio_client.dart';
+import '../../../../core/network/driver_location_streamer.dart';
+import '../../../../core/network/ride_socket_service.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../core/session/auth_session.dart';
@@ -53,6 +55,8 @@ final class AuthRepository {
         data: {},
       );
     } catch (_) {}
+    DriverLocationStreamer.stop();
+    await RideSocketService.disconnect();
     await AuthSession.clearSession();
     AppRouter.router.go(RouteNames.phone);
   }

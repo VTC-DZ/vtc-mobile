@@ -17,11 +17,13 @@ class AvailableRideCard extends StatelessWidget {
     super.key,
     required this.ride,
     required this.onBid,
+    this.onIgnore,
     this.onExpired,
   });
 
   final AvailableRequestCard ride;
   final VoidCallback onBid;
+  final VoidCallback? onIgnore;
   final VoidCallback? onExpired;
 
   static const Color _dropoffColor = Color(0xFFEF4444);
@@ -129,7 +131,7 @@ class AvailableRideCard extends StatelessWidget {
                   Divider(color: AppColors.borderDefault(context), height: 1),
                   SizedBox(height: 12.h),
 
-                  // --- Fare + Bid ---
+                  // --- Fare + Ignore + Bid ---
                   Row(
                     children: [
                       Expanded(
@@ -153,6 +155,29 @@ class AvailableRideCard extends StatelessWidget {
                           ],
                         ),
                       ),
+                      OutlinedButton(
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppColors.textSecondary(context),
+                          side: BorderSide(
+                              color: AppColors.borderDefault(context)),
+                          minimumSize: Size(0, 44.h),
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          padding: EdgeInsets.symmetric(
+                              horizontal: 16.w, vertical: 12.h),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12.r),
+                          ),
+                        ),
+                        onPressed: onIgnore,
+                        child: Text(
+                          'Ignore',
+                          style: AppTextStyles.labelMedium(context).copyWith(
+                            color: AppColors.textSecondary(context),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                      SizedBox(width: 8.w),
                       ElevatedButton(
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primary,

@@ -20,7 +20,7 @@ import 'ride_socket_service.dart';
 final class DriverLocationStreamer {
   DriverLocationStreamer._();
 
-  static const Duration _interval = Duration(seconds: 5);
+  static const Duration _interval = Duration(seconds: 15);
 
   static StreamSubscription<RideSocketStatus>? _statusSub;
   static Timer? _timer;

@@ -62,6 +62,9 @@ class _AvailableRidesViewState extends State<AvailableRidesView> {
                       return AvailableRideCard(
                         ride: ride,
                         onBid: () => _openBidSheet(context, ride),
+                        onIgnore: () => context
+                            .read<AvailableRidesCubit>()
+                            .ignoreRide(ride.rideRequestId),
                         onExpired: () => context
                             .read<AvailableRidesCubit>()
                             .ignoreRide(ride.rideRequestId),
