@@ -6,7 +6,8 @@ import 'driver_ride_models.dart';
 /// names. Any other `type` has no entry here and is ignored.
 enum RideSocketEventType {
   rideBroadcast('ride.broadcast'),
-  rideBroadcastCancelled('ride.broadcast_cancelled');
+  rideBroadcastCancelled('ride.broadcast_cancelled'),
+  offerCreated('offer.created');
 
   const RideSocketEventType(this.wireName);
 
@@ -51,6 +52,14 @@ sealed class RideSocketEvent {
             rideRequestId: payload['rideRequestId'] as String,
             reason: payload['reason'] as String? ?? '',
           );
+        case RideSocketEventType.offerCreated:
+          return OfferCreated(
+            offerId: payload['offerId'] as String,
+            rideRequestId: payload['rideRequestId'] as String,
+            driverId: payload['driverId'] as String,
+            fare: payload['fare'] as int,
+            expiresAt: payload['expiresAt'] as String,
+          );
       }
     } catch (_) {
       return null;
@@ -75,4 +84,21 @@ final class RideBroadcastCancelled extends RideSocketEvent {
 
   final String rideRequestId;
   final String reason;
+}
+
+/// A driver placed a bid on the passenger's ride request.
+final class OfferCreated extends RideSocketEvent {
+  const OfferCreated({
+    required this.offerId,
+    required this.rideRequestId,
+    required this.driverId,
+    required this.fare,
+    required this.expiresAt,
+  });
+
+  final String offerId;
+  final String rideRequestId;
+  final String driverId;
+  final int fare;
+  final String expiresAt;
 }

@@ -86,17 +86,28 @@ class WaitingOffersView extends StatelessWidget {
                           ),
                         ),
                         SizedBox(height: 12.h),
-                        ...state.offers.map(
-                          (offer) => OfferCard(
-                            offer: offer,
-                            isAccepting: isAccepting,
-                            onAccept: () => context
-                                .read<WaitingOffersCubit>()
-                                .acceptOffer(offer.offerId),
-                            onRefuse: () => context
-                                .read<WaitingOffersCubit>()
-                                .refuseOffer(offer.offerId),
-                          ),
+                        ListView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: state.offers.length,
+                          itemBuilder: (context, i) {
+                            final offer = state.offers[i];
+                            return OfferCard(
+                              key: ValueKey(offer.offerId),
+                              index: i + 1,
+                              offer: offer,
+                              isAccepting: isAccepting,
+                              onAccept: () => context
+                                  .read<WaitingOffersCubit>()
+                                  .acceptOffer(offer.offerId),
+                              onRefuse: () => context
+                                  .read<WaitingOffersCubit>()
+                                  .refuseOffer(offer.offerId),
+                              onExpired: () => context
+                                  .read<WaitingOffersCubit>()
+                                  .removeOffer(offer.offerId),
+                            );
+                          },
                         ),
                       ],
                       SizedBox(height: 24.h),

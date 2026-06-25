@@ -1,5 +1,8 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../../../core/models/token_payload.dart';
+import '../../../../../../core/network/ride_socket_service.dart';
 import '../../../data/models/passenger_ride_models.dart';
 import '../../../data/passenger_ride_repository.dart';
 import 'ride_request_state.dart';
@@ -21,6 +24,8 @@ final class RideRequestCubit extends Cubit<RideRequestState> {
     emit(state.copyWith(status: RideRequestStatus.loading, errorMessage: ''));
     try {
       final response = await _repository.createRide(request);
+      await RideSocketService.connect(ActiveRole.passenger);
+      if (kDebugMode) debugPrint('[Passenger] WS connected for ride ${response.rideRequestId}');
       emit(state.copyWith(
         status: RideRequestStatus.success,
         createRideResponse: response,

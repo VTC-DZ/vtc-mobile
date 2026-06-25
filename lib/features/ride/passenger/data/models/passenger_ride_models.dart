@@ -92,14 +92,14 @@ final class OfferEntry {
   final String offerId;
   final String driverId;
   final String driverFullName;
-  final double driverRatingAvg;
+  final double? driverRatingAvg;
   final String vehicleModel;
-  final String vehiclePlate;
+  final String? vehiclePlate;
   final int fare;
   final String direction;
   final String status;
   final int round;
-  final int etaSeconds;
+  final int? etaSeconds;
   final String expiresAt;
   final String? previousOfferId;
 
@@ -107,14 +107,14 @@ final class OfferEntry {
         offerId: json['offerId'] as String,
         driverId: json['driverId'] as String,
         driverFullName: json['driverFullName'] as String,
-        driverRatingAvg: (json['driverRatingAvg'] as num).toDouble(),
+        driverRatingAvg: (json['driverRatingAvg'] as num?)?.toDouble(),
         vehicleModel: json['vehicleModel'] as String,
-        vehiclePlate: json['vehiclePlate'] as String,
+        vehiclePlate: json['vehiclePlate'] as String?,
         fare: json['fare'] as int,
         direction: json['direction'] as String,
         status: json['status'] as String,
         round: json['round'] as int,
-        etaSeconds: json['etaSeconds'] as int,
+        etaSeconds: json['etaSeconds'] as int?,
         expiresAt: json['expiresAt'] as String,
         previousOfferId: json['previousOfferId'] as String?,
       );

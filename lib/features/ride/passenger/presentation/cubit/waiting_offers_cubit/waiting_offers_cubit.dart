@@ -1,9 +1,12 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../../../core/network/ride_socket_service.dart';
 import '../../../data/models/passenger_ride_models.dart';
 import '../../../data/passenger_ride_repository.dart';
+import '../../../../../ride/driver/data/models/ride_socket_event.dart';
 import 'waiting_offers_state.dart';
 
 final class WaitingOffersCubit extends Cubit<WaitingOffersState> {
@@ -12,11 +15,17 @@ final class WaitingOffersCubit extends Cubit<WaitingOffersState> {
 
   final PassengerRideRepository _repository;
   final String _rideRequestId;
-  Timer? _timer;
+  StreamSubscription<String>? _wsSub;
 
   void startPolling() {
     _poll();
-    // _timer = Timer.periodic(const Duration(seconds: 5), (_) => _poll());
+    _wsSub = RideSocketService.frameStream.listen((frame) {
+      final event = RideSocketEvent.tryParse(frame);
+      if (event is OfferCreated && event.rideRequestId == _rideRequestId) {
+        if (kDebugMode) debugPrint('[Passenger] offer.created → offerId=${event.offerId} fare=${event.fare} DZD');
+        _poll();
+      }
+    });
   }
 
   Future<void> _poll() async {
@@ -35,11 +44,19 @@ final class WaitingOffersCubit extends Cubit<WaitingOffersState> {
     }
   }
 
+  void removeOffer(String offerId) {
+    final remaining = state.offers.where((o) => o.offerId != offerId).toList();
+    final phase = remaining.isEmpty
+        ? RideRequestPhase.requested
+        : RideRequestPhase.negotiating;
+    emit(state.copyWith(offers: remaining, rideRequestPhase: phase));
+  }
+
   Future<void> acceptOffer(String offerId) async {
     emit(state.copyWith(acceptStatus: AcceptStatus.loading));
     try {
       await _repository.acceptOffer(_rideRequestId, offerId);
-      _timer?.cancel();
+      _wsSub?.cancel();
       emit(state.copyWith(
         acceptStatus: AcceptStatus.success,
         rideRequestPhase: RideRequestPhase.accepted,
@@ -79,7 +96,7 @@ final class WaitingOffersCubit extends Cubit<WaitingOffersState> {
         _rideRequestId,
         CancelRideRequest(reason: reason.apiValue, note: note),
       );
-      _timer?.cancel();
+      _wsSub?.cancel();
       emit(state.copyWith(
         cancelStatus: CancelStatus.success,
         rideRequestPhase: RideRequestPhase.cancelled,
@@ -94,7 +111,7 @@ final class WaitingOffersCubit extends Cubit<WaitingOffersState> {
 
   @override
   Future<void> close() {
-    _timer?.cancel();
+    _wsSub?.cancel();
     return super.close();
   }
 }

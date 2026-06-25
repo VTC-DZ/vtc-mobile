@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
@@ -5,23 +8,70 @@ import '../../../../../../../core/theme/app_colors.dart';
 import '../../../../../../../core/theme/app_text_styles.dart';
 import '../../../../data/models/passenger_ride_models.dart';
 
-class OfferCard extends StatelessWidget {
+class OfferCard extends StatefulWidget {
   const OfferCard({
     super.key,
+    required this.index,
     required this.offer,
     required this.isAccepting,
     required this.onAccept,
     required this.onRefuse,
+    required this.onExpired,
   });
 
+  final int index;
   final OfferEntry offer;
   final bool isAccepting;
   final VoidCallback onAccept;
   final VoidCallback onRefuse;
+  final VoidCallback onExpired;
+
+  @override
+  State<OfferCard> createState() => _OfferCardState();
+}
+
+class _OfferCardState extends State<OfferCard> {
+  late int _secondsLeft;
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _secondsLeft = max(
+      0,
+      DateTime.parse(widget.offer.expiresAt)
+          .difference(DateTime.now())
+          .inSeconds,
+    );
+    if (_secondsLeft > 0) {
+      _timer = Timer.periodic(const Duration(seconds: 1), _tick);
+    } else {
+      // Already expired when mounted — remove on next frame
+      WidgetsBinding.instance.addPostFrameCallback((_) => widget.onExpired());
+    }
+  }
+
+  void _tick(Timer _) {
+    if (_secondsLeft <= 1) {
+      _timer?.cancel();
+      widget.onExpired();
+    } else {
+      setState(() => _secondsLeft--);
+    }
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final etaMin = (offer.etaSeconds / 60).ceil();
+    final etaMin = widget.offer.etaSeconds != null
+        ? (widget.offer.etaSeconds! / 60).ceil()
+        : null;
+    final timerColor = _secondsLeft <= 10 ? AppColors.error : AppColors.primary;
 
     return Container(
       margin: EdgeInsets.only(bottom: 12.h),
@@ -34,6 +84,14 @@ class OfferCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Text(
+            '#${widget.index}',
+            style: AppTextStyles.labelSmall(context).copyWith(
+              color: AppColors.textSecondary(context),
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          SizedBox(height: 6.h),
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -49,7 +107,7 @@ class OfferCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      offer.driverFullName,
+                      widget.offer.driverFullName,
                       style: AppTextStyles.bodyMedium(context)
                           .copyWith(fontWeight: FontWeight.w700),
                     ),
@@ -60,7 +118,9 @@ class OfferCard extends StatelessWidget {
                             size: 14.w, color: const Color(0xFFF59E0B)),
                         SizedBox(width: 2.w),
                         Text(
-                          offer.driverRatingAvg.toStringAsFixed(1),
+                          widget.offer.driverRatingAvg != null
+                              ? widget.offer.driverRatingAvg!.toStringAsFixed(1)
+                              : '—',
                           style: AppTextStyles.labelSmall(context).copyWith(
                             color: AppColors.textSecondary(context),
                           ),
@@ -70,10 +130,15 @@ class OfferCard extends StatelessWidget {
                             size: 14.w,
                             color: AppColors.textSecondary(context)),
                         SizedBox(width: 3.w),
-                        Text(
-                          '${offer.vehicleModel} · ${offer.vehiclePlate}',
-                          style: AppTextStyles.labelSmall(context).copyWith(
-                            color: AppColors.textSecondary(context),
+                        Flexible(
+                          child: Text(
+                            widget.offer.vehiclePlate != null
+                                ? '${widget.offer.vehicleModel} · ${widget.offer.vehiclePlate}'
+                                : widget.offer.vehicleModel,
+                            style: AppTextStyles.labelSmall(context).copyWith(
+                              color: AppColors.textSecondary(context),
+                            ),
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                       ],
@@ -81,21 +146,39 @@ class OfferCard extends StatelessWidget {
                   ],
                 ),
               ),
+              SizedBox(width: 8.w),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
-                    '${offer.fare} DZD',
+                    '${widget.offer.fare} DZD',
                     style: AppTextStyles.bodyMedium(context).copyWith(
                       fontWeight: FontWeight.w700,
                       color: AppColors.primary,
                     ),
                   ),
                   SizedBox(height: 2.h),
-                  Text(
-                    '$etaMin min away',
-                    style: AppTextStyles.labelSmall(context).copyWith(
-                      color: AppColors.textSecondary(context),
+                  if (etaMin != null)
+                    Text(
+                      '$etaMin min away',
+                      style: AppTextStyles.labelSmall(context).copyWith(
+                        color: AppColors.textSecondary(context),
+                      ),
+                    ),
+                  SizedBox(height: 4.h),
+                  Container(
+                    padding:
+                        EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
+                    decoration: BoxDecoration(
+                      color: timerColor.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(6.r),
+                    ),
+                    child: Text(
+                      '${_secondsLeft}s',
+                      style: AppTextStyles.labelSmall(context).copyWith(
+                        color: timerColor,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
                 ],
@@ -115,11 +198,11 @@ class OfferCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(10.r),
                     ),
                   ),
-                  onPressed: isAccepting ? null : onRefuse,
+                  onPressed: widget.isAccepting ? null : widget.onRefuse,
                   child: Text(
                     'Refuse',
                     style: AppTextStyles.labelMedium(context).copyWith(
-                      color: isAccepting
+                      color: widget.isAccepting
                           ? AppColors.buttonDisabledText(context)
                           : AppColors.error,
                       fontWeight: FontWeight.w600,
@@ -138,7 +221,7 @@ class OfferCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(10.r),
                     ),
                   ),
-                  onPressed: isAccepting ? null : onAccept,
+                  onPressed: widget.isAccepting ? null : widget.onAccept,
                   child: Text(
                     'Accept',
                     style: AppTextStyles.labelMedium(context).copyWith(
