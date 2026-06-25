@@ -4,11 +4,13 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:web_socket_channel/io.dart';
 
+import '../constants/auth_api_constants.dart';
 import '../constants/web_socket_constants.dart';
 import '../models/token_payload.dart';
 import '../router/app_router.dart';
 import '../router/route_names.dart';
 import '../session/auth_session.dart';
+import 'dio_client.dart';
 import 'ws_url.dart';
 
 /// Coarse connection state for the ride socket. Mirrored to UI via
@@ -58,6 +60,7 @@ final class RideSocketService {
   static int _backoffIndex = 0;
   static Timer? _reconnectTimer;
   static bool _isConnecting = false; // guards connect() re-entrancy
+  static bool _isRefreshingToken = false; // guards concurrent refresh calls
   static RideSocketStatus _status = RideSocketStatus.disconnected;
 
   /// Last-emitted [RideSocketStatus], for callers that need the current value
@@ -173,9 +176,22 @@ final class RideSocketService {
   // --- Stream callbacks ---
 
   static void _onData(dynamic data) {
-    // Pass raw text frames straight through; binary/other types are ignored.
-    if (data is String && !_frameController.isClosed) {
-      _frameController.add(data);
+    if (data is! String || _frameController.isClosed) return;
+    // Intercept system.token_expiring before broadcasting so we can refresh
+    // proactively without dropping the connection (epic-03-ride.md §4).
+    if (_isTokenExpiringFrame(data)) {
+      _handleTokenExpiring();
+    }
+    _frameController.add(data);
+  }
+
+  static bool _isTokenExpiringFrame(String frame) {
+    try {
+      final type =
+          (jsonDecode(frame) as Map<String, dynamic>)['type'] as String?;
+      return type == 'system.token_expiring';
+    } catch (_) {
+      return false;
     }
   }
 
@@ -209,10 +225,9 @@ final class RideSocketService {
         _emit(RideSocketStatus.failed);
         _forceRelogin();
       case WebSocketCloseMeaning.tokenExpired:
-        // TODO(auth-refresh): refresh via REST, then fresh connect(role)
-        //   without dropping the link. For now reconnect with the current
-        //   token; if it is still expired this cycles within the backoff cap.
-        _scheduleReconnect();
+        // Token already expired on the server — refresh via REST then reconnect
+        // immediately (no backoff penalty for a clean token expiry).
+        _refreshAndReconnect();
       case WebSocketCloseMeaning.rateLimited:
       case WebSocketCloseMeaning.serverShutdown:
       case WebSocketCloseMeaning.transient:
@@ -235,6 +250,77 @@ final class RideSocketService {
     _log('reconnecting in ${step.inSeconds}s ...');
     _reconnectTimer?.cancel();
     _reconnectTimer = Timer(step, () => connect(role));
+  }
+
+  /// Called when the server sends `system.token_expiring` (~2 min warning).
+  /// Refreshes via REST and sends the new token upstream so the socket stays
+  /// alive without a disconnect/reconnect cycle.
+  static Future<void> _handleTokenExpiring() async {
+    if (_isRefreshingToken) return;
+    _isRefreshingToken = true;
+    try {
+      final newToken = await _doRestRefresh();
+      if (newToken == null) return;
+      send({'type': 'system.auth_refresh', 'payload': {'token': newToken}});
+      _log('token refreshed proactively via system.token_expiring');
+    } finally {
+      _isRefreshingToken = false;
+    }
+  }
+
+  /// Called when the server closes with code 4001 (token already expired).
+  /// Refreshes via REST then reconnects immediately.
+  static Future<void> _refreshAndReconnect() async {
+    final role = _activeRole;
+    if (role == null) return;
+    _emit(RideSocketStatus.reconnecting);
+    if (_isRefreshingToken) {
+      // Another refresh is already in flight — wait for it then reconnect.
+      _scheduleReconnect();
+      return;
+    }
+    _isRefreshingToken = true;
+    try {
+      final newToken = await _doRestRefresh();
+      if (newToken == null) {
+        _forceRelogin();
+        return;
+      }
+      _log('token refreshed after 4001 close — reconnecting');
+      _backoffIndex = 0;
+      await connect(role);
+    } finally {
+      _isRefreshingToken = false;
+    }
+  }
+
+  /// Calls `POST /api/auth/refresh`, saves the new tokens to [AuthSession],
+  /// and returns the new access token. Returns `null` and forces re-login on
+  /// any failure (expired refresh token, network error, etc.).
+  static Future<String?> _doRestRefresh() async {
+    final refreshToken = AuthSession.refreshToken;
+    if (refreshToken == null) {
+      _forceRelogin();
+      return null;
+    }
+    try {
+      final response = await DioClient.post(
+        path: AuthApiConstants.refresh,
+        data: {'refreshToken': refreshToken},
+      );
+      final data = response.data as Map<String, dynamic>;
+      final newAccess = data['accessToken'] as String;
+      final newRefresh = data['refreshToken'] as String;
+      await AuthSession.setTokens(
+        accessToken: newAccess,
+        refreshToken: newRefresh,
+      );
+      return newAccess;
+    } catch (e) {
+      _log('token refresh failed: $e — forcing re-login');
+      _forceRelogin();
+      return null;
+    }
   }
 
   static Future<void> _forceRelogin() async {

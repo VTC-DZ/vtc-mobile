@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 
@@ -37,6 +39,23 @@ final class DioClient {
           final token = AuthSession.accessToken;
           if (token != null) {
             options.headers['Authorization'] = 'Bearer $token';
+          }
+          handler.next(options);
+        },
+      ),
+    );
+
+    // Attach a unique Idempotency-Key to every mutating request so the server
+    // can safely de-duplicate retries. Auth endpoints are excluded — the refresh
+    // call is internal and must not carry a key.
+    _dio.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) {
+          final method = options.method.toUpperCase();
+          final isAuth = options.path.startsWith(AuthApiConstants.base);
+          if (!isAuth &&
+              (method == 'POST' || method == 'PUT' || method == 'DELETE')) {
+            options.headers['Idempotency-Key'] = _uuid();
           }
           handler.next(options);
         },
@@ -233,6 +252,21 @@ final class DioClient {
     } on DioException catch (e) {
       throw await _handleDioError(e);
     }
+  }
+
+  static final _rng = Random.secure();
+
+  /// RFC 4122 v4 UUID — no external package required.
+  static String _uuid() {
+    final b = List<int>.generate(16, (_) => _rng.nextInt(256));
+    b[6] = (b[6] & 0x0f) | 0x40;
+    b[8] = (b[8] & 0x3f) | 0x80;
+    String h(int n) => n.toRadixString(16).padLeft(2, '0');
+    return '${b.sublist(0, 4).map(h).join()}'
+        '-${b.sublist(4, 6).map(h).join()}'
+        '-${b.sublist(6, 8).map(h).join()}'
+        '-${b.sublist(8, 10).map(h).join()}'
+        '-${b.sublist(10, 16).map(h).join()}';
   }
 
   static Future<String> _handleDioError(DioException e) async {

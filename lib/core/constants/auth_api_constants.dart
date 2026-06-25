@@ -1,7 +1,8 @@
 abstract final class AuthApiConstants {
   AuthApiConstants._();
 
-  static const String _base = '/api/auth';
+  static const String base = '/api/auth';
+  static const String _base = base;
 
   static const String otpRequest = '$_base/otp/request';
   static const String otpVerify = '$_base/otp/verify';

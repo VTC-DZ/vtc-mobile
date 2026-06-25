@@ -2,19 +2,48 @@ import 'dart:convert';
 
 import 'driver_ride_models.dart';
 
-/// The driver-side socket `type` values this layer handles, mapped to their wire
-/// names. Any other `type` has no entry here and is ignored.
+/// Ride states as defined in the state machine (swagger/epic-03-ride.md §6).
+enum RideState {
+  accepted,
+  arrived,
+  inProgress,
+  completed,
+  cancelled;
+
+  static RideState fromWire(String value) => switch (value) {
+        'ACCEPTED' => RideState.accepted,
+        'ARRIVED' => RideState.arrived,
+        'IN_PROGRESS' => RideState.inProgress,
+        'COMPLETED' => RideState.completed,
+        'CANCELLED' => RideState.cancelled,
+        _ => throw ArgumentError('Unknown ride state: $value'),
+      };
+}
+
+/// All socket `type` values handled by this layer (driver + passenger downstream
+/// + shared). Any other `type` is ignored.
 enum RideSocketEventType {
+  // Driver downstream
   rideBroadcast('ride.broadcast'),
   rideBroadcastCancelled('ride.broadcast_cancelled'),
-  offerCreated('offer.created');
+  // Passenger downstream
+  rideRequested('ride.requested'),
+  rideRequestCancelled('ride.request_cancelled'),
+  driverLocation('driver.location'),
+  // Shared downstream (both surfaces)
+  offerCreated('offer.created'),
+  offerAccepted('offer.accepted'),
+  offerRejected('offer.rejected'),
+  offerExpired('offer.expired'),
+  rideStateChanged('ride.state_changed'),
+  rideCancelled('ride.cancelled'),
+  // System
+  systemTokenExpiring('system.token_expiring');
 
   const RideSocketEventType(this.wireName);
 
-  /// The on-the-wire `type` string in the socket envelope.
   final String wireName;
 
-  /// Resolves a wire `type` to its enum value, or `null` when unrecognised.
   static RideSocketEventType? fromWire(String value) {
     for (final type in values) {
       if (type.wireName == value) return type;
@@ -23,20 +52,14 @@ enum RideSocketEventType {
   }
 }
 
-/// Typed driver-side events decoded from the raw socket [String] frames exposed
-/// by `RideSocketService.frameStream`.
-///
-/// This is the "decode the envelope" seam the socket service documents: it reads
-/// the `{ type, payload, timestamp }` envelope and turns the broadcast events
-/// into typed values that [AvailableRidesCubit] applies to its list. Only the two
-/// broadcast events are modelled for now (see `swagger/epic-03-ride.md` §5/§9);
-/// every other `type` parses to `null` and is ignored.
+/// Typed events decoded from raw socket frames (`{ type, payload, timestamp }`
+/// envelope) as defined in swagger/epic-03-ride.md §5/§9. Covers both the
+/// driver and passenger WebSocket surfaces — each cubit filters to the events
+/// it cares about. Malformed or unrecognised frames parse to `null` and are
+/// dropped; socket frames are best-effort hints, not guaranteed delivery.
 sealed class RideSocketEvent {
   const RideSocketEvent();
 
-  /// Decodes a raw socket frame into a [RideSocketEvent], or `null` when the
-  /// frame is malformed or carries a `type` we do not handle here. Socket frames
-  /// are best-effort, so a bad frame is swallowed rather than thrown.
   static RideSocketEvent? tryParse(String frame) {
     try {
       final envelope = jsonDecode(frame) as Map<String, dynamic>;
@@ -44,38 +67,85 @@ sealed class RideSocketEvent {
       final payload = envelope['payload'] as Map<String, dynamic>?;
       if (type == null || payload == null) return null;
 
-      switch (type) {
-        case RideSocketEventType.rideBroadcast:
-          return RideBroadcast(AvailableRequestCard.fromJson(payload));
-        case RideSocketEventType.rideBroadcastCancelled:
-          return RideBroadcastCancelled(
+      return switch (type) {
+        RideSocketEventType.rideBroadcast =>
+          RideBroadcast(AvailableRequestCard.fromJson(payload)),
+        RideSocketEventType.rideBroadcastCancelled => RideBroadcastCancelled(
             rideRequestId: payload['rideRequestId'] as String,
             reason: payload['reason'] as String? ?? '',
-          );
-        case RideSocketEventType.offerCreated:
-          return OfferCreated(
+          ),
+        RideSocketEventType.rideRequested => RideRequested(
+            rideRequestId: payload['rideRequestId'] as String,
+            serviceType: payload['serviceType'] as String? ?? '',
+            femaleOnly: payload['femaleOnly'] as bool? ?? false,
+            proposedFare: payload['proposedFare'] as int,
+          ),
+        RideSocketEventType.rideRequestCancelled => RideRequestCancelled(
+            rideRequestId: payload['rideRequestId'] as String,
+            reason: payload['reason'] as String? ?? '',
+          ),
+        RideSocketEventType.offerCreated => OfferCreated(
             offerId: payload['offerId'] as String,
             rideRequestId: payload['rideRequestId'] as String,
             driverId: payload['driverId'] as String,
             fare: payload['fare'] as int,
             expiresAt: payload['expiresAt'] as String,
-          );
-      }
+          ),
+        RideSocketEventType.offerAccepted => OfferAccepted(
+            offerId: payload['offerId'] as String,
+            rideRequestId: payload['rideRequestId'] as String,
+            rideId: payload['rideId'] as String,
+            fare: payload['fare'] as int,
+            driverId: payload['driverId'] as String?,
+          ),
+        RideSocketEventType.offerRejected => OfferRejected(
+            offerId: payload['offerId'] as String,
+            rideRequestId: payload['rideRequestId'] as String,
+            reason: payload['reason'] as String? ?? '',
+          ),
+        RideSocketEventType.offerExpired => OfferExpired(
+            offerId: payload['offerId'] as String,
+            rideRequestId: payload['rideRequestId'] as String,
+          ),
+        RideSocketEventType.rideStateChanged => RideStateChanged(
+            rideId: payload['rideId'] as String,
+            state: RideState.fromWire(payload['state'] as String),
+            occurredAt: payload['occurredAt'] as String,
+          ),
+        RideSocketEventType.rideCancelled => RideCancelled(
+            rideId: payload['rideId'] as String,
+            actorType: payload['actorType'] as String? ?? '',
+            reason: payload['reason'] as String? ?? '',
+            occurredAt: payload['occurredAt'] as String,
+          ),
+        RideSocketEventType.driverLocation => DriverLocationUpdate(
+            rideId: payload['rideId'] as String,
+            driverId: payload['driverId'] as String,
+            lat: (payload['lat'] as num).toDouble(),
+            lng: (payload['lng'] as num).toDouble(),
+            capturedAt: payload['capturedAt'] as String,
+          ),
+        RideSocketEventType.systemTokenExpiring => SystemTokenExpiring(
+            expiresAt: payload['expiresAt'] as String,
+          ),
+      };
     } catch (_) {
       return null;
     }
   }
 }
 
-/// A request matched this driver and should be upserted into the available list.
-/// May arrive repeatedly for the same `rideRequestId` — dedupe by that id.
+// ── Driver downstream ──────────────────────────────────────────────────────
+
+/// A request matched this driver; upsert into the available list by
+/// `rideRequestId` — the server re-broadcasts every ~10 s.
 final class RideBroadcast extends RideSocketEvent {
   const RideBroadcast(this.request);
 
   final AvailableRequestCard request;
 }
 
-/// A previously broadcast request is gone and its card should be removed.
+/// A previously broadcast request is gone; remove the card from the list.
 final class RideBroadcastCancelled extends RideSocketEvent {
   const RideBroadcastCancelled({
     required this.rideRequestId,
@@ -85,6 +155,54 @@ final class RideBroadcastCancelled extends RideSocketEvent {
   final String rideRequestId;
   final String reason;
 }
+
+// ── Passenger downstream ───────────────────────────────────────────────────
+
+/// Echo confirmation that the server received the ride request.
+final class RideRequested extends RideSocketEvent {
+  const RideRequested({
+    required this.rideRequestId,
+    required this.serviceType,
+    required this.femaleOnly,
+    required this.proposedFare,
+  });
+
+  final String rideRequestId;
+  final String serviceType;
+  final bool femaleOnly;
+  final int proposedFare;
+}
+
+/// The ride request was cancelled by the system (no drivers found or timeout).
+final class RideRequestCancelled extends RideSocketEvent {
+  const RideRequestCancelled({
+    required this.rideRequestId,
+    required this.reason, // NO_DRIVERS | TIMEOUT
+  });
+
+  final String rideRequestId;
+  final String reason;
+}
+
+/// Live driver position; throttled to ~1 update per 5 s by the server.
+/// Only emitted while the ride is between ACCEPTED and a terminal state.
+final class DriverLocationUpdate extends RideSocketEvent {
+  const DriverLocationUpdate({
+    required this.rideId,
+    required this.driverId,
+    required this.lat,
+    required this.lng,
+    required this.capturedAt,
+  });
+
+  final String rideId;
+  final String driverId;
+  final double lat;
+  final double lng;
+  final String capturedAt;
+}
+
+// ── Shared downstream (both surfaces) ─────────────────────────────────────
 
 /// A driver placed a bid on the passenger's ride request.
 final class OfferCreated extends RideSocketEvent {
@@ -100,5 +218,88 @@ final class OfferCreated extends RideSocketEvent {
   final String rideRequestId;
   final String driverId;
   final int fare;
+  final String expiresAt;
+}
+
+/// An offer was accepted; a `Ride` entity now exists under `rideId`.
+/// `driverId` is present on the passenger surface, absent on the driver surface.
+final class OfferAccepted extends RideSocketEvent {
+  const OfferAccepted({
+    required this.offerId,
+    required this.rideRequestId,
+    required this.rideId,
+    required this.fare,
+    this.driverId,
+  });
+
+  final String offerId;
+  final String rideRequestId;
+  final String rideId;
+  final int fare;
+  final String? driverId;
+}
+
+/// The offer ended without acceptance.
+/// `reason` values: EXPLICIT_REJECT, SIBLING_ACCEPTED, REQUEST_CANCELLED,
+/// DRIVER_OCCUPIED (driver surface), DRIVER_OFFLINE (driver surface).
+final class OfferRejected extends RideSocketEvent {
+  const OfferRejected({
+    required this.offerId,
+    required this.rideRequestId,
+    required this.reason,
+  });
+
+  final String offerId;
+  final String rideRequestId;
+  final String reason;
+}
+
+/// The offer hit its 30 s server-side timeout without a passenger decision.
+final class OfferExpired extends RideSocketEvent {
+  const OfferExpired({
+    required this.offerId,
+    required this.rideRequestId,
+  });
+
+  final String offerId;
+  final String rideRequestId;
+}
+
+/// The active ride transitioned to a new state.
+final class RideStateChanged extends RideSocketEvent {
+  const RideStateChanged({
+    required this.rideId,
+    required this.state,
+    required this.occurredAt,
+  });
+
+  final String rideId;
+  final RideState state;
+  final String occurredAt;
+}
+
+/// The active ride was cancelled.
+/// `actorType` values: PASSENGER, DRIVER, SYSTEM, ADMIN.
+final class RideCancelled extends RideSocketEvent {
+  const RideCancelled({
+    required this.rideId,
+    required this.actorType,
+    required this.reason,
+    required this.occurredAt,
+  });
+
+  final String rideId;
+  final String actorType;
+  final String reason;
+  final String occurredAt;
+}
+
+// ── System ─────────────────────────────────────────────────────────────────
+
+/// Server warning ~2 min before JWT expiry. Respond with upstream
+/// `system.auth_refresh` carrying the new token to keep the socket alive.
+final class SystemTokenExpiring extends RideSocketEvent {
+  const SystemTokenExpiring({required this.expiresAt});
+
   final String expiresAt;
 }
