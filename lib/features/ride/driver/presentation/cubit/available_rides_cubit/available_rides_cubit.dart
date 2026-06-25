@@ -85,6 +85,8 @@ final class AvailableRidesCubit extends Cubit<AvailableRidesState> {
     emit(state.copyWith(status: AvailableRidesStatus.loaded, rides: rides));
   }
 
+  void ignoreRide(String rideRequestId) => _removeRide(rideRequestId);
+
   void _removeRide(String rideRequestId) {
     final rides = state.rides
         .where((r) => r.rideRequestId != rideRequestId)
