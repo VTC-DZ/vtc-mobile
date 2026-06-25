@@ -29,6 +29,10 @@ class WaitingOffersView extends StatelessWidget {
           prev.acceptStatus != curr.acceptStatus ||
           prev.cancelStatus != curr.cancelStatus ||
           prev.refuseStatus != curr.refuseStatus,
+      buildWhen: (prev, curr) =>
+          prev.offers != curr.offers ||
+          prev.rideRequestPhase != curr.rideRequestPhase ||
+          prev.acceptStatus != curr.acceptStatus,
       listener: (context, state) {
         if (state.acceptStatus == AcceptStatus.success) {
           _showAcceptedSheet(context, state);
