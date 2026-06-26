@@ -41,6 +41,7 @@ class BroadcastOverlay extends StatelessWidget {
                       AvailableRideCard(
                         key: ValueKey(ride.rideRequestId),
                         ride: ride,
+                        compact: true,
                         onBid: () async {
                           final fare = await showBidSheet(
                             context,

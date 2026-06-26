@@ -12,6 +12,9 @@ import '../../../data/models/driver_ride_models.dart';
 /// row with a live expiry countdown and distance, then the proposed fare and a
 /// Bid button. A draining [LinearProgressIndicator] at the top of the card
 /// shows time remaining visually.
+///
+/// Pass [compact] for the floating [BroadcastOverlay] to render the same card
+/// at a tighter density.
 class AvailableRideCard extends StatelessWidget {
   const AvailableRideCard({
     super.key,
@@ -19,6 +22,7 @@ class AvailableRideCard extends StatelessWidget {
     required this.onBid,
     this.onIgnore,
     this.onExpired,
+    this.compact = false,
   });
 
   final AvailableRequestCard ride;
@@ -26,98 +30,136 @@ class AvailableRideCard extends StatelessWidget {
   final VoidCallback? onIgnore;
   final VoidCallback? onExpired;
 
+  /// Shrinks every dimension for the floating [BroadcastOverlay].
+  final bool compact;
+
   static const Color _dropoffColor = Color(0xFFEF4444);
 
   @override
   Widget build(BuildContext context) {
+    final m = compact ? _CardMetrics.compact : _CardMetrics.normal;
+
     return Container(
-      margin: EdgeInsets.only(bottom: 12.h),
+      margin: EdgeInsets.only(bottom: m.cardBottomMargin.h),
       decoration: BoxDecoration(
         color: AppColors.surface(context),
-        borderRadius: BorderRadius.circular(16.r),
+        borderRadius: BorderRadius.circular(m.cardRadius.r),
         border: Border.all(color: AppColors.borderDefault(context)),
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(16.r),
+        borderRadius: BorderRadius.circular(m.cardRadius.r),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // --- Linear timer bar ---
             _ExpiryProgressBar(
               expiresAt: ride.expiresAt,
+              barHeight: m.progressHeight,
               onExpired: onExpired,
             ),
 
             Padding(
-              padding: EdgeInsets.all(16.w),
+              padding: EdgeInsets.fromLTRB(
+                  m.contentPadding.w, m.contentTop.h, m.contentPadding.w, m.contentPadding.h),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // --- Service / vehicle + female-only badge ---
+                  // --- Header: service / vehicle / female-only · fare ---
                   Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       Icon(ride.serviceType.icon,
-                          size: 18.w, color: AppColors.primary),
-                      SizedBox(width: 6.w),
+                          size: m.serviceIconSize.w, color: AppColors.primary),
+                      SizedBox(width: 4.w),
                       Text(
                         ride.serviceType.label,
-                        style: AppTextStyles.labelMedium(context).copyWith(
+                        style: AppTextStyles.labelSmall(context).copyWith(
                           color: AppColors.primary,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
-                      SizedBox(width: 12.w),
+                      SizedBox(width: 8.w),
                       Icon(ride.vehicleCategory.icon,
-                          size: 18.w,
+                          size: m.serviceIconSize.w,
                           color: AppColors.textSecondary(context)),
-                      SizedBox(width: 4.w),
+                      SizedBox(width: 3.w),
                       Text(
                         ride.vehicleCategory.label,
-                        style: AppTextStyles.labelMedium(context).copyWith(
+                        style: AppTextStyles.labelSmall(context).copyWith(
                           color: AppColors.textSecondary(context),
                         ),
                       ),
+                      if (ride.femaleOnly) ...[
+                        SizedBox(width: 6.w),
+                        const _FemaleOnlyBadge(),
+                      ],
                       const Spacer(),
-                      if (ride.femaleOnly) const _FemaleOnlyBadge(),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            '${_formatFare(ride.proposedFare)} DZD',
+                            style: AppTextStyles.bodyMedium(context).copyWith(
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.primary,
+                              height: 1.1,
+                            ),
+                          ),
+                          Text(
+                            'proposed fare',
+                            style: AppTextStyles.labelSmall(context).copyWith(
+                              color: AppColors.textSecondary(context),
+                              fontSize: 9.sp,
+                            ),
+                          ),
+                        ],
+                      ),
                     ],
                   ),
-                  SizedBox(height: 14.h),
+                  SizedBox(height: m.gapHeaderRoute.h),
 
                   // --- Route: pickup → dropoff ---
                   _LocationRow(
                     icon: Icons.trip_origin_rounded,
                     iconColor: AppColors.primary,
                     address: ride.pickup.address,
+                    iconSize: m.locationIconSize,
+                    spacing: m.locationSpacing,
                   ),
-                  SizedBox(height: 8.h),
                   Padding(
-                    padding: EdgeInsets.only(left: 8.w),
+                    padding: EdgeInsets.only(left: m.connectorInset.w),
                     child: SizedBox(
-                      height: 14.h,
+                      height: m.connectorHeight.h,
                       child: VerticalDivider(
                         color: AppColors.borderDefault(context),
                         thickness: 1.5,
+                        width: 1,
                       ),
                     ),
                   ),
-                  SizedBox(height: 4.h),
                   _LocationRow(
                     icon: Icons.location_on_rounded,
                     iconColor: _dropoffColor,
                     address: ride.dropoff.address,
+                    iconSize: m.locationIconSize,
+                    spacing: m.locationSpacing,
                   ),
-                  SizedBox(height: 14.h),
+                  SizedBox(height: m.gapRouteFooter.h),
 
-                  // --- Meta: expiry countdown · distance ---
+                  // --- Footer: countdown · distance · Ignore · Bid ---
                   Row(
                     children: [
-                      _ExpiryCountdown(expiresAt: ride.expiresAt),
+                      _ExpiryCountdown(
+                        expiresAt: ride.expiresAt,
+                        iconSize: m.countdownIconSize,
+                      ),
                       if (ride.distanceMeters != null) ...[
                         _MetaDot(),
                         Icon(Icons.straighten_rounded,
-                            size: 14.w,
+                            size: m.metaIconSize.w,
                             color: AppColors.textSecondary(context)),
-                        SizedBox(width: 4.w),
+                        SizedBox(width: 2.w),
                         Text(
                           _formatDistance(ride.distanceMeters!),
                           style: AppTextStyles.labelSmall(context).copyWith(
@@ -125,76 +167,49 @@ class AvailableRideCard extends StatelessWidget {
                           ),
                         ),
                       ],
-                    ],
-                  ),
-                  SizedBox(height: 12.h),
-                  Divider(color: AppColors.borderDefault(context), height: 1),
-                  SizedBox(height: 12.h),
-
-                  // --- Fare + Ignore + Bid ---
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              '${_formatFare(ride.proposedFare)} DZD',
-                              style: AppTextStyles.bodyLarge(context).copyWith(
-                                fontWeight: FontWeight.w800,
-                                color: AppColors.primary,
-                              ),
-                            ),
-                            SizedBox(height: 2.h),
-                            Text(
-                              'proposed',
-                              style: AppTextStyles.labelSmall(context).copyWith(
-                                color: AppColors.textSecondary(context),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                      const Spacer(),
                       OutlinedButton(
                         style: OutlinedButton.styleFrom(
                           foregroundColor: AppColors.textSecondary(context),
                           side: BorderSide(
                               color: AppColors.borderDefault(context)),
-                          minimumSize: Size(0, 44.h),
+                          minimumSize: Size(0, m.buttonHeight.h),
                           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                           padding: EdgeInsets.symmetric(
-                              horizontal: 16.w, vertical: 12.h),
+                              horizontal: m.ignoreButtonHPad.w),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12.r),
+                            borderRadius:
+                                BorderRadius.circular(m.buttonRadius.r),
                           ),
                         ),
                         onPressed: onIgnore,
                         child: Text(
                           'Ignore',
-                          style: AppTextStyles.labelMedium(context).copyWith(
+                          style: AppTextStyles.labelSmall(context).copyWith(
                             color: AppColors.textSecondary(context),
                             fontWeight: FontWeight.w600,
                           ),
                         ),
                       ),
-                      SizedBox(width: 8.w),
+                      SizedBox(width: m.buttonGap.w),
                       ElevatedButton(
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primary,
                           foregroundColor: AppColors.white,
                           elevation: 0,
-                          minimumSize: Size(0, 44.h),
+                          minimumSize: Size(0, m.buttonHeight.h),
                           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                           padding: EdgeInsets.symmetric(
-                              horizontal: 28.w, vertical: 12.h),
+                              horizontal: m.bidButtonHPad.w),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12.r),
+                            borderRadius:
+                                BorderRadius.circular(m.buttonRadius.r),
                           ),
                         ),
                         onPressed: onBid,
                         child: Text(
                           'Bid',
-                          style: AppTextStyles.labelMedium(context).copyWith(
+                          style: AppTextStyles.labelSmall(context).copyWith(
                             color: AppColors.white,
                             fontWeight: FontWeight.w700,
                           ),
@@ -226,12 +241,110 @@ String _formatFare(int amount) {
   return buffer.toString();
 }
 
+/// All tunable dimensions for [AvailableRideCard], stored as raw values so the
+/// `.w/.h/.r` ScreenUtil scaling is applied at each use site. Two presets:
+/// [normal] (list view) and [compact] (floating overlay).
+class _CardMetrics {
+  const _CardMetrics({
+    required this.cardBottomMargin,
+    required this.cardRadius,
+    required this.contentPadding,
+    required this.contentTop,
+    required this.serviceIconSize,
+    required this.gapHeaderRoute,
+    required this.connectorHeight,
+    required this.connectorInset,
+    required this.gapRouteFooter,
+    required this.metaIconSize,
+    required this.countdownIconSize,
+    required this.buttonHeight,
+    required this.buttonRadius,
+    required this.buttonGap,
+    required this.ignoreButtonHPad,
+    required this.bidButtonHPad,
+    required this.progressHeight,
+    required this.locationIconSize,
+    required this.locationSpacing,
+  });
+
+  final double cardBottomMargin; // .h
+  final double cardRadius; // .r
+  final double contentPadding; // .w
+  final double contentTop; // .h
+  final double serviceIconSize; // .w
+  final double gapHeaderRoute; // .h
+  final double connectorHeight; // .h
+  final double connectorInset; // .w
+  final double gapRouteFooter; // .h
+  final double metaIconSize; // .w
+  final double countdownIconSize; // .w
+  final double buttonHeight; // .h
+  final double buttonRadius; // .r
+  final double buttonGap; // .w
+  final double ignoreButtonHPad; // .w
+  final double bidButtonHPad; // .w
+  final double progressHeight; // .h
+  final double locationIconSize; // .w
+  final double locationSpacing; // .w
+
+  /// Tightened base size used in the available-rides list.
+  static const normal = _CardMetrics(
+    cardBottomMargin: 8,
+    cardRadius: 12,
+    contentPadding: 10,
+    contentTop: 8,
+    serviceIconSize: 14,
+    gapHeaderRoute: 6,
+    connectorHeight: 8,
+    connectorInset: 6.5,
+    gapRouteFooter: 8,
+    metaIconSize: 12,
+    countdownIconSize: 12,
+    buttonHeight: 30,
+    buttonRadius: 8,
+    buttonGap: 6,
+    ignoreButtonHPad: 10,
+    bidButtonHPad: 18,
+    progressHeight: 2.5,
+    locationIconSize: 13,
+    locationSpacing: 6,
+  );
+
+  /// One step tighter — used by the floating [BroadcastOverlay].
+  static const compact = _CardMetrics(
+    cardBottomMargin: 4,
+    cardRadius: 10,
+    contentPadding: 8,
+    contentTop: 6,
+    serviceIconSize: 13,
+    gapHeaderRoute: 4,
+    connectorHeight: 6,
+    connectorInset: 6,
+    gapRouteFooter: 6,
+    metaIconSize: 11,
+    countdownIconSize: 11,
+    buttonHeight: 28,
+    buttonRadius: 8,
+    buttonGap: 5,
+    ignoreButtonHPad: 8,
+    bidButtonHPad: 14,
+    progressHeight: 2.5,
+    locationIconSize: 12,
+    locationSpacing: 5,
+  );
+}
+
 /// Full-width draining progress bar at the top of the card.
 /// Rebuilds every second; only this widget re-renders, not the card.
 class _ExpiryProgressBar extends StatefulWidget {
-  const _ExpiryProgressBar({required this.expiresAt, this.onExpired});
+  const _ExpiryProgressBar({
+    required this.expiresAt,
+    required this.barHeight,
+    this.onExpired,
+  });
 
   final String expiresAt;
+  final double barHeight;
   final VoidCallback? onExpired;
 
   @override
@@ -289,7 +402,7 @@ class _ExpiryProgressBarState extends State<_ExpiryProgressBar> {
 
     return LinearProgressIndicator(
       value: progress,
-      minHeight: 4.h,
+      minHeight: widget.barHeight.h,
       backgroundColor: AppColors.borderDefault(context),
       valueColor: AlwaysStoppedAnimation<Color>(color),
     );
@@ -298,9 +411,13 @@ class _ExpiryProgressBarState extends State<_ExpiryProgressBar> {
 
 /// Live `m:ss` text countdown to [expiresAt] (ISO-8601), floored at `0:00`.
 class _ExpiryCountdown extends StatefulWidget {
-  const _ExpiryCountdown({required this.expiresAt});
+  const _ExpiryCountdown({
+    required this.expiresAt,
+    required this.iconSize,
+  });
 
   final String expiresAt;
+  final double iconSize;
 
   @override
   State<_ExpiryCountdown> createState() => _ExpiryCountdownState();
@@ -340,7 +457,7 @@ class _ExpiryCountdownState extends State<_ExpiryCountdown> {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(Icons.timer_outlined, size: 14.w, color: color),
+        Icon(Icons.timer_outlined, size: widget.iconSize.w, color: color),
         SizedBox(width: 4.w),
         Text(
           _formatRemaining(clamped),
@@ -408,19 +525,23 @@ class _LocationRow extends StatelessWidget {
     required this.icon,
     required this.iconColor,
     required this.address,
+    required this.iconSize,
+    required this.spacing,
   });
 
   final IconData icon;
   final Color iconColor;
   final String address;
+  final double iconSize;
+  final double spacing;
 
   @override
   Widget build(BuildContext context) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, size: 16.w, color: iconColor),
-        SizedBox(width: 8.w),
+        Icon(icon, size: iconSize.w, color: iconColor),
+        SizedBox(width: spacing.w),
         Expanded(
           child: Text(
             address,
