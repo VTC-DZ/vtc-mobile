@@ -66,6 +66,8 @@ final class AvailableRidesCubit extends Cubit<AvailableRidesState> {
         _upsertRide(request);
       case RideBroadcastCancelled(:final rideRequestId):
         _removeRide(rideRequestId);
+      case OfferAccepted():
+        emit(state.copyWith(status: AvailableRidesStatus.offerAccepted));
       default:
         break;
     }

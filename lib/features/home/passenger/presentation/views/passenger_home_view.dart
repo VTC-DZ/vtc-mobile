@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_zoom_drawer/flutter_zoom_drawer.dart';
 import 'package:go_router/go_router.dart';
 import 'package:khfif_drif/features/ride/passenger/data/models/passenger_ride_models.dart';
 
 import '../../../../../core/router/route_names.dart';
 import '../../../../../core/theme/app_colors.dart';
-import '../../../../../core/theme/app_text_styles.dart';
 import '../../../../../shared/widgets/top_bar.dart';
 import '../cubit/passenger_home_cubit.dart';
 import '../cubit/passenger_home_state.dart';
@@ -74,68 +72,30 @@ class PassengerHomeView extends StatelessWidget {
           );
           context.read<PassengerHomeCubit>().clearActiveRideStatus();
         }
+
+        if (state.activeRideStatus == ActiveRideStatus.foundRide) {
+          context.go(RouteNames.passengerActiveRide);
+          context.read<PassengerHomeCubit>().clearActiveRideStatus();
+        }
       },
       child: Scaffold(
         backgroundColor: AppColors.background(context),
         body: SafeArea(
-          child: Column(
-            children: [
-              const TopBar(),
-              BlocBuilder<PassengerHomeCubit, PassengerHomeState>(
-                buildWhen: (prev, curr) =>
-                    prev.activeRideStatus != curr.activeRideStatus,
-                builder: (context, state) {
-                  if (state.activeRideStatus == ActiveRideStatus.foundRide) {
-                    return _ActiveRideBanner(ride: state.activeRide!);
-                  }
-                  return const SizedBox.shrink();
-                },
-              ),
-              const HomeBottomPanel(),
-            ],
+          child: BlocBuilder<PassengerHomeCubit, PassengerHomeState>(
+            buildWhen: (prev, curr) =>
+                prev.activeRideStatus != curr.activeRideStatus,
+            builder: (context, state) {
+              if (state.activeRideStatus == ActiveRideStatus.loading) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              return const Column(
+                children: [
+                  TopBar(),
+                  HomeBottomPanel(),
+                ],
+              );
+            },
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _ActiveRideBanner extends StatelessWidget {
-  const _ActiveRideBanner({required this.ride});
-
-  final ActiveRideSummary ride;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        // TODO: navigate to ride tracking screen
-      },
-      child: Container(
-        margin: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 0),
-        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
-        decoration: BoxDecoration(
-          color: AppColors.primary.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(12.r),
-          border: Border.all(color: AppColors.primary, width: 1.5.w),
-        ),
-        child: Row(
-          children: [
-            Icon(Icons.directions_car_rounded,
-                color: AppColors.primary, size: 20.w),
-            SizedBox(width: 10.w),
-            Expanded(
-              child: Text(
-                'You have an active ride — tap to view',
-                style: AppTextStyles.bodySmall(context).copyWith(
-                  color: AppColors.primary,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-            Icon(Icons.chevron_right_rounded,
-                color: AppColors.primary, size: 20.w),
-          ],
         ),
       ),
     );

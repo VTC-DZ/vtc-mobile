@@ -41,9 +41,11 @@ import '../../features/ride/passenger/data/models/passenger_ride_models.dart';
 import '../presentation/cubit/web_socket_connection_cubit/web_socket_connection_cubit.dart';
 import '../../features/ride/passenger/data/passenger_ride_repository.dart';
 import '../../features/ride/passenger/presentation/cubit/location_cubit/location_picker_cubit.dart';
+import '../../features/ride/passenger/presentation/cubit/passenger_active_ride_cubit/passenger_active_ride_cubit.dart';
 import '../../features/ride/passenger/presentation/cubit/ride_request_cubit/ride_request_cubit.dart';
 import '../../features/ride/passenger/presentation/cubit/waiting_offers_cubit/waiting_offers_cubit.dart';
 import '../../features/ride/passenger/presentation/views/location_picker_view.dart';
+import '../../features/ride/passenger/presentation/views/passenger_active_ride_view.dart';
 import '../../features/ride/passenger/presentation/views/ride_request_view.dart';
 import '../../features/ride/passenger/presentation/views/waiting_offers_view.dart';
 import '../../features/ride/driver/data/driver_availability_repository.dart';
@@ -201,6 +203,17 @@ final class AppRouter {
                     args.response.rideRequestId,
                   )..startPolling(),
                   child: WaitingOffersView(args: args),
+                );
+              },
+            ),
+            GoRoute(
+              path: RouteNames.passengerActiveRide,
+              builder: (context, state) {
+                return BlocProvider<PassengerActiveRideCubit>(
+                  create: (_) => PassengerActiveRideCubit(
+                    const PassengerRideRepository(),
+                  )..loadActiveRide(),
+                  child: const PassengerActiveRideView(),
                 );
               },
             ),

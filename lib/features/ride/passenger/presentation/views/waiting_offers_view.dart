@@ -35,7 +35,7 @@ class WaitingOffersView extends StatelessWidget {
           prev.acceptStatus != curr.acceptStatus,
       listener: (context, state) {
         if (state.acceptStatus == AcceptStatus.success) {
-          _showAcceptedSheet(context, state);
+          context.go(RouteNames.passengerActiveRide);
         }
         if (state.cancelStatus == CancelStatus.success) {
           context.go(RouteNames.passengerHome);
@@ -164,68 +164,4 @@ class WaitingOffersView extends StatelessWidget {
     );
   }
 
-  void _showAcceptedSheet(BuildContext context, WaitingOffersState state) {
-    showModalBottomSheet(
-      context: context,
-      isDismissible: false,
-      enableDrag: false,
-      backgroundColor: AppColors.background(context),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
-      ),
-      builder: (_) => Padding(
-        padding: EdgeInsets.fromLTRB(
-          24.w,
-          24.h,
-          24.w,
-          MediaQuery.of(context).padding.bottom + 24.h,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.check_circle_rounded,
-                color: AppColors.primary, size: 56.w),
-            SizedBox(height: 16.h),
-            Text(
-              'Ride Accepted!',
-              style: AppTextStyles.headingSmall(context)
-                  .copyWith(fontWeight: FontWeight.w700),
-            ),
-            SizedBox(height: 8.h),
-            Text(
-              'Your driver is on the way.',
-              style: AppTextStyles.bodyMedium(context).copyWith(
-                color: AppColors.textSecondary(context),
-              ),
-            ),
-            SizedBox(height: 24.h),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: AppColors.white,
-                  padding: EdgeInsets.symmetric(vertical: 14.h),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12.r),
-                  ),
-                ),
-                onPressed: () {
-                  Navigator.of(context).pop();
-                  context.go(RouteNames.passengerHome);
-                },
-                child: Text(
-                  'Back to Home',
-                  style: AppTextStyles.labelLarge(context).copyWith(
-                    color: AppColors.white,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }

@@ -8,6 +8,7 @@ enum DriverActiveRideStatus {
   loaded,
   transitioning,
   noActiveRide,
+  cancelled,
   failure,
 }
 

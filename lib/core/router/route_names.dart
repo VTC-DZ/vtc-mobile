@@ -28,4 +28,5 @@ abstract final class RouteNames {
   static const String waitingOffers = '/waiting-offers';
   static const String availableRides = '/available-rides';
   static const String driverActiveRide = '/driver-active-ride';
+  static const String passengerActiveRide = '/passenger-active-ride';
 }

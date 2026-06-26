@@ -2,7 +2,7 @@ import 'package:equatable/equatable.dart';
 
 import '../../../data/models/driver_ride_models.dart';
 
-enum AvailableRidesStatus { initial, loading, loaded, bidding, bidSuccess, failure }
+enum AvailableRidesStatus { initial, loading, loaded, bidding, bidSuccess, offerAccepted, failure }
 
 final class AvailableRidesState extends Equatable {
   const AvailableRidesState({

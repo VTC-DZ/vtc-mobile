@@ -1,14 +1,33 @@
+import 'dart:async';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../../../core/network/ride_socket_service.dart';
 import '../../../data/driver_ride_repository.dart';
 import '../../../data/models/driver_ride_models.dart';
+import '../../../data/models/ride_socket_event.dart';
 import 'driver_active_ride_state.dart';
 
 final class DriverActiveRideCubit extends Cubit<DriverActiveRideState> {
   DriverActiveRideCubit(this._repository)
-      : super(const DriverActiveRideState());
+      : super(const DriverActiveRideState()) {
+    _frameSub = RideSocketService.frameStream.listen(_onFrame);
+  }
 
   final DriverRideRepository _repository;
+  late final StreamSubscription<String> _frameSub;
+
+  void _onFrame(String frame) {
+    final event = RideSocketEvent.tryParse(frame);
+    switch (event) {
+      case RideStateChanged():
+        loadActiveRide();
+      case RideCancelled():
+        emit(state.copyWith(status: DriverActiveRideStatus.cancelled));
+      default:
+        break;
+    }
+  }
 
   Future<void> loadActiveRide() async {
     emit(state.copyWith(
@@ -89,5 +108,11 @@ final class DriverActiveRideCubit extends Cubit<DriverActiveRideState> {
         errorMessage: e.toString(),
       ));
     }
+  }
+
+  @override
+  Future<void> close() {
+    _frameSub.cancel();
+    return super.close();
   }
 }
