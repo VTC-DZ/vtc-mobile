@@ -1,3 +1,4 @@
+import '../../../../../features/ride/shared/models/shared_ride_models.dart';
 import 'kyc_status.dart';
 
 class DriverProfileModel {
@@ -7,6 +8,8 @@ class DriverProfileModel {
     required this.phone,
     required this.kycStatus,
     required this.acceptsFemaleOnly,
+    required this.isOnline,
+    required this.activeServiceTypes,
     this.email,
   });
 
@@ -15,16 +18,23 @@ class DriverProfileModel {
   final String phone;
   final KycStatus kycStatus;
   final bool acceptsFemaleOnly;
+  final bool isOnline;
+  final Set<ServiceType> activeServiceTypes;
   final String? email;
 
   factory DriverProfileModel.fromJson(Map<String, dynamic> json) {
+    final driver = json['driver'] as Map<String, dynamic>? ?? {};
+    final rawTypes = driver['activeServiceTypes'] as List<dynamic>? ?? [];
     return DriverProfileModel(
       fullName: json['fullName'] as String? ?? '',
       gender: json['gender'] as String? ?? 'MALE',
       phone: json['phone'] as String? ?? '',
-      kycStatus: KycStatus.fromString(json['kycStatus'] as String?),
-      acceptsFemaleOnly: json['acceptsFemaleOnly'] as bool? ?? false,
       email: json['email'] as String?,
+      kycStatus: KycStatus.fromString(driver['kycStatus'] as String?),
+      acceptsFemaleOnly: driver['acceptsFemaleOnly'] as bool? ?? false,
+      isOnline: driver['isOnline'] as bool? ?? false,
+      activeServiceTypes:
+          rawTypes.map((e) => ServiceType.fromJson(e as String)).toSet(),
     );
   }
 
@@ -34,6 +44,8 @@ class DriverProfileModel {
     String? phone,
     KycStatus? kycStatus,
     bool? acceptsFemaleOnly,
+    bool? isOnline,
+    Set<ServiceType>? activeServiceTypes,
     String? email,
   }) {
     return DriverProfileModel(
@@ -42,6 +54,8 @@ class DriverProfileModel {
       phone: phone ?? this.phone,
       kycStatus: kycStatus ?? this.kycStatus,
       acceptsFemaleOnly: acceptsFemaleOnly ?? this.acceptsFemaleOnly,
+      isOnline: isOnline ?? this.isOnline,
+      activeServiceTypes: activeServiceTypes ?? this.activeServiceTypes,
       email: email ?? this.email,
     );
   }

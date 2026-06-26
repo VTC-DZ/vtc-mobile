@@ -9,6 +9,10 @@ class DriverServiceTypesCubit extends Cubit<DriverServiceTypesState> {
 
   final DriverServiceTypesRepository _repo;
 
+  void seed(Set<ServiceType> types) {
+    emit(state.copyWith(activeTypes: types));
+  }
+
   Future<void> toggle(ServiceType type, bool enabled) async {
     if (state.status == DriverServiceTypesStatus.loading) return;
     emit(state.copyWith(

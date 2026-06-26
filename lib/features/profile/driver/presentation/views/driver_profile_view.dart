@@ -121,7 +121,14 @@ class DriverProfileView extends StatelessWidget {
                       BlocProvider(
                         create: (_) => DriverServiceTypesCubit(
                           const DriverServiceTypesRepository(),
-                        ),
+                        )..seed(
+                            context
+                                    .read<DriverHomeCubit>()
+                                    .state
+                                    .profile
+                                    ?.activeServiceTypes ??
+                                {},
+                          ),
                         child: const DriverServiceTypesWidget(),
                       ),
                       SizedBox(height: 24.h),

@@ -11,6 +11,14 @@ class DriverAvailabilityCubit extends Cubit<DriverAvailabilityState> {
 
   final DriverAvailabilityRepository _repo;
 
+  Future<void> seed(bool isOnline) async {
+    if (isOnline) {
+      await RideSocketService.connect(ActiveRole.driver);
+      DriverLocationStreamer.start();
+    }
+    emit(state.copyWith(isOnline: isOnline));
+  }
+
   Future<void> toggle() async {
     if (state.status == DriverAvailabilityStatus.loading) return;
     emit(state.copyWith(status: DriverAvailabilityStatus.loading));
