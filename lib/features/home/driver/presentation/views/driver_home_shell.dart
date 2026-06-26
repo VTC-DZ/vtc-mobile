@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_zoom_drawer/flutter_zoom_drawer.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../../core/router/route_names.dart';
 import '../../../../../core/theme/app_colors.dart';
+import '../../../../ride/driver/presentation/cubit/available_rides_cubit/available_rides_cubit.dart';
+import '../../../../ride/driver/presentation/cubit/available_rides_cubit/available_rides_state.dart';
 import '../../../../ride/driver/presentation/views/widgets/broadcast_overlay.dart';
 import 'widgets/driver_home_drawer.dart';
 
@@ -27,27 +30,39 @@ class DriverHomeShell extends StatelessWidget {
     final currentPath = GoRouterState.of(context).uri.path;
     final showOverlay = !_hideOverlayRoutes.contains(currentPath);
 
-    return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle(
-        statusBarColor: Colors.transparent,
-        statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
-        statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
-      ),
-      child: Stack(
-        children: [
-          ZoomDrawer(
-            style: DrawerStyle.defaultStyle,
-            menuScreen: const DriverHomeDrawer(),
-            mainScreen: child,
-            borderRadius: 30,
-            showShadow: true,
-            angle: 1,
-            menuBackgroundColor: AppColors.drawerBackground(context),
-            moveMenuScreen: false,
-            slideWidth: MediaQuery.sizeOf(context).width * 0.72,
-          ),
-          if (showOverlay) const BroadcastOverlay(),
-        ],
+    // Shell-scoped listener: AvailableRidesCubit already receives the
+    // `offer.accepted` socket frame on every driver screen, so react here (at
+    // the shell) rather than only inside AvailableRidesView — this way the
+    // driver is taken to the active ride no matter which screen is showing.
+    return BlocListener<AvailableRidesCubit, AvailableRidesState>(
+      listenWhen: (prev, curr) =>
+          prev.status != curr.status &&
+          curr.status == AvailableRidesStatus.offerAccepted,
+      listener: (context, state) {
+        context.go(RouteNames.driverActiveRide);
+      },
+      child: AnnotatedRegion<SystemUiOverlayStyle>(
+        value: SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+          statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
+        ),
+        child: Stack(
+          children: [
+            ZoomDrawer(
+              style: DrawerStyle.defaultStyle,
+              menuScreen: const DriverHomeDrawer(),
+              mainScreen: child,
+              borderRadius: 30,
+              showShadow: true,
+              angle: 1,
+              menuBackgroundColor: AppColors.drawerBackground(context),
+              moveMenuScreen: false,
+              slideWidth: MediaQuery.sizeOf(context).width * 0.72,
+            ),
+            if (showOverlay) const BroadcastOverlay(),
+          ],
+        ),
       ),
     );
   }
