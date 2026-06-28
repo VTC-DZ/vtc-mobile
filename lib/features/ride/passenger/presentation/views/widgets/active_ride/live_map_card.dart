@@ -6,6 +6,7 @@ import 'package:latlong2/latlong.dart';
 
 import '../../../../../../../core/theme/app_colors.dart';
 import '../../../../../../../core/theme/app_text_styles.dart';
+import '../../../../../shared/models/shared_ride_models.dart';
 
 /// Full-screen capable live map. Sizes to whatever its parent gives it.
 /// Caller is responsible for bounding the widget (e.g. Positioned.fill or SizedBox).
@@ -15,11 +16,17 @@ class LiveMapCard extends StatefulWidget {
     required this.driverLat,
     required this.driverLng,
     required this.ownPosition,
+    this.pickup,
+    this.dropoff,
+    this.driverLabel,
   });
 
   final double? driverLat;
   final double? driverLng;
   final Position? ownPosition;
+  final CoordinatePoint? pickup;
+  final CoordinatePoint? dropoff;
+  final String? driverLabel;
 
   @override
   State<LiveMapCard> createState() => _LiveMapCardState();
@@ -91,25 +98,32 @@ class _LiveMapCardState extends State<LiveMapCard> {
             ),
             MarkerLayer(
               markers: [
-                Marker(
-                  point: driverPoint,
-                  child: Container(
-                    padding: EdgeInsets.all(6.w),
-                    decoration: BoxDecoration(
-                      color: AppColors.primary,
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.primary.withValues(alpha: 0.4),
-                          blurRadius: 8,
-                          spreadRadius: 2,
-                        ),
-                      ],
-                    ),
-                    child: Icon(Icons.directions_car_rounded,
-                        color: AppColors.white, size: 18.w),
+                // Pickup point
+                if (widget.pickup != null)
+                  _labeledMarker(
+                    point: LatLng(widget.pickup!.lat, widget.pickup!.lng),
+                    color: AppColors.primary,
+                    icon: Icons.trip_origin_rounded,
+                    label: 'Pickup',
+                    glow: true,
                   ),
+                // Dropoff point
+                if (widget.dropoff != null)
+                  _labeledMarker(
+                    point: LatLng(widget.dropoff!.lat, widget.dropoff!.lng),
+                    color: AppColors.error,
+                    icon: Icons.location_on_rounded,
+                    label: 'Dropoff',
+                  ),
+                // Driver's live position
+                _labeledMarker(
+                  point: driverPoint,
+                  color: AppColors.primary,
+                  icon: Icons.directions_car_rounded,
+                  label: widget.driverLabel ?? 'Driver',
+                  glow: true,
                 ),
+                // Passenger's own position ("you")
                 if (widget.ownPosition != null)
                   Marker(
                     point: LatLng(
@@ -144,6 +158,104 @@ class _LiveMapCardState extends State<LiveMapCard> {
           child: _MapZoomButtons(controller: _mapController),
         ),
       ],
+    );
+  }
+}
+
+/// A pin (circular icon badge) with a floating [label] chip above it. The pin's
+/// bottom sits on the [point] so the chip reads cleanly above the marker.
+Marker _labeledMarker({
+  required LatLng point,
+  required Color color,
+  required IconData icon,
+  required String label,
+  bool glow = false,
+}) {
+  return Marker(
+    point: point,
+    width: 120.w,
+    height: 64.w,
+    alignment: Alignment.bottomCenter,
+    child: Align(
+      alignment: Alignment.bottomCenter,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _HintChip(text: label, color: color),
+          SizedBox(height: 4.w),
+          _PinCircle(color: color, icon: icon, glow: glow),
+        ],
+      ),
+    ),
+  );
+}
+
+class _PinCircle extends StatelessWidget {
+  const _PinCircle({
+    required this.color,
+    required this.icon,
+    this.glow = false,
+  });
+
+  final Color color;
+  final IconData icon;
+  final bool glow;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.all(6.w),
+      decoration: BoxDecoration(
+        color: color,
+        shape: BoxShape.circle,
+        boxShadow: glow
+            ? [
+                BoxShadow(
+                  color: color.withValues(alpha: 0.4),
+                  blurRadius: 8,
+                  spreadRadius: 2,
+                ),
+              ]
+            : null,
+      ),
+      child: Icon(icon, color: AppColors.white, size: 18.w),
+    );
+  }
+}
+
+class _HintChip extends StatelessWidget {
+  const _HintChip({required this.text, required this.color});
+
+  final String text;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
+      constraints: BoxConstraints(maxWidth: 100.w),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(8.r),
+        border: Border.all(color: color, width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.15),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Text(
+        text,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        textAlign: TextAlign.center,
+        style: AppTextStyles.labelSmall(context).copyWith(
+          color: color,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
     );
   }
 }

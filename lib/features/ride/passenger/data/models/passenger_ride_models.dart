@@ -250,6 +250,8 @@ final class ActiveRideSummary {
     required this.acceptedAt,
     this.arrivedAt,
     this.startedAt,
+    this.pickup,
+    this.dropoff,
   });
 
   final String rideId;
@@ -259,6 +261,8 @@ final class ActiveRideSummary {
   final String acceptedAt;
   final String? arrivedAt;
   final String? startedAt;
+  final CoordinatePoint? pickup;
+  final CoordinatePoint? dropoff;
 
   factory ActiveRideSummary.fromJson(Map<String, dynamic> json) =>
       ActiveRideSummary(
@@ -269,6 +273,12 @@ final class ActiveRideSummary {
         acceptedAt: json['acceptedAt'] as String,
         arrivedAt: json['arrivedAt'] as String?,
         startedAt: json['startedAt'] as String?,
+        pickup: json['pickup'] != null
+            ? CoordinatePoint.fromJson(json['pickup'] as Map<String, dynamic>)
+            : null,
+        dropoff: json['dropoff'] != null
+            ? CoordinatePoint.fromJson(json['dropoff'] as Map<String, dynamic>)
+            : null,
       );
 }
 

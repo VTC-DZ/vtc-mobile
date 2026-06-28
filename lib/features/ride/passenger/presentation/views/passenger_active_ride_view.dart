@@ -44,8 +44,7 @@ class _PassengerActiveRideViewState extends State<PassengerActiveRideView> {
       return;
     }
     _positionSub = Geolocator.getPositionStream(
-      locationSettings:
-          const LocationSettings(accuracy: LocationAccuracy.high),
+      locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
     ).listen((pos) {
       if (mounted) setState(() => _ownPosition = pos);
     });
@@ -127,6 +126,10 @@ class _RideBody extends StatelessWidget {
             driverLat: driverLat,
             driverLng: driverLng,
             ownPosition: ownPosition,
+            pickup: ride.pickup,
+            dropoff: ride.dropoff,
+            driverLabel:
+                ride.driver.fullName.split(' ').firstOrNull ?? 'Driver',
           ),
         ),
 
@@ -223,10 +226,9 @@ class _SheetContent extends StatelessWidget {
               if (canCancel) ...[
                 SizedBox(height: 10.h),
                 CancelRideButton(
-                  onCancel: (reason) =>
-                      context
-                          .read<PassengerActiveRideCubit>()
-                          .cancelRide(reason),
+                  onCancel: (reason) => context
+                      .read<PassengerActiveRideCubit>()
+                      .cancelRide(reason),
                 ),
               ],
             ],
@@ -250,8 +252,8 @@ class _PeekRow extends StatelessWidget {
         CircleAvatar(
           radius: 18.r,
           backgroundColor: AppColors.primary.withValues(alpha: 0.1),
-          child: Icon(Icons.person_rounded,
-              color: AppColors.primary, size: 20.w),
+          child:
+              Icon(Icons.person_rounded, color: AppColors.primary, size: 20.w),
         ),
         SizedBox(width: 10.w),
         Expanded(

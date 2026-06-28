@@ -16,6 +16,13 @@ final class CoordinatePoint {
         'lat': lat,
         'lng': lng,
       };
+
+  factory CoordinatePoint.fromJson(Map<String, dynamic> json) =>
+      CoordinatePoint(
+        address: (json['address'] as String?) ?? '',
+        lat: (json['lat'] as num).toDouble(),
+        lng: (json['lng'] as num).toDouble(),
+      );
 }
 
 enum ServiceType {
