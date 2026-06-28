@@ -30,9 +30,7 @@ class OtpVerificationView extends StatelessWidget {
           current.status == OtpStatus.success,
       listener: (context, state) {
         if (state.status == OtpStatus.success) {
-          if (state.hasDriverProfile) {
-            context.go(RouteNames.driverStatusReview);
-          } else if (state.isNewUser) {
+          if (state.isNewUser) {
             context.go(RouteNames.modeSelection);
           } else {
             context.go(RouteNames.passengerHome);

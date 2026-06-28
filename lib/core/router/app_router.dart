@@ -259,7 +259,10 @@ final class AppRouter {
         builder: (context, state, child) => MultiBlocProvider(
           providers: [
             BlocProvider(
-              create: (_) => DriverHomeCubit(_driverRepository)..getProfile(),
+              create: (_) =>
+                  DriverHomeCubit(_driverRepository)
+                    ..getProfile()
+                    ..checkActiveRide(),
             ),
             BlocProvider(
               create: (_) =>

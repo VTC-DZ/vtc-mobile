@@ -1,13 +1,19 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../../../features/auth/data/repo/driver_repository.dart';
 import '../../../../../features/auth/data/models/driver_profile_model.dart';
+import '../../../../../features/auth/data/repo/driver_repository.dart';
+import '../../../../../features/ride/driver/data/driver_ride_repository.dart';
+import '../../../../../features/ride/driver/data/models/driver_ride_models.dart';
 import 'driver_home_state.dart';
 
 class DriverHomeCubit extends Cubit<DriverHomeState> {
-  DriverHomeCubit(this._repository) : super(const DriverHomeState());
+  DriverHomeCubit(
+    this._repository, [
+    this._rideRepository = const DriverRideRepository(),
+  ]) : super(const DriverHomeState());
 
   final DriverRepository _repository;
+  final DriverRideRepository _rideRepository;
 
   Future<void> getProfile() async {
     emit(state.copyWith(status: DriverHomeStatus.loading));
@@ -42,5 +48,30 @@ class DriverHomeCubit extends Cubit<DriverHomeState> {
     emit(state.copyWith(
       profile: state.profile!.copyWith(phone: phone),
     ));
+  }
+
+  Future<void> checkActiveRide() async {
+    emit(state.copyWith(
+        activeRideCheckStatus: DriverActiveRideCheckStatus.loading));
+    try {
+      final ride = await _rideRepository.getActiveRide();
+      if (ride != null &&
+          ride.state != ActiveDriverRideState.completed &&
+          ride.state != ActiveDriverRideState.cancelled) {
+        emit(state.copyWith(
+            activeRideCheckStatus: DriverActiveRideCheckStatus.found));
+      } else {
+        emit(state.copyWith(
+            activeRideCheckStatus: DriverActiveRideCheckStatus.none));
+      }
+    } catch (_) {
+      emit(state.copyWith(
+          activeRideCheckStatus: DriverActiveRideCheckStatus.none));
+    }
+  }
+
+  void clearActiveRideCheckStatus() {
+    emit(state.copyWith(
+        activeRideCheckStatus: DriverActiveRideCheckStatus.idle));
   }
 }

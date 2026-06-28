@@ -5,7 +5,6 @@ import 'package:flutter_zoom_drawer/flutter_zoom_drawer.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../../../core/router/route_names.dart';
-import '../../../../../../core/session/auth_session.dart';
 import '../../../../../../core/theme/app_colors.dart';
 import '../../../../../../core/theme/app_text_styles.dart';
 import '../../../../../../core/widgets/app_toast.dart';
@@ -107,7 +106,6 @@ class DriverHomeDrawer extends StatelessWidget {
   }) async {
     try {
       await const DriverRepository().switchRole(targetRole);
-      await AuthSession.setLastRole(targetRole);
       final destination = targetRole == 'DRIVER'
           ? RouteNames.driverHome
           : RouteNames.passengerHome;

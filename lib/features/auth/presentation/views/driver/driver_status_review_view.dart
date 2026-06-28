@@ -132,7 +132,6 @@ class _PendingContent extends StatelessWidget {
           label: AppStrings.goToHome,
           isEnabled: true,
           onPressed: () async {
-            await AuthSession.setLastRole(AuthSession.rolePassenger);
             if (context.mounted) context.go(RouteNames.passengerHome);
           },
         ),

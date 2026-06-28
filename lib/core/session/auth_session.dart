@@ -11,7 +11,6 @@ final class AuthSession {
   static bool? _isNewUser;
   static bool? _waitingKycStatus;
   static bool? _hasDriverProfile;
-  static String? _lastRole;
 
   static String? get accessToken => _accessToken;
   static String? get refreshToken => _refreshToken;
@@ -19,7 +18,6 @@ final class AuthSession {
   static bool get isNewUser => _isNewUser ?? false;
   static bool get waitingKycStatus => _waitingKycStatus ?? false;
   static bool get hasDriverProfile => _hasDriverProfile ?? false;
-  static String? get lastRole => _lastRole;
 
   static const String roleDriver = 'DRIVER';
   static const String rolePassenger = 'PASSENGER';
@@ -47,10 +45,6 @@ final class AuthSession {
       key: CacheKeys.secureStorageKeys.hasDriverProfile,
     );
     _hasDriverProfile = hasDriverProfileStr == 'true';
-
-    _lastRole = await SecureStorageHelper.read(
-      key: CacheKeys.secureStorageKeys.lastRole,
-    );
   }
 
   /// Saves tokens, decodes the JWT payload, and persists the role.
@@ -98,14 +92,6 @@ final class AuthSession {
     );
   }
 
-  static Future<void> setLastRole(String role) async {
-    _lastRole = role;
-    await SecureStorageHelper.write(
-      key: CacheKeys.secureStorageKeys.lastRole,
-      value: role,
-    );
-  }
-
   static Future<void> clearIsNewUser() async {
     _isNewUser = false;
     await SecureStorageHelper.remove(
@@ -120,7 +106,6 @@ final class AuthSession {
     _isNewUser = null;
     _waitingKycStatus = null;
     _hasDriverProfile = null;
-    _lastRole = null;
     await SecureStorageHelper.remove(
       key: CacheKeys.secureStorageKeys.accessTokenKey,
     );
@@ -136,27 +121,11 @@ final class AuthSession {
     await SecureStorageHelper.remove(
       key: CacheKeys.secureStorageKeys.hasDriverProfile,
     );
-    await SecureStorageHelper.remove(
-      key: CacheKeys.secureStorageKeys.lastRole,
-    );
   }
 
   static String resolveInitialRoute() {
     if (!isLoggedIn) return RouteNames.phone;
-    // if (_lastRole == roleDriver && hasDriverProfile) {
-    //   return RouteNames.driverHome;
-    // }
-    if (lastRole == rolePassenger) {
-      return RouteNames.passengerHome;
-    } else if (lastRole == roleDriver) {
-      return RouteNames.driverStatusReview;
-    }
-    if (waitingKycStatus) return RouteNames.driverStatusReview;
-
-    if (isNewUser) {
-      return RouteNames.modeSelection;
-    }
-
+    if (isNewUser) return RouteNames.modeSelection;
     return RouteNames.passengerHome;
   }
 }

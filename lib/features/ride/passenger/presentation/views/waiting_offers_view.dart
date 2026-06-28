@@ -66,8 +66,8 @@ class WaitingOffersView extends StatelessWidget {
             children: [
               Expanded(
                 child: SingleChildScrollView(
-                  padding: EdgeInsets.symmetric(
-                      horizontal: 20.w, vertical: 20.h),
+                  padding:
+                      EdgeInsets.symmetric(horizontal: 20.w, vertical: 20.h),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -80,7 +80,8 @@ class WaitingOffersView extends StatelessWidget {
                       ),
                       SizedBox(height: 20.h),
                       if (state.offers.isEmpty &&
-                          state.rideRequestPhase == RideRequestPhase.requested) ...[
+                          state.rideRequestPhase ==
+                              RideRequestPhase.requested) ...[
                         const EmptyOffersPlaceholder(),
                       ] else ...[
                         Text(
@@ -98,9 +99,9 @@ class WaitingOffersView extends StatelessWidget {
                             final offer = state.offers[i];
                             return OfferCard(
                               key: ValueKey(offer.offerId),
-                              index: i + 1,
                               offer: offer,
                               isAccepting: isAccepting,
+                              proposedFare: args.proposedFare,
                               onAccept: () => context
                                   .read<WaitingOffersCubit>()
                                   .acceptOffer(offer.offerId),
@@ -131,8 +132,7 @@ class WaitingOffersView extends StatelessWidget {
                     onPressed: (isAccepting || isCancelling)
                         ? null
                         : () async {
-                            final reason =
-                                await showCancelRideDialog(context);
+                            final reason = await showCancelRideDialog(context);
                             if (reason != null && context.mounted) {
                               context
                                   .read<WaitingOffersCubit>()
@@ -163,5 +163,4 @@ class WaitingOffersView extends StatelessWidget {
       },
     );
   }
-
 }

@@ -120,7 +120,6 @@ class HomeDrawer extends StatelessWidget {
       _performSwitch(context, targetRole: 'DRIVER');
     } else {
       await AuthSession.setWaitingKycStatus(true);
-      await AuthSession.setLastRole('DRIVER');
       context.go(RouteNames.driverStatusReview);
     }
   }
@@ -131,7 +130,6 @@ class HomeDrawer extends StatelessWidget {
   }) async {
     try {
       await const AuthRepository().switchRole(targetRole);
-      await AuthSession.setLastRole(targetRole);
       final destination = targetRole == 'DRIVER'
           ? RouteNames.driverHome
           : RouteNames.passengerHome;
