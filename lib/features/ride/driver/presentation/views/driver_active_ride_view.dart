@@ -2,16 +2,23 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
-import 'package:latlong2/latlong.dart';
 
 import '../../../../../core/router/route_names.dart';
+import '../../../../../core/theme/app_colors.dart';
+import '../../../../../core/theme/app_text_styles.dart';
+import '../../../../../shared/widgets/primary_button.dart';
 import '../../data/models/driver_ride_models.dart';
+import '../../../shared/widgets/ride_route_card.dart';
 import '../cubit/driver_active_ride_cubit/driver_active_ride_cubit.dart';
 import '../cubit/driver_active_ride_cubit/driver_active_ride_state.dart';
+import 'widgets/active/active_ride_map.dart';
+import 'widgets/active/cancel_ride_button.dart';
+import 'widgets/active/fare_card.dart';
+import 'widgets/active/floating_back_button.dart';
+import 'widgets/active/passenger_info_card.dart';
 
 class DriverActiveRideView extends StatefulWidget {
   const DriverActiveRideView({super.key});
@@ -54,7 +61,7 @@ class _DriverActiveRideViewState extends State<DriverActiveRideView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Active Ride')),
+      backgroundColor: AppColors.background(context),
       body: BlocConsumer<DriverActiveRideCubit, DriverActiveRideState>(
         listenWhen: (prev, curr) =>
             curr.status == DriverActiveRideStatus.cancelled,
@@ -65,120 +72,259 @@ class _DriverActiveRideViewState extends State<DriverActiveRideView> {
           context.go(RouteNames.driverHome);
         },
         builder: (context, state) {
-          if (state.status == DriverActiveRideStatus.loading ||
-              state.status == DriverActiveRideStatus.transitioning) {
+          if (state.status == DriverActiveRideStatus.loading) {
             return const Center(child: CircularProgressIndicator());
           }
           if (state.status == DriverActiveRideStatus.noActiveRide) {
-            return const Center(child: Text('No active ride'));
+            return Center(
+              child: Text(
+                'No active ride',
+                style: AppTextStyles.bodyMedium(context)
+                    .copyWith(color: AppColors.textSecondary(context)),
+              ),
+            );
           }
           if (state.status == DriverActiveRideStatus.failure) {
-            return Center(child: Text(state.errorMessage));
+            return Center(
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 32.w),
+                child: Text(
+                  state.errorMessage.isEmpty
+                      ? 'Could not load ride'
+                      : state.errorMessage,
+                  textAlign: TextAlign.center,
+                  style: AppTextStyles.bodyMedium(context)
+                      .copyWith(color: AppColors.textSecondary(context)),
+                ),
+              ),
+            );
           }
+
           final ride = state.ride;
           if (ride == null) return const SizedBox.shrink();
-          return _RideDetails(ride: ride, driverPosition: _driverPosition);
+
+          return _RideStack(
+            ride: ride,
+            driverPosition: _driverPosition,
+            isTransitioning:
+                state.status == DriverActiveRideStatus.transitioning,
+          );
         },
       ),
     );
   }
 }
 
-class _RideDetails extends StatelessWidget {
-  const _RideDetails({required this.ride, required this.driverPosition});
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _RideStack extends StatelessWidget {
+  const _RideStack({
+    required this.ride,
+    required this.driverPosition,
+    required this.isTransitioning,
+  });
 
   final ActiveDriverRideResponse ride;
   final Position? driverPosition;
+  final bool isTransitioning;
+
+  @override
+  Widget build(BuildContext context) {
+    final topPadding = MediaQuery.of(context).padding.top;
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
+
+    return Stack(
+      children: [
+        // Full-screen map with zoom controls built in
+        Positioned.fill(
+          child: ActiveRideMap(ride: ride, driverPosition: driverPosition),
+        ),
+
+        // Floating back button
+        Positioned(
+          top: topPadding + 8.h,
+          left: 16.w,
+          child: const FloatingBackButton(),
+        ),
+
+        // Draggable bottom sheet
+        DraggableScrollableSheet(
+          initialChildSize: 0.45,
+          minChildSize: 0.14,
+          maxChildSize: 0.88,
+          snap: true,
+          snapSizes: const [0.45],
+          builder: (ctx, scrollController) => _SheetContent(
+            scrollController: scrollController,
+            ride: ride,
+            isTransitioning: isTransitioning,
+            bottomPadding: bottomPadding,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _SheetContent extends StatelessWidget {
+  const _SheetContent({
+    required this.scrollController,
+    required this.ride,
+    required this.isTransitioning,
+    required this.bottomPadding,
+  });
+
+  final ScrollController scrollController;
+  final ActiveDriverRideResponse ride;
+  final bool isTransitioning;
+  final double bottomPadding;
 
   @override
   Widget build(BuildContext context) {
     final cubit = context.read<DriverActiveRideCubit>();
-    final pickupPoint = LatLng(ride.pickup.lat, ride.pickup.lng);
-    final dropoffPoint = LatLng(ride.dropoff.lat, ride.dropoff.lng);
+    final canCancel = ride.state == ActiveDriverRideState.accepted ||
+        ride.state == ActiveDriverRideState.arrived;
 
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          SizedBox(
-            height: 250.h,
-            child: FlutterMap(
-              options: MapOptions(
-                initialCenter: pickupPoint,
-                initialZoom: 13,
-              ),
-              children: [
-                TileLayer(
-                  urlTemplate:
-                      'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                  userAgentPackageName: 'khfif_drif',
-                ),
-                MarkerLayer(
-                  markers: [
-                    Marker(
-                      point: pickupPoint,
-                      child: const Icon(Icons.trip_origin,
-                          color: Colors.green, size: 32),
-                    ),
-                    Marker(
-                      point: dropoffPoint,
-                      child: const Icon(Icons.location_on,
-                          color: Colors.red, size: 32),
-                    ),
-                    if (driverPosition != null)
-                      Marker(
-                        point: LatLng(
-                          driverPosition!.latitude,
-                          driverPosition!.longitude,
-                        ),
-                        child: const Icon(Icons.directions_car,
-                            color: Colors.blue, size: 32),
-                      ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text('Passenger: ${ride.passengerFullName}'),
-                Text('Phone: ${ride.passengerPhone}'),
-                const SizedBox(height: 8),
-                Text('Pickup: ${ride.pickup.address}'),
-                Text('Dropoff: ${ride.dropoff.address}'),
-                Text('Fare: ${ride.finalFare} DZD'),
-                const SizedBox(height: 16),
-                if (ride.state == ActiveDriverRideState.accepted)
-                  ElevatedButton(
-                    onPressed: cubit.markArrived,
-                    child: const Text('Mark Arrived'),
-                  ),
-                if (ride.state == ActiveDriverRideState.arrived)
-                  ElevatedButton(
-                    onPressed: cubit.startRide,
-                    child: const Text('Start Ride'),
-                  ),
-                if (ride.state == ActiveDriverRideState.inProgress)
-                  ElevatedButton(
-                    onPressed: cubit.completeRide,
-                    child: const Text('Complete Ride'),
-                  ),
-                const SizedBox(height: 8),
-                if (ride.state == ActiveDriverRideState.accepted ||
-                    ride.state == ActiveDriverRideState.arrived)
-                  OutlinedButton(
-                    onPressed: () =>
-                        cubit.cancelRide(CancelReason.driverVehicleIssue),
-                    child: const Text('Cancel Ride'),
-                  ),
-              ],
-            ),
+    final (actionLabel, onAction) = switch (ride.state) {
+      ActiveDriverRideState.accepted => ('Mark Arrived', cubit.markArrived),
+      ActiveDriverRideState.arrived => ('Start Ride', cubit.startRide),
+      ActiveDriverRideState.inProgress => ('Complete Ride', cubit.completeRide),
+      _ => ('', null as VoidCallback?),
+    };
+
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.background(context),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.12),
+            blurRadius: 20,
+            offset: const Offset(0, -4),
           ),
         ],
       ),
+      child: SingleChildScrollView(
+        controller: scrollController,
+        physics: const ClampingScrollPhysics(),
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(
+            20.w,
+            12.h,
+            20.w,
+            bottomPadding + 20.h,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Drag handle
+              Container(
+                width: 40.w,
+                height: 4.h,
+                margin: EdgeInsets.only(bottom: 16.h),
+                decoration: BoxDecoration(
+                  color: AppColors.borderDefault(context),
+                  borderRadius: BorderRadius.circular(2.r),
+                ),
+              ),
+
+              // Peek row — always visible at collapsed state
+              _PeekRow(
+                fullName: ride.passengerFullName,
+                rideState: ride.state,
+              ),
+              SizedBox(height: 16.h),
+
+              // Full content
+              PassengerInfoCard(
+                fullName: ride.passengerFullName,
+                phone: ride.passengerPhone,
+              ),
+              SizedBox(height: 12.h),
+
+              RideRouteCard(pickup: ride.pickup, dropoff: ride.dropoff),
+              SizedBox(height: 12.h),
+
+              FareCard(finalFare: ride.finalFare),
+              SizedBox(height: 16.h),
+
+              if (actionLabel.isNotEmpty)
+                PrimaryButton(
+                  label: actionLabel,
+                  onPressed: onAction,
+                  isLoading: isTransitioning,
+                  isEnabled: !isTransitioning,
+                ),
+
+              if (canCancel) ...[
+                SizedBox(height: 10.h),
+                CancelRideButton(
+                  onCancel: () =>
+                      cubit.cancelRide(CancelReason.driverVehicleIssue),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _PeekRow extends StatelessWidget {
+  const _PeekRow({required this.fullName, required this.rideState});
+
+  final String fullName;
+  final ActiveDriverRideState rideState;
+
+  @override
+  Widget build(BuildContext context) {
+    final (stateLabel, stateColor) = switch (rideState) {
+      ActiveDriverRideState.accepted => ('On the way', AppColors.primary),
+      ActiveDriverRideState.arrived => ('Arrived', Colors.orange),
+      ActiveDriverRideState.inProgress => ('In ride', Colors.blue),
+      _ => ('', AppColors.textSecondary(context)),
+    };
+
+    return Row(
+      children: [
+        CircleAvatar(
+          radius: 18.r,
+          backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+          child: Icon(Icons.person_rounded,
+              color: AppColors.primary, size: 20.w),
+        ),
+        SizedBox(width: 10.w),
+        Expanded(
+          child: Text(
+            fullName,
+            style: AppTextStyles.bodyMedium(context)
+                .copyWith(fontWeight: FontWeight.w700),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+        SizedBox(width: 8.w),
+        if (stateLabel.isNotEmpty)
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
+            decoration: BoxDecoration(
+              color: stateColor.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8.r),
+            ),
+            child: Text(
+              stateLabel,
+              style: AppTextStyles.labelSmall(context).copyWith(
+                color: stateColor,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+      ],
     );
   }
 }

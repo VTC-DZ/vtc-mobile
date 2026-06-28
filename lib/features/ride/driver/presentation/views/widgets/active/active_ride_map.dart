@@ -5,42 +5,27 @@ import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../../../../../../core/theme/app_colors.dart';
-import '../../../../../../../core/theme/app_text_styles.dart';
+import '../../../../data/models/driver_ride_models.dart';
 
-/// Full-screen capable live map. Sizes to whatever its parent gives it.
-/// Caller is responsible for bounding the widget (e.g. Positioned.fill or SizedBox).
-class LiveMapCard extends StatefulWidget {
-  const LiveMapCard({
+/// Full-screen live map for the driver's active ride. Shows pickup and dropoff
+/// markers plus the driver's own GPS position (when available), with built-in
+/// zoom controls.
+class ActiveRideMap extends StatefulWidget {
+  const ActiveRideMap({
     super.key,
-    required this.driverLat,
-    required this.driverLng,
-    required this.ownPosition,
+    required this.ride,
+    required this.driverPosition,
   });
 
-  final double? driverLat;
-  final double? driverLng;
-  final Position? ownPosition;
+  final ActiveDriverRideResponse ride;
+  final Position? driverPosition;
 
   @override
-  State<LiveMapCard> createState() => _LiveMapCardState();
+  State<ActiveRideMap> createState() => _ActiveRideMapState();
 }
 
-class _LiveMapCardState extends State<LiveMapCard> {
+class _ActiveRideMapState extends State<ActiveRideMap> {
   final _mapController = MapController();
-
-  @override
-  void didUpdateWidget(LiveMapCard oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    final lat = widget.driverLat;
-    final lng = widget.driverLng;
-    if (lat != null &&
-        lng != null &&
-        oldWidget.driverLat != null &&
-        oldWidget.driverLng != null &&
-        (oldWidget.driverLat != lat || oldWidget.driverLng != lng)) {
-      _mapController.move(LatLng(lat, lng), _mapController.camera.zoom);
-    }
-  }
 
   @override
   void dispose() {
@@ -50,49 +35,33 @@ class _LiveMapCardState extends State<LiveMapCard> {
 
   @override
   Widget build(BuildContext context) {
-    final lat = widget.driverLat;
-    final lng = widget.driverLng;
+    final pickupPoint = LatLng(widget.ride.pickup.lat, widget.ride.pickup.lng);
+    final dropoffPoint =
+        LatLng(widget.ride.dropoff.lat, widget.ride.dropoff.lng);
+    final centerLat =
+        (widget.ride.pickup.lat + widget.ride.dropoff.lat) / 2;
+    final centerLng =
+        (widget.ride.pickup.lng + widget.ride.dropoff.lng) / 2;
 
-    if (lat == null || lng == null) {
-      return ColoredBox(
-        color: AppColors.surface(context),
-        child: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.location_searching,
-                  color: AppColors.textSecondary(context), size: 32.w),
-              SizedBox(height: 8.h),
-              Text(
-                'Waiting for driver location…',
-                style: AppTextStyles.bodySmall(context).copyWith(
-                  color: AppColors.textSecondary(context),
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    final driverPoint = LatLng(lat, lng);
     return Stack(
       children: [
         FlutterMap(
           mapController: _mapController,
           options: MapOptions(
-            initialCenter: driverPoint,
-            initialZoom: 14,
+            initialCenter: LatLng(centerLat, centerLng),
+            initialZoom: 13,
           ),
           children: [
             TileLayer(
-              urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+              urlTemplate:
+                  'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
               userAgentPackageName: 'khfif_drif',
             ),
             MarkerLayer(
               markers: [
+                // Pickup marker
                 Marker(
-                  point: driverPoint,
+                  point: pickupPoint,
                   child: Container(
                     padding: EdgeInsets.all(6.w),
                     decoration: BoxDecoration(
@@ -106,38 +75,53 @@ class _LiveMapCardState extends State<LiveMapCard> {
                         ),
                       ],
                     ),
-                    child: Icon(Icons.directions_car_rounded,
-                        color: AppColors.white, size: 18.w),
+                    child: Icon(Icons.trip_origin_rounded,
+                        color: AppColors.white, size: 16.w),
                   ),
                 ),
-                if (widget.ownPosition != null)
+                // Dropoff marker
+                Marker(
+                  point: dropoffPoint,
+                  child: Container(
+                    padding: EdgeInsets.all(6.w),
+                    decoration: const BoxDecoration(
+                      color: AppColors.error,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(Icons.location_on_rounded,
+                        color: AppColors.white, size: 16.w),
+                  ),
+                ),
+                // Driver's own GPS position
+                if (widget.driverPosition != null)
                   Marker(
                     point: LatLng(
-                      widget.ownPosition!.latitude,
-                      widget.ownPosition!.longitude,
+                      widget.driverPosition!.latitude,
+                      widget.driverPosition!.longitude,
                     ),
                     child: Container(
-                      padding: EdgeInsets.all(4.w),
+                      padding: EdgeInsets.all(6.w),
                       decoration: BoxDecoration(
-                        color: AppColors.white,
+                        color: Colors.blue.shade700,
                         shape: BoxShape.circle,
-                        border:
-                            Border.all(color: AppColors.primary, width: 2.5),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.15),
-                            blurRadius: 6,
+                            color: Colors.blue.withValues(alpha: 0.4),
+                            blurRadius: 8,
+                            spreadRadius: 2,
                           ),
                         ],
                       ),
-                      child: Icon(Icons.person_rounded,
-                          color: AppColors.primary, size: 14.w),
+                      child: Icon(Icons.directions_car_rounded,
+                          color: AppColors.white, size: 16.w),
                     ),
                   ),
               ],
             ),
           ],
         ),
+
+        // Zoom controls
         Positioned(
           right: 12.w,
           bottom: 150.h,
@@ -177,19 +161,13 @@ class _MapZoomButtons extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _ZoomBtn(
-            icon: Icons.add_rounded,
-            onTap: () => _zoom(1),
-          ),
+          _ZoomBtn(icon: Icons.add_rounded, onTap: () => _zoom(1)),
           Divider(
             height: 1,
             thickness: 1,
             color: AppColors.borderDefault(context),
           ),
-          _ZoomBtn(
-            icon: Icons.remove_rounded,
-            onTap: () => _zoom(-1),
-          ),
+          _ZoomBtn(icon: Icons.remove_rounded, onTap: () => _zoom(-1)),
         ],
       ),
     );

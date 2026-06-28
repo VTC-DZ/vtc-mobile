@@ -8,8 +8,8 @@ import '../../../../../shared/widgets/top_bar.dart';
 import '../../data/models/driver_ride_models.dart';
 import '../cubit/available_rides_cubit/available_rides_cubit.dart';
 import '../cubit/available_rides_cubit/available_rides_state.dart';
-import 'widgets/available_ride_card.dart';
-import 'widgets/bid_sheet.dart';
+import 'widgets/available_ride/available_ride_card.dart';
+import 'widgets/available_ride/bid_sheet.dart';
 
 class AvailableRidesView extends StatefulWidget {
   const AvailableRidesView({super.key});

@@ -3,12 +3,16 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../../../../../../../core/theme/app_colors.dart';
 import '../../../../../../../core/theme/app_text_styles.dart';
-import '../../../../data/models/passenger_ride_models.dart';
 
-class DriverCard extends StatelessWidget {
-  const DriverCard({super.key, required this.driver});
+class PassengerInfoCard extends StatelessWidget {
+  const PassengerInfoCard({
+    super.key,
+    required this.fullName,
+    required this.phone,
+  });
 
-  final DriverInRide driver;
+  final String fullName;
+  final String phone;
 
   @override
   Widget build(BuildContext context) {
@@ -33,20 +37,20 @@ class DriverCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Your Driver',
+                  'Your Passenger',
                   style: AppTextStyles.labelSmall(context).copyWith(
                     color: AppColors.textSecondary(context),
                   ),
                 ),
                 SizedBox(height: 2.h),
                 Text(
-                  driver.fullName,
+                  fullName,
                   style: AppTextStyles.bodyLarge(context)
                       .copyWith(fontWeight: FontWeight.w700),
                 ),
                 SizedBox(height: 2.h),
                 Text(
-                  '${driver.vehicleModel} · ${driver.vehiclePlate}',
+                  phone,
                   style: AppTextStyles.bodySmall(context).copyWith(
                     color: AppColors.textSecondary(context),
                   ),
@@ -54,7 +58,7 @@ class DriverCard extends StatelessWidget {
               ],
             ),
           ),
-          // Phone icon — requires url_launcher to activate calling
+          // Phone icon — requires url_launcher to be active; shown as UI stub
           Container(
             width: 40.w,
             height: 40.w,

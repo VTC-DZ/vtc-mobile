@@ -3,20 +3,13 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../../../../../../../core/theme/app_colors.dart';
 import '../../../../../../../core/theme/app_text_styles.dart';
-import '../../../../../../../core/widgets/cancel_ride_dialog.dart';
-import '../../../../../shared/models/shared_ride_models.dart';
 
+/// Outlined cancel button for the active ride. Calls [onCancel] when pressed —
+/// the parent wires this to `DriverActiveRideCubit.cancelRide`.
 class CancelRideButton extends StatelessWidget {
   const CancelRideButton({super.key, required this.onCancel});
 
-  final ValueChanged<CancelReason> onCancel;
-
-  Future<void> _showDialog(BuildContext context) async {
-    final reason = await showCancelRideDialog(context);
-    if (reason != null && context.mounted) {
-      onCancel(reason);
-    }
-  }
+  final VoidCallback onCancel;
 
   @override
   Widget build(BuildContext context) {
@@ -24,7 +17,7 @@ class CancelRideButton extends StatelessWidget {
       height: 48.h,
       width: double.infinity,
       child: OutlinedButton(
-        onPressed: () => _showDialog(context),
+        onPressed: onCancel,
         style: OutlinedButton.styleFrom(
           side: const BorderSide(color: AppColors.error, width: 1.5),
           shape: RoundedRectangleBorder(
@@ -33,9 +26,8 @@ class CancelRideButton extends StatelessWidget {
         ),
         child: Text(
           'Cancel Ride',
-          style: AppTextStyles.labelLarge(context).copyWith(
-            color: AppColors.error,
-          ),
+          style: AppTextStyles.labelLarge(context)
+              .copyWith(color: AppColors.error),
         ),
       ),
     );

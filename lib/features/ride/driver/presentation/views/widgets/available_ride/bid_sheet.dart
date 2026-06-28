@@ -5,8 +5,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import '../../../../../../core/theme/app_colors.dart';
-import '../../../../../../core/theme/app_text_styles.dart';
+import '../../../../../../../core/theme/app_colors.dart';
+import '../../../../../../../core/theme/app_text_styles.dart';
 
 /// Bottom sheet to enter a bid for a ride request. Returns the entered fare in
 /// DZD, or `null` if dismissed. The input is constrained to the server's allowed

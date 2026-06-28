@@ -9,7 +9,7 @@ import '../../../../../core/theme/app_colors.dart';
 import '../../../../ride/driver/presentation/cubit/available_rides_cubit/available_rides_cubit.dart';
 import '../../../../ride/driver/presentation/cubit/available_rides_cubit/available_rides_state.dart';
 import '../../../../ride/driver/presentation/cubit/driver_availability_cubit/driver_availability_cubit.dart';
-import '../../../../ride/driver/presentation/views/widgets/broadcast_overlay.dart';
+import '../../../../ride/driver/presentation/views/widgets/available_ride/broadcast_overlay.dart';
 import '../cubit/driver_home_cubit.dart';
 import '../cubit/driver_home_state.dart';
 import 'widgets/driver_home_drawer.dart';

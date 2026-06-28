@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-import '../../cubit/available_rides_cubit/available_rides_cubit.dart';
-import '../../cubit/available_rides_cubit/available_rides_state.dart';
+import '../../../cubit/available_rides_cubit/available_rides_cubit.dart';
+import '../../../cubit/available_rides_cubit/available_rides_state.dart';
 import 'available_ride_card.dart';
 import 'bid_sheet.dart';
 

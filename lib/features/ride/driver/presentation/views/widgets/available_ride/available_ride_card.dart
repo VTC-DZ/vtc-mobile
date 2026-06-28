@@ -3,9 +3,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-import '../../../../../../core/theme/app_colors.dart';
-import '../../../../../../core/theme/app_text_styles.dart';
-import '../../../data/models/driver_ride_models.dart';
+import '../../../../../../../core/theme/app_colors.dart';
+import '../../../../../../../core/theme/app_text_styles.dart';
+import '../../../../data/models/driver_ride_models.dart';
 
 /// A single incoming ride request shown to the driver. Service & vehicle chips
 /// and an optional female-only badge on top, the pickup→dropoff route, a meta

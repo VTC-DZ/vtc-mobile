@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../../../../core/theme/app_colors.dart';
 import '../../../../../../../core/theme/app_text_styles.dart';
 
+/// Displays the agreed fare for the active ride.
 class FareCard extends StatelessWidget {
   const FareCard({super.key, required this.finalFare});
 
