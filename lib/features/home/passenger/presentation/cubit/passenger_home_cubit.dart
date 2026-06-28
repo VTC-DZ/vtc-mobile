@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:khfif_drif/core/session/auth_session.dart';
 import 'package:khfif_drif/features/auth/data/models/passenger_profile_model.dart';
@@ -10,7 +12,9 @@ class PassengerHomeCubit extends Cubit<PassengerHomeState> {
   PassengerHomeCubit(
     this._repository, [
     this._rideRepository = const PassengerRideRepository(),
-  ]) : super(const PassengerHomeState());
+  ]) : super(const PassengerHomeState()) {
+    unawaited(AuthSession.setLastRole(AuthSession.rolePassenger));
+  }
 
   final ProfileRepository _repository;
   final PassengerRideRepository _rideRepository;

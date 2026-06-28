@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../../core/session/auth_session.dart';
 import '../../../../../features/auth/data/models/driver_profile_model.dart';
 import '../../../../../features/auth/data/repo/driver_repository.dart';
 import '../../../../../features/ride/driver/data/driver_ride_repository.dart';
@@ -10,7 +13,9 @@ class DriverHomeCubit extends Cubit<DriverHomeState> {
   DriverHomeCubit(
     this._repository, [
     this._rideRepository = const DriverRideRepository(),
-  ]) : super(const DriverHomeState());
+  ]) : super(const DriverHomeState()) {
+    unawaited(AuthSession.setLastRole(AuthSession.roleDriver));
+  }
 
   final DriverRepository _repository;
   final DriverRideRepository _rideRepository;
