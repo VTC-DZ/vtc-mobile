@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 
 import 'package:dio/dio.dart';
@@ -16,7 +17,7 @@ final class DioClient {
   DioClient._();
 
   static late Dio _dio;
-  static bool _isRefreshing = false;
+  static Completer<String>? _refreshCompleter;
 
   static void init() {
     _dio = Dio(
@@ -66,39 +67,25 @@ final class DioClient {
       InterceptorsWrapper(
         onError: (error, handler) async {
           if (error.response?.statusCode != 401 ||
-              _isRefreshing ||
               AuthSession.refreshToken == null) {
             return handler.next(error);
           }
 
-          _isRefreshing = true;
           try {
-            final response = await _dio.post(
-              AuthApiConstants.refresh,
-              data: {'refreshToken': AuthSession.refreshToken},
-              options: Options(
-                headers: {'Authorization': null},
-              ),
-            );
-            final tokens = AuthTokensModel.fromJson(
-              response.data as Map<String, dynamic>,
-            );
-            await AuthSession.setTokens(
-              accessToken: tokens.accessToken,
-              refreshToken: tokens.refreshToken,
-            );
+            // All concurrent 401s join the same in-flight refresh instead of
+            // each racing/failing independently — otherwise only the first
+            // request to 401 benefits and the rest get force-logged-out even
+            // though the refresh succeeds moments later.
+            final newAccessToken = await _refreshAccessToken();
 
             final retryOptions = error.requestOptions;
-            retryOptions.headers['Authorization'] =
-                'Bearer ${tokens.accessToken}';
+            retryOptions.headers['Authorization'] = 'Bearer $newAccessToken';
             final retried = await _dio.fetch(retryOptions);
             handler.resolve(retried);
           } catch (_) {
             await AuthSession.clearSession();
             AppRouter.router.go(RouteNames.phone);
             handler.next(error);
-          } finally {
-            _isRefreshing = false;
           }
         },
       ),
@@ -116,6 +103,41 @@ final class DioClient {
         ),
       );
     }
+  }
+
+  /// Refreshes the access token, sharing a single in-flight request across
+  /// any 401s that arrive concurrently rather than firing one refresh call
+  /// per request.
+  static Future<String> _refreshAccessToken() {
+    final inFlight = _refreshCompleter;
+    if (inFlight != null) return inFlight.future;
+
+    final completer = Completer<String>();
+    _refreshCompleter = completer;
+
+    Future(() async {
+      final response = await _dio.post(
+        AuthApiConstants.refresh,
+        data: {'refreshToken': AuthSession.refreshToken},
+        options: Options(
+          headers: {'Authorization': null},
+        ),
+      );
+      final tokens = AuthTokensModel.fromJson(
+        response.data as Map<String, dynamic>,
+      );
+      await AuthSession.setTokens(
+        accessToken: tokens.accessToken,
+        refreshToken: tokens.refreshToken,
+      );
+      return tokens.accessToken;
+    }).then(completer.complete).catchError((Object e, StackTrace s) {
+      completer.completeError(e, s);
+    }).whenComplete(() {
+      _refreshCompleter = null;
+    });
+
+    return completer.future;
   }
 
   static Future<Response> get({

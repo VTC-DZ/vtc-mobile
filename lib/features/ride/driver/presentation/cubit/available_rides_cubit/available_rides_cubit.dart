@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:khfif_drif/core/widgets/app_toast.dart';
 
 import '../../../../../../core/network/ride_socket_service.dart';
 import '../../../data/driver_ride_repository.dart';
@@ -25,7 +26,8 @@ final class AvailableRidesCubit extends Cubit<AvailableRidesState> {
   late final StreamSubscription<RideSocketStatus> _statusSub;
 
   Future<void> loadAvailableRides() async {
-    emit(state.copyWith(status: AvailableRidesStatus.loading, errorMessage: ''));
+    emit(
+        state.copyWith(status: AvailableRidesStatus.loading, errorMessage: ''));
     try {
       final response = await _repository.listAvailableRides();
       emit(state.copyWith(
@@ -41,11 +43,13 @@ final class AvailableRidesCubit extends Cubit<AvailableRidesState> {
   }
 
   Future<void> submitBid(String rideRequestId, int fare) async {
-    emit(state.copyWith(status: AvailableRidesStatus.bidding, errorMessage: ''));
+    emit(
+        state.copyWith(status: AvailableRidesStatus.bidding, errorMessage: ''));
     try {
       await _repository.submitBid(rideRequestId, fare);
       emit(state.copyWith(status: AvailableRidesStatus.bidSuccess));
     } catch (e) {
+      AppToast.error(e.toString());
       emit(state.copyWith(
         status: AvailableRidesStatus.failure,
         errorMessage: e.toString(),
@@ -90,9 +94,8 @@ final class AvailableRidesCubit extends Cubit<AvailableRidesState> {
   void ignoreRide(String rideRequestId) => _removeRide(rideRequestId);
 
   void _removeRide(String rideRequestId) {
-    final rides = state.rides
-        .where((r) => r.rideRequestId != rideRequestId)
-        .toList();
+    final rides =
+        state.rides.where((r) => r.rideRequestId != rideRequestId).toList();
     emit(state.copyWith(status: AvailableRidesStatus.loaded, rides: rides));
   }
 
