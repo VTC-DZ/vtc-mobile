@@ -133,6 +133,7 @@ class _RideBody extends StatelessWidget {
             driverLat: driverLat,
             driverLng: driverLng,
             ownPosition: ownPosition,
+            rideState: rideState,
             pickup: ride.pickup,
             dropoff: ride.dropoff,
             driverLabel:

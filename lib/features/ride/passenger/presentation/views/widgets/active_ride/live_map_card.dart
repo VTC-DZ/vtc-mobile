@@ -5,18 +5,24 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import '../../../../../../../core/theme/app_colors.dart';
 import '../../../../../../../core/theme/app_text_styles.dart';
+import '../../../../../../../core/utils/map_geo.dart';
 import '../../../../../../../core/utils/map_gestures.dart';
-import '../../../../../../../core/utils/map_marker_factory.dart';
+import '../../../../../driver/data/models/ride_socket_event.dart';
 import '../../../../../shared/models/shared_ride_models.dart';
+import '../../../../../shared/widgets/ride_map_style.dart';
 
 /// Full-screen capable live map. Sizes to whatever its parent gives it.
 /// Caller is responsible for bounding the widget (e.g. Positioned.fill or SizedBox).
+///
+/// Shows pickup/dropoff pins, the driver as a car turned toward its direction
+/// of travel, the passenger's own position, and stage-aware guide lines.
 class LiveMapCard extends StatefulWidget {
   const LiveMapCard({
     super.key,
     required this.driverLat,
     required this.driverLng,
     required this.ownPosition,
+    this.rideState,
     this.pickup,
     this.dropoff,
     this.driverLabel,
@@ -25,6 +31,7 @@ class LiveMapCard extends StatefulWidget {
   final double? driverLat;
   final double? driverLng;
   final Position? ownPosition;
+  final RideState? rideState;
   final CoordinatePoint? pickup;
   final CoordinatePoint? dropoff;
   final String? driverLabel;
@@ -34,74 +41,85 @@ class LiveMapCard extends StatefulWidget {
 }
 
 class _LiveMapCardState extends State<LiveMapCard> {
+  /// Minimum driver movement before the car is turned toward the new point —
+  /// below this, GPS jitter would make it spin in place.
+  static const double _minBearingDistance = 3; // m
+
   GoogleMapController? _mapController;
-  BitmapDescriptor? _pickupIcon;
-  BitmapDescriptor? _dropoffIcon;
-  BitmapDescriptor? _driverIcon;
-  BitmapDescriptor? _ownIcon;
-  String? _driverIconLabel;
+  RideMapIcons? _icons;
+  double _driverBearing = 0;
+  bool _fittedWithDriver = false;
+
+  bool get _tripStarted => widget.rideState == RideState.inProgress;
+
+  LatLng? get _driver {
+    final lat = widget.driverLat;
+    final lng = widget.driverLng;
+    return lat == null || lng == null ? null : LatLng(lat, lng);
+  }
+
+  LatLng? get _pickup => widget.pickup == null
+      ? null
+      : LatLng(widget.pickup!.lat, widget.pickup!.lng);
+
+  LatLng? get _dropoff => widget.dropoff == null
+      ? null
+      : LatLng(widget.dropoff!.lat, widget.dropoff!.lng);
 
   @override
   void initState() {
     super.initState();
-    _loadIcons();
-  }
-
-  Future<void> _loadIcons() async {
-    final driverLabel = widget.driverLabel ?? 'Driver';
-    final icons = await Future.wait([
-      MapMarkerFactory.labeled(
-        color: AppColors.primary,
-        icon: Icons.trip_origin_rounded,
-        label: 'Pickup',
-        glow: true,
-      ),
-      MapMarkerFactory.labeled(
-        color: AppColors.error,
-        icon: Icons.location_on_rounded,
-        label: 'Dropoff',
-      ),
-      MapMarkerFactory.labeled(
-        color: AppColors.primary,
-        icon: Icons.directions_car_rounded,
-        label: driverLabel,
-        glow: true,
-      ),
-      MapMarkerFactory.circle(
-        color: AppColors.white,
-        icon: Icons.person_rounded,
-        iconSize: 14,
-        padding: 4,
-        iconColor: AppColors.primary,
-        borderColor: AppColors.primary,
-      ),
-    ]);
-    if (!mounted) return;
-    setState(() {
-      _pickupIcon = icons[0];
-      _dropoffIcon = icons[1];
-      _driverIcon = icons[2];
-      _ownIcon = icons[3];
-      _driverIconLabel = driverLabel;
+    RideMapIcons.load().then((icons) {
+      if (mounted) setState(() => _icons = icons);
     });
   }
 
   @override
   void didUpdateWidget(LiveMapCard oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if ((widget.driverLabel ?? 'Driver') != _driverIconLabel &&
-        _driverIconLabel != null) {
-      _loadIcons();
+    final driver = _driver;
+    final oldLat = oldWidget.driverLat;
+    final oldLng = oldWidget.driverLng;
+    if (driver != null && oldLat != null && oldLng != null) {
+      final previous = LatLng(oldLat, oldLng);
+      if (MapGeo.distanceMeters(previous, driver) > _minBearingDistance) {
+        _driverBearing = MapGeo.bearingBetween(previous, driver);
+      }
+      if (previous != driver) _keepDriverInView(driver);
     }
-    final lat = widget.driverLat;
-    final lng = widget.driverLng;
-    if (lat != null &&
-        lng != null &&
-        oldWidget.driverLat != null &&
-        oldWidget.driverLng != null &&
-        (oldWidget.driverLat != lat || oldWidget.driverLng != lng)) {
-      _mapController?.animateCamera(CameraUpdate.newLatLng(LatLng(lat, lng)));
+
+    // Reframe when the driver first appears, and when the trip starts (the
+    // target switches from pickup to dropoff).
+    final gotFirstFix = !_fittedWithDriver && driver != null;
+    final stageChanged = widget.rideState != oldWidget.rideState;
+    if (gotFirstFix || stageChanged) _fitRoute();
+  }
+
+  /// Follows the driver only when they leave the visible area, so the camera
+  /// doesn't fight a passenger who panned or zoomed the map.
+  Future<void> _keepDriverInView(LatLng driver) async {
+    final controller = _mapController;
+    if (controller == null) return;
+    try {
+      final region = await controller.getVisibleRegion();
+      if (!region.contains(driver)) {
+        await controller.animateCamera(CameraUpdate.newLatLng(driver));
+      }
+    } catch (_) {
+      // Map disposed mid-update.
     }
+  }
+
+  /// Frames the leg that matters now: driver → pickup before the trip,
+  /// driver → dropoff during it (pickup → dropoff while the driver is unknown).
+  void _fitRoute() {
+    final controller = _mapController;
+    if (controller == null) return;
+    final driver = _driver;
+    _fittedWithDriver = driver != null;
+    final target = _tripStarted ? _dropoff : _pickup;
+    final points = driver == null ? [_pickup, _dropoff] : [driver, target];
+    RideMapStyle.fitCamera(controller, points.whereType<LatLng>().toList());
   }
 
   @override
@@ -112,97 +130,156 @@ class _LiveMapCardState extends State<LiveMapCard> {
 
   @override
   Widget build(BuildContext context) {
-    final lat = widget.driverLat;
-    final lng = widget.driverLng;
+    final icons = _icons;
+    final driver = _driver;
+    final pickup = _pickup;
+    final dropoff = _dropoff;
+    final own = widget.ownPosition;
+    final media = MediaQuery.of(context);
+    final controlsTop = media.padding.top + 76.h;
+    final initialTarget = driver ?? pickup ?? const LatLng(36.7538, 3.0588);
 
-    if (lat == null || lng == null) {
-      return ColoredBox(
-        color: AppColors.surface(context),
-        child: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.location_searching,
-                  color: AppColors.textSecondary(context), size: 32.w),
-              SizedBox(height: 8.h),
-              Text(
-                'Waiting for driver location…',
-                style: AppTextStyles.bodySmall(context).copyWith(
-                  color: AppColors.textSecondary(context),
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    final driverPoint = LatLng(lat, lng);
-    const bottomAnchor = Offset(0.5, 1);
     return Stack(
       children: [
         GoogleMap(
           gestureRecognizers: mapGestureRecognizers,
           // setState so _MapZoomButtons receives the controller.
-          onMapCreated: (controller) =>
-              setState(() => _mapController = controller),
-          initialCameraPosition: CameraPosition(target: driverPoint, zoom: 14),
+          onMapCreated: (controller) {
+            setState(() => _mapController = controller);
+            _fitRoute();
+          },
+          initialCameraPosition:
+              CameraPosition(target: initialTarget, zoom: 14),
+          // Keep framed content clear of the status badge and bottom sheet.
+          padding: EdgeInsets.only(
+            top: controlsTop,
+            bottom: media.size.height * 0.42,
+          ),
           zoomControlsEnabled: false,
           myLocationButtonEnabled: false,
           mapToolbarEnabled: false,
-          markers: {
-            // Pickup point
-            if (widget.pickup != null)
-              Marker(
-                markerId: const MarkerId('pickup'),
-                position: LatLng(widget.pickup!.lat, widget.pickup!.lng),
-                icon: _pickupIcon ?? BitmapDescriptor.defaultMarker,
-                anchor: bottomAnchor,
-              ),
-            // Dropoff point
-            if (widget.dropoff != null)
-              Marker(
-                markerId: const MarkerId('dropoff'),
-                position: LatLng(widget.dropoff!.lat, widget.dropoff!.lng),
-                icon: _dropoffIcon ?? BitmapDescriptor.defaultMarker,
-                anchor: bottomAnchor,
-              ),
-            // Driver's live position
-            Marker(
-              markerId: const MarkerId('driver'),
-              position: driverPoint,
-              icon: _driverIcon ?? BitmapDescriptor.defaultMarker,
-              anchor: bottomAnchor,
-              zIndexInt: 2,
-            ),
-            // Passenger's own position ("you")
-            if (widget.ownPosition != null)
-              Marker(
-                markerId: const MarkerId('own'),
-                position: LatLng(
-                  widget.ownPosition!.latitude,
-                  widget.ownPosition!.longitude,
+          compassEnabled: false,
+          polylines: pickup == null || dropoff == null
+              ? const {}
+              : RideMapStyle.polylines(
+                  driver: driver,
+                  pickup: pickup,
+                  dropoff: dropoff,
+                  tripStarted: _tripStarted,
                 ),
-                icon: _ownIcon ?? BitmapDescriptor.defaultMarker,
-                anchor: const Offset(0.5, 0.5),
-                zIndexInt: 1,
-              ),
+          markers: {
+            if (icons != null) ...{
+              if (pickup != null)
+                Marker(
+                  markerId: const MarkerId('pickup'),
+                  position: pickup,
+                  icon: icons.pickup.descriptor,
+                  anchor: icons.pickup.anchor,
+                  // The passenger is on board once the trip starts.
+                  alpha: _tripStarted ? 0.5 : 1,
+                  zIndexInt: 1,
+                ),
+              if (dropoff != null)
+                Marker(
+                  markerId: const MarkerId('dropoff'),
+                  position: dropoff,
+                  icon: icons.dropoff.descriptor,
+                  anchor: icons.dropoff.anchor,
+                  zIndexInt: 1,
+                ),
+              // Passenger's own position ("you"). Hidden during the trip —
+              // they're in the car.
+              if (own != null && !_tripStarted)
+                Marker(
+                  markerId: const MarkerId('own'),
+                  position: LatLng(own.latitude, own.longitude),
+                  icon: icons.userDot,
+                  anchor: const Offset(0.5, 0.5),
+                  zIndexInt: 2,
+                ),
+              // Driver's live position
+              if (driver != null)
+                Marker(
+                  markerId: const MarkerId('driver'),
+                  position: driver,
+                  icon: icons.car,
+                  anchor: const Offset(0.5, 0.5),
+                  flat: true,
+                  rotation: _driverBearing,
+                  zIndexInt: 3,
+                  infoWindow: InfoWindow(title: widget.driverLabel ?? 'Driver'),
+                ),
+            },
           },
         ),
+        if (driver == null)
+          Positioned(
+            top: controlsTop,
+            left: 0,
+            right: 0,
+            child: const Center(child: _WaitingForDriverPill()),
+          ),
         Positioned(
           right: 12.w,
-          bottom: 150.h,
-          child: _MapZoomButtons(controller: _mapController),
+          top: controlsTop + (driver == null ? 48.h : 0),
+          child: _MapZoomButtons(
+            controller: _mapController,
+            onFitRoute: _fitRoute,
+          ),
         ),
       ],
     );
   }
 }
 
+class _WaitingForDriverPill extends StatelessWidget {
+  const _WaitingForDriverPill();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
+      decoration: BoxDecoration(
+        color: AppColors.background(context),
+        borderRadius: BorderRadius.circular(20.r),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.15),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(
+            width: 12.w,
+            height: 12.w,
+            child: const CircularProgressIndicator(
+              strokeWidth: 2,
+              color: AppColors.primary,
+            ),
+          ),
+          SizedBox(width: 8.w),
+          Text(
+            'Waiting for driver location…',
+            style: AppTextStyles.bodySmall(context).copyWith(
+              color: AppColors.textSecondary(context),
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _MapZoomButtons extends StatelessWidget {
-  const _MapZoomButtons({required this.controller});
+  const _MapZoomButtons({required this.controller, required this.onFitRoute});
 
   final GoogleMapController? controller;
+  final VoidCallback onFitRoute;
 
   void _zoom(double delta) {
     controller?.animateCamera(CameraUpdate.zoomBy(delta));
@@ -225,6 +302,15 @@ class _MapZoomButtons extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
+          _ZoomBtn(
+            icon: Icons.alt_route_rounded,
+            onTap: onFitRoute,
+          ),
+          Divider(
+            height: 1,
+            thickness: 1,
+            color: AppColors.borderDefault(context),
+          ),
           _ZoomBtn(
             icon: Icons.add_rounded,
             onTap: () => _zoom(1),
