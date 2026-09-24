@@ -3,7 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../../../../../../../core/theme/app_colors.dart';
 import '../../../../../../../core/theme/app_text_styles.dart';
-import '../../../cubit/location_cubit/location_picker_state.dart';
+import '../../../../data/models/place_models.dart';
 
 class SearchResultsList extends StatelessWidget {
   const SearchResultsList({
@@ -12,8 +12,8 @@ class SearchResultsList extends StatelessWidget {
     required this.onSelect,
   });
 
-  final List<NominatimPlace> results;
-  final void Function(NominatimPlace) onSelect;
+  final List<PlaceSummary> results;
+  final void Function(PlaceSummary) onSelect;
 
   @override
   Widget build(BuildContext context) {
@@ -55,13 +55,34 @@ class SearchResultsList extends StatelessWidget {
                         ),
                         SizedBox(width: 10.w),
                         Expanded(
-                          child: Text(
-                            place.displayName,
-                            style: AppTextStyles.bodySmall(context).copyWith(
-                              color: AppColors.text(context),
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                place.displayName,
+                                style:
+                                    AppTextStyles.bodySmall(context).copyWith(
+                                  color: AppColors.text(context),
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              if (place.formattedAddress.isNotEmpty &&
+                                  place.formattedAddress != place.displayName)
+                                Padding(
+                                  padding: EdgeInsets.only(top: 2.h),
+                                  child: Text(
+                                    place.formattedAddress,
+                                    style: AppTextStyles.bodySmall(context)
+                                        .copyWith(
+                                      color: AppColors.textSecondary(context),
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                            ],
                           ),
                         ),
                       ],

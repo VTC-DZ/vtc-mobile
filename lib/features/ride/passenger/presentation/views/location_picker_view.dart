@@ -251,10 +251,14 @@ class _LocationPickerViewState extends State<LocationPickerView> {
                       if (state.searchResults.isNotEmpty)
                         SearchResultsList(
                           results: state.searchResults,
-                          onSelect: (place) {
+                          onSelect: (place) async {
                             _searchCtrl.text = place.displayName;
-                            cubit.selectResult(place);
                             _searchFocus.unfocus();
+                            final ok = await cubit.selectResult(place);
+                            if (!ok && mounted) {
+                              AppToast.error(cubit.state.errorMessage ??
+                                  'Could not load this place.');
+                            }
                           },
                         ),
                     ],

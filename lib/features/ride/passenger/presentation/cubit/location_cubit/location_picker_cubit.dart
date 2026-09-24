@@ -1,22 +1,25 @@
-import 'package:dio/dio.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
+import '../../../../../../core/utils/uuid.dart';
 import '../../../../../saved_places/data/address_model.dart';
+import '../../../data/models/place_models.dart';
+import '../../../data/places_repository.dart';
 import 'location_picker_state.dart';
 
 class LocationPickerCubit extends Cubit<LocationPickerState> {
-  LocationPickerCubit() : super(const LocationPickerState());
+  LocationPickerCubit(this._places) : super(const LocationPickerState());
 
-  final _dio = Dio(
-    BaseOptions(
-      baseUrl: 'https://nominatim.openstreetmap.org',
-      headers: {'User-Agent': 'khfif_drif/1.0'},
-      connectTimeout: const Duration(seconds: 8),
-      receiveTimeout: const Duration(seconds: 8),
-    ),
-  );
+  final PlacesRepository _places;
+
+  /// Groups the keystrokes of one search session; cleared once a result is
+  /// resolved or the search is cleared.
+  String? _sessionToken;
+
+  /// Incremented per search so a slow earlier response can't overwrite a
+  /// newer one.
+  int _searchSeq = 0;
 
   Future<void> init({LatLng? initial}) async {
     // When an initial position is provided (e.g. editing a saved place),
@@ -100,17 +103,11 @@ class LocationPickerCubit extends Cubit<LocationPickerState> {
 
   Future<void> _reverseGeocode(LatLng position) async {
     try {
-      final response = await _dio.get<Map<String, dynamic>>(
-        '/reverse',
-        queryParameters: {
-          'lat': position.latitude,
-          'lon': position.longitude,
-          'format': 'json',
-        },
-      );
-      final address = response.data?['display_name'] as String? ?? '';
-      emit(state.copyWith(pickedAddress: address, isGeocoding: false));
+      final place = await _places.reverseGeocode(position);
+      if (isClosed || state.selectedPosition != position) return;
+      emit(state.copyWith(pickedAddress: place.label, isGeocoding: false));
     } catch (_) {
+      if (isClosed || state.selectedPosition != position) return;
       emit(state.copyWith(
         isGeocoding: false,
         pickedAddress:
@@ -120,43 +117,70 @@ class LocationPickerCubit extends Cubit<LocationPickerState> {
   }
 
   Future<void> search(String query) async {
-    if (query.trim().isEmpty) {
+    final q = query.trim();
+    final seq = ++_searchSeq;
+    // The API rejects queries shorter than 2 characters.
+    if (q.length < 2) {
       emit(state.copyWith(searchResults: [], isSearching: false));
       return;
     }
     emit(state.copyWith(isSearching: true, searchResults: [], clearError: true));
     try {
-      final response = await _dio.get<List<dynamic>>(
-        '/search',
-        queryParameters: {
-          'q': query,
-          'format': 'json',
-          'limit': 5,
-        },
+      final results = await _places.search(
+        q,
+        sessionToken: _sessionToken ??= uuidV4(),
+        bias: state.mapCenter,
       );
-      final results = (response.data ?? [])
-          .cast<Map<String, dynamic>>()
-          .map(NominatimPlace.fromJson)
-          .toList();
+      if (isClosed || seq != _searchSeq) return;
       emit(state.copyWith(searchResults: results, isSearching: false));
     } catch (_) {
+      if (isClosed || seq != _searchSeq) return;
       emit(state.copyWith(searchResults: [], isSearching: false));
     }
   }
 
-  void selectResult(NominatimPlace place) {
-    final position = LatLng(place.lat, place.lng);
-    // Move camera AND drop pin at the search result, using displayName directly.
+  /// Search results carry no coordinates, so the place is resolved first.
+  ///
+  /// Returns `false` (with an [errorMessage] emitted) when it can't be
+  /// resolved; the view shows the error toast.
+  Future<bool> selectResult(PlaceSummary place) async {
+    _searchSeq++; // Drop any in-flight search response.
+    // Any previous pin stays put on failure, so its address is restored too.
+    final previousAddress = state.pickedAddress;
     emit(state.copyWith(
-      mapCenter: position,
-      selectedPosition: position,
-      pickedAddress: place.displayName,
+      pickedAddress: place.label,
+      isGeocoding: true,
       searchResults: [],
       isSearching: false,
+      clearError: true,
     ));
+    try {
+      final detail = await _places.resolve(place.placeId);
+      _sessionToken = null;
+      if (isClosed) return false;
+      final position = LatLng(detail.lat, detail.lng);
+      // Move camera AND drop pin at the resolved place.
+      emit(state.copyWith(
+        mapCenter: position,
+        selectedPosition: position,
+        pickedAddress: detail.label,
+        isGeocoding: false,
+      ));
+      return true;
+    } catch (e) {
+      if (isClosed) return false;
+      emit(state.copyWith(
+        isGeocoding: false,
+        pickedAddress: previousAddress,
+        errorMessage: e.toString(),
+      ));
+      return false;
+    }
   }
 
   void clearSearch() {
+    _searchSeq++;
+    _sessionToken = null;
     emit(state.copyWith(searchResults: [], isSearching: false));
   }
 
@@ -170,11 +194,5 @@ class LocationPickerCubit extends Cubit<LocationPickerState> {
       searchResults: [],
       isSearching: false,
     ));
-  }
-
-  @override
-  Future<void> close() {
-    _dio.close();
-    return super.close();
   }
 }

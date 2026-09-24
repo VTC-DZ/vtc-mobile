@@ -40,6 +40,7 @@ import '../../features/saved_places/presentation/views/address_edit_view.dart';
 import '../../features/ride/passenger/data/models/passenger_ride_models.dart';
 import '../presentation/cubit/web_socket_connection_cubit/web_socket_connection_cubit.dart';
 import '../../features/ride/passenger/data/passenger_ride_repository.dart';
+import '../../features/ride/passenger/data/places_repository.dart';
 import '../../features/ride/passenger/presentation/cubit/location_cubit/location_picker_cubit.dart';
 import '../../features/ride/passenger/presentation/cubit/location_cubit/location_picker_state.dart';
 import '../../features/ride/passenger/presentation/cubit/passenger_active_ride_cubit/passenger_active_ride_cubit.dart';
@@ -208,7 +209,8 @@ final class AppRouter {
                         label: (extra as String?) ?? 'Location');
                 return BlocProvider<LocationPickerCubit>(
                   create: (_) =>
-                      LocationPickerCubit()..init(initial: args.initial),
+                      LocationPickerCubit(const PlacesRepository())
+                        ..init(initial: args.initial),
                   child: LocationPickerView(args: args),
                 );
               },

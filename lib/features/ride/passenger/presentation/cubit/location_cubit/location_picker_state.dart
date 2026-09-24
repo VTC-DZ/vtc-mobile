@@ -1,25 +1,7 @@
 import 'package:equatable/equatable.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
-class NominatimPlace {
-  const NominatimPlace({
-    required this.displayName,
-    required this.lat,
-    required this.lng,
-  });
-
-  final String displayName;
-  final double lat;
-  final double lng;
-
-  factory NominatimPlace.fromJson(Map<String, dynamic> json) {
-    return NominatimPlace(
-      displayName: json['display_name'] as String? ?? '',
-      lat: double.tryParse(json['lat'] as String? ?? '0') ?? 0,
-      lng: double.tryParse(json['lon'] as String? ?? '0') ?? 0,
-    );
-  }
-}
+import '../../../data/models/place_models.dart';
 
 /// Arguments passed to the [RouteNames.locationPicker] route.
 class LocationPickerArgs {
@@ -56,7 +38,7 @@ class LocationPickerState extends Equatable {
 
   final String pickedAddress;
   final bool isGeocoding;
-  final List<NominatimPlace> searchResults;
+  final List<PlaceSummary> searchResults;
   final bool isSearching;
 
   /// True while fetching the device's current GPS position.
@@ -70,7 +52,7 @@ class LocationPickerState extends Equatable {
     bool clearSelectedPosition = false,
     String? pickedAddress,
     bool? isGeocoding,
-    List<NominatimPlace>? searchResults,
+    List<PlaceSummary>? searchResults,
     bool? isSearching,
     bool? isLocating,
     String? errorMessage,

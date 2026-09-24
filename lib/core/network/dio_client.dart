@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
@@ -11,6 +10,7 @@ import '../errors/api_exception.dart';
 import '../router/app_router.dart';
 import '../router/route_names.dart';
 import '../session/auth_session.dart';
+import '../utils/uuid.dart';
 import '../../features/auth/data/models/auth_tokens_model.dart';
 import 'driver_location_streamer.dart';
 import 'ride_socket_service.dart';
@@ -74,7 +74,7 @@ final class DioClient {
           final isAuth = options.path.startsWith(AuthApiConstants.base);
           if (!isAuth &&
               (method == 'POST' || method == 'PUT' || method == 'DELETE')) {
-            options.headers['Idempotency-Key'] = _uuid();
+            options.headers['Idempotency-Key'] = uuidV4();
           }
           handler.next(options);
         },
@@ -318,21 +318,6 @@ final class DioClient {
     } on DioException catch (e) {
       throw await _handleDioError(e);
     }
-  }
-
-  static final _rng = Random.secure();
-
-  /// RFC 4122 v4 UUID — no external package required.
-  static String _uuid() {
-    final b = List<int>.generate(16, (_) => _rng.nextInt(256));
-    b[6] = (b[6] & 0x0f) | 0x40;
-    b[8] = (b[8] & 0x3f) | 0x80;
-    String h(int n) => n.toRadixString(16).padLeft(2, '0');
-    return '${b.sublist(0, 4).map(h).join()}'
-        '-${b.sublist(4, 6).map(h).join()}'
-        '-${b.sublist(6, 8).map(h).join()}'
-        '-${b.sublist(8, 10).map(h).join()}'
-        '-${b.sublist(10, 16).map(h).join()}';
   }
 
   static Future<ApiException> _handleDioError(DioException e) async {
