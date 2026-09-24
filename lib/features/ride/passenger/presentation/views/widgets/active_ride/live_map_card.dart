@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:latlong2/latlong.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import '../../../../../../../core/theme/app_colors.dart';
 import '../../../../../../../core/theme/app_text_styles.dart';
+import '../../../../../../../core/utils/map_gestures.dart';
+import '../../../../../../../core/utils/map_marker_factory.dart';
 import '../../../../../shared/models/shared_ride_models.dart';
 
 /// Full-screen capable live map. Sizes to whatever its parent gives it.
@@ -33,11 +34,65 @@ class LiveMapCard extends StatefulWidget {
 }
 
 class _LiveMapCardState extends State<LiveMapCard> {
-  final _mapController = MapController();
+  GoogleMapController? _mapController;
+  BitmapDescriptor? _pickupIcon;
+  BitmapDescriptor? _dropoffIcon;
+  BitmapDescriptor? _driverIcon;
+  BitmapDescriptor? _ownIcon;
+  String? _driverIconLabel;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadIcons();
+  }
+
+  Future<void> _loadIcons() async {
+    final driverLabel = widget.driverLabel ?? 'Driver';
+    final icons = await Future.wait([
+      MapMarkerFactory.labeled(
+        color: AppColors.primary,
+        icon: Icons.trip_origin_rounded,
+        label: 'Pickup',
+        glow: true,
+      ),
+      MapMarkerFactory.labeled(
+        color: AppColors.error,
+        icon: Icons.location_on_rounded,
+        label: 'Dropoff',
+      ),
+      MapMarkerFactory.labeled(
+        color: AppColors.primary,
+        icon: Icons.directions_car_rounded,
+        label: driverLabel,
+        glow: true,
+      ),
+      MapMarkerFactory.circle(
+        color: AppColors.white,
+        icon: Icons.person_rounded,
+        iconSize: 14,
+        padding: 4,
+        iconColor: AppColors.primary,
+        borderColor: AppColors.primary,
+      ),
+    ]);
+    if (!mounted) return;
+    setState(() {
+      _pickupIcon = icons[0];
+      _dropoffIcon = icons[1];
+      _driverIcon = icons[2];
+      _ownIcon = icons[3];
+      _driverIconLabel = driverLabel;
+    });
+  }
 
   @override
   void didUpdateWidget(LiveMapCard oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if ((widget.driverLabel ?? 'Driver') != _driverIconLabel &&
+        _driverIconLabel != null) {
+      _loadIcons();
+    }
     final lat = widget.driverLat;
     final lng = widget.driverLng;
     if (lat != null &&
@@ -45,13 +100,13 @@ class _LiveMapCardState extends State<LiveMapCard> {
         oldWidget.driverLat != null &&
         oldWidget.driverLng != null &&
         (oldWidget.driverLat != lat || oldWidget.driverLng != lng)) {
-      _mapController.move(LatLng(lat, lng), _mapController.camera.zoom);
+      _mapController?.animateCamera(CameraUpdate.newLatLng(LatLng(lat, lng)));
     }
   }
 
   @override
   void dispose() {
-    _mapController.dispose();
+    _mapController?.dispose();
     super.dispose();
   }
 
@@ -83,74 +138,56 @@ class _LiveMapCardState extends State<LiveMapCard> {
     }
 
     final driverPoint = LatLng(lat, lng);
+    const bottomAnchor = Offset(0.5, 1);
     return Stack(
       children: [
-        FlutterMap(
-          mapController: _mapController,
-          options: MapOptions(
-            initialCenter: driverPoint,
-            initialZoom: 14,
-          ),
-          children: [
-            TileLayer(
-              urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-              userAgentPackageName: 'khfif_drif',
+        GoogleMap(
+          gestureRecognizers: mapGestureRecognizers,
+          // setState so _MapZoomButtons receives the controller.
+          onMapCreated: (controller) =>
+              setState(() => _mapController = controller),
+          initialCameraPosition: CameraPosition(target: driverPoint, zoom: 14),
+          zoomControlsEnabled: false,
+          myLocationButtonEnabled: false,
+          mapToolbarEnabled: false,
+          markers: {
+            // Pickup point
+            if (widget.pickup != null)
+              Marker(
+                markerId: const MarkerId('pickup'),
+                position: LatLng(widget.pickup!.lat, widget.pickup!.lng),
+                icon: _pickupIcon ?? BitmapDescriptor.defaultMarker,
+                anchor: bottomAnchor,
+              ),
+            // Dropoff point
+            if (widget.dropoff != null)
+              Marker(
+                markerId: const MarkerId('dropoff'),
+                position: LatLng(widget.dropoff!.lat, widget.dropoff!.lng),
+                icon: _dropoffIcon ?? BitmapDescriptor.defaultMarker,
+                anchor: bottomAnchor,
+              ),
+            // Driver's live position
+            Marker(
+              markerId: const MarkerId('driver'),
+              position: driverPoint,
+              icon: _driverIcon ?? BitmapDescriptor.defaultMarker,
+              anchor: bottomAnchor,
+              zIndexInt: 2,
             ),
-            MarkerLayer(
-              markers: [
-                // Pickup point
-                if (widget.pickup != null)
-                  _labeledMarker(
-                    point: LatLng(widget.pickup!.lat, widget.pickup!.lng),
-                    color: AppColors.primary,
-                    icon: Icons.trip_origin_rounded,
-                    label: 'Pickup',
-                    glow: true,
-                  ),
-                // Dropoff point
-                if (widget.dropoff != null)
-                  _labeledMarker(
-                    point: LatLng(widget.dropoff!.lat, widget.dropoff!.lng),
-                    color: AppColors.error,
-                    icon: Icons.location_on_rounded,
-                    label: 'Dropoff',
-                  ),
-                // Driver's live position
-                _labeledMarker(
-                  point: driverPoint,
-                  color: AppColors.primary,
-                  icon: Icons.directions_car_rounded,
-                  label: widget.driverLabel ?? 'Driver',
-                  glow: true,
+            // Passenger's own position ("you")
+            if (widget.ownPosition != null)
+              Marker(
+                markerId: const MarkerId('own'),
+                position: LatLng(
+                  widget.ownPosition!.latitude,
+                  widget.ownPosition!.longitude,
                 ),
-                // Passenger's own position ("you")
-                if (widget.ownPosition != null)
-                  Marker(
-                    point: LatLng(
-                      widget.ownPosition!.latitude,
-                      widget.ownPosition!.longitude,
-                    ),
-                    child: Container(
-                      padding: EdgeInsets.all(4.w),
-                      decoration: BoxDecoration(
-                        color: AppColors.white,
-                        shape: BoxShape.circle,
-                        border:
-                            Border.all(color: AppColors.primary, width: 2.5),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.15),
-                            blurRadius: 6,
-                          ),
-                        ],
-                      ),
-                      child: Icon(Icons.person_rounded,
-                          color: AppColors.primary, size: 14.w),
-                    ),
-                  ),
-              ],
-            ),
-          ],
+                icon: _ownIcon ?? BitmapDescriptor.defaultMarker,
+                anchor: const Offset(0.5, 0.5),
+                zIndexInt: 1,
+              ),
+          },
         ),
         Positioned(
           right: 12.w,
@@ -162,114 +199,13 @@ class _LiveMapCardState extends State<LiveMapCard> {
   }
 }
 
-/// A pin (circular icon badge) with a floating [label] chip above it. The pin's
-/// bottom sits on the [point] so the chip reads cleanly above the marker.
-Marker _labeledMarker({
-  required LatLng point,
-  required Color color,
-  required IconData icon,
-  required String label,
-  bool glow = false,
-}) {
-  return Marker(
-    point: point,
-    width: 120.w,
-    height: 64.w,
-    alignment: Alignment.bottomCenter,
-    child: Align(
-      alignment: Alignment.bottomCenter,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _HintChip(text: label, color: color),
-          SizedBox(height: 4.w),
-          _PinCircle(color: color, icon: icon, glow: glow),
-        ],
-      ),
-    ),
-  );
-}
-
-class _PinCircle extends StatelessWidget {
-  const _PinCircle({
-    required this.color,
-    required this.icon,
-    this.glow = false,
-  });
-
-  final Color color;
-  final IconData icon;
-  final bool glow;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.all(6.w),
-      decoration: BoxDecoration(
-        color: color,
-        shape: BoxShape.circle,
-        boxShadow: glow
-            ? [
-                BoxShadow(
-                  color: color.withValues(alpha: 0.4),
-                  blurRadius: 8,
-                  spreadRadius: 2,
-                ),
-              ]
-            : null,
-      ),
-      child: Icon(icon, color: AppColors.white, size: 18.w),
-    );
-  }
-}
-
-class _HintChip extends StatelessWidget {
-  const _HintChip({required this.text, required this.color});
-
-  final String text;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
-      constraints: BoxConstraints(maxWidth: 100.w),
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(8.r),
-        border: Border.all(color: color, width: 1.5),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.15),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Text(
-        text,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        textAlign: TextAlign.center,
-        style: AppTextStyles.labelSmall(context).copyWith(
-          color: color,
-          fontWeight: FontWeight.w700,
-        ),
-      ),
-    );
-  }
-}
-
 class _MapZoomButtons extends StatelessWidget {
   const _MapZoomButtons({required this.controller});
 
-  final MapController controller;
+  final GoogleMapController? controller;
 
   void _zoom(double delta) {
-    controller.move(
-      controller.camera.center,
-      controller.camera.zoom + delta,
-    );
+    controller?.animateCamera(CameraUpdate.zoomBy(delta));
   }
 
   @override

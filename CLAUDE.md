@@ -67,7 +67,7 @@ Static singleton holding access/refresh tokens plus flags (`isNewUser`, `waiting
 
 ### Maps
 
-OSM-based via **flutter_map** + **latlong2** (no Google Maps API key). Location permission/positioning via **geolocator**. The same permission flow is reused by `LocationPickerCubit` and `DriverLocationStreamer`.
+Google Maps via **google_maps_flutter** (`LatLng` comes from this package). The API key lives in [AndroidManifest.xml](android/app/src/main/AndroidManifest.xml) (`com.google.android.geo.API_KEY`) and [AppDelegate.swift](ios/Runner/AppDelegate.swift) (`GMSServices.provideAPIKey`). Custom markers are painted to bitmaps by [map_marker_factory.dart](lib/core/utils/map_marker_factory.dart). Place search / reverse geocoding in `LocationPickerCubit` still uses Nominatim (to be replaced by a backend API). Location permission/positioning via **geolocator**. The same permission flow is reused by `LocationPickerCubit` and `DriverLocationStreamer`.
 
 ## Backend contract — `swagger/` is authoritative
 

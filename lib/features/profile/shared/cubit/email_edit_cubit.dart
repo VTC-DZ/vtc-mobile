@@ -1,4 +1,5 @@
 import 'package:flutter/widgets.dart';
+import 'package:khfif_drif/core/errors/api_exception.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/utils/validators.dart';
@@ -39,7 +40,7 @@ class EmailEditCubit extends Cubit<EmailEditState> {
     } catch (e) {
       emit(state.copyWith(
         status: EmailEditStatus.failure,
-        errorMessage: e is String ? e : 'Failed to update email.',
+        errorMessage: e is ApiException ? e.message : 'Failed to update email.',
       ));
     }
   }

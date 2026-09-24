@@ -1,4 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:khfif_drif/core/errors/api_exception.dart';
 
 import '../../../data/repo/driver_repository.dart';
 import 'kyc_status_state.dart';
@@ -21,7 +22,7 @@ final class KycStatusCubit extends Cubit<KycStatusState> {
     } catch (e) {
       emit(state.copyWith(
         status: KycStatusViewStatus.failure,
-        errorMessage: e is String ? e : 'Failed to load KYC status.',
+        errorMessage: e is ApiException ? e.message : 'Failed to load KYC status.',
       ));
     }
   }

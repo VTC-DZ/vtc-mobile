@@ -1,4 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:khfif_drif/core/errors/api_exception.dart';
 
 import '../../../../../ride/shared/models/shared_ride_models.dart';
 import '../../../data/driver_service_types_repository.dart';
@@ -30,7 +31,7 @@ class DriverServiceTypesCubit extends Cubit<DriverServiceTypesState> {
     } catch (e) {
       emit(state.copyWith(
         status: DriverServiceTypesStatus.failed,
-        errorMessage: e is String ? e : 'Failed to update service types.',
+        errorMessage: e is ApiException ? e.message : 'Failed to update service types.',
         clearPending: true,
       ));
     }

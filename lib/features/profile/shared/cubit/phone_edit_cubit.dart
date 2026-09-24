@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:khfif_drif/core/errors/api_exception.dart';
 
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -51,7 +52,7 @@ class PhoneEditCubit extends Cubit<PhoneEditState> {
     } catch (e) {
       emit(state.copyWith(
         status: PhoneEditStatus.failure,
-        errorMessage: e is String ? e : 'Failed to send code.',
+        errorMessage: e is ApiException ? e.message : 'Failed to send code.',
       ));
     }
   }
@@ -85,7 +86,7 @@ class PhoneEditCubit extends Cubit<PhoneEditState> {
       } else {
         emit(state.copyWith(
           status: PhoneEditStatus.failure,
-          errorMessage: e is String ? e : 'Incorrect code, try again',
+          errorMessage: e is ApiException ? e.message : 'Incorrect code, try again',
         ));
       }
     }
@@ -110,7 +111,7 @@ class PhoneEditCubit extends Cubit<PhoneEditState> {
     } catch (e) {
       emit(state.copyWith(
         status: PhoneEditStatus.failure,
-        errorMessage: e is String ? e : 'Could not resend code.',
+        errorMessage: e is ApiException ? e.message : 'Could not resend code.',
       ));
     }
   }

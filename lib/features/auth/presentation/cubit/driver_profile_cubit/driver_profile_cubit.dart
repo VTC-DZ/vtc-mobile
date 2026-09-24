@@ -1,4 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:khfif_drif/core/errors/api_exception.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../../../core/constants/app_strings.dart';
@@ -206,7 +207,7 @@ final class DriverProfileCubit extends Cubit<DriverProfileState> {
     } catch (e) {
       emit(state.copyWith(
         status: DriverRegistrationStatus.failure,
-        errorMessage: e is String ? e : 'Submission failed. Please try again.',
+        errorMessage: e is ApiException ? e.message : 'Submission failed. Please try again.',
       ));
     }
   }

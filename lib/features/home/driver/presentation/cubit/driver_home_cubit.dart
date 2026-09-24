@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:khfif_drif/core/errors/api_exception.dart';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -28,7 +29,7 @@ class DriverHomeCubit extends Cubit<DriverHomeState> {
     } catch (e) {
       emit(state.copyWith(
         status: DriverHomeStatus.failure,
-        errorMessage: e is String ? e : 'Failed to load profile.',
+        errorMessage: e is ApiException ? e.message : 'Failed to load profile.',
       ));
     }
   }

@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:latlong2/latlong.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import '../../../../../../../core/theme/app_colors.dart';
+import '../../../../../../../core/utils/map_gestures.dart';
+import '../../../../../../../core/utils/map_marker_factory.dart';
 import '../../../../../../../core/widgets/app_toast.dart';
 import '../../../../data/models/driver_ride_models.dart';
 import '../../../../../passenger/presentation/views/widgets/location/map_button.dart';
@@ -27,11 +28,45 @@ class ActiveRideMap extends StatefulWidget {
 }
 
 class _ActiveRideMapState extends State<ActiveRideMap> {
-  final _mapController = MapController();
+  GoogleMapController? _mapController;
+  BitmapDescriptor _pickupIcon = BitmapDescriptor.defaultMarker;
+  BitmapDescriptor _dropoffIcon = BitmapDescriptor.defaultMarker;
+  BitmapDescriptor _driverIcon = BitmapDescriptor.defaultMarker;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadIcons();
+  }
+
+  Future<void> _loadIcons() async {
+    final icons = await Future.wait([
+      MapMarkerFactory.circle(
+        color: AppColors.primary,
+        icon: Icons.trip_origin_rounded,
+        glow: true,
+      ),
+      MapMarkerFactory.circle(
+        color: AppColors.error,
+        icon: Icons.location_on_rounded,
+      ),
+      MapMarkerFactory.circle(
+        color: Colors.blue.shade700,
+        icon: Icons.directions_car_rounded,
+        glow: true,
+      ),
+    ]);
+    if (!mounted) return;
+    setState(() {
+      _pickupIcon = icons[0];
+      _dropoffIcon = icons[1];
+      _driverIcon = icons[2];
+    });
+  }
 
   @override
   void dispose() {
-    _mapController.dispose();
+    _mapController?.dispose();
     super.dispose();
   }
 
@@ -43,106 +78,59 @@ class _ActiveRideMapState extends State<ActiveRideMap> {
       AppToast.error('Locating your position, please wait.');
       return;
     }
-    _mapController.move(
-      LatLng(position.latitude, position.longitude),
-      _mapController.camera.zoom,
+    _mapController?.animateCamera(
+      CameraUpdate.newLatLng(LatLng(position.latitude, position.longitude)),
     );
   }
 
-  void _zoomIn() {
-    final camera = _mapController.camera;
-    _mapController.move(camera.center, (camera.zoom + 1).clamp(0, 19));
-  }
+  void _zoomIn() => _mapController?.animateCamera(CameraUpdate.zoomIn());
 
-  void _zoomOut() {
-    final camera = _mapController.camera;
-    _mapController.move(camera.center, (camera.zoom - 1).clamp(0, 19));
-  }
+  void _zoomOut() => _mapController?.animateCamera(CameraUpdate.zoomOut());
 
   @override
   Widget build(BuildContext context) {
     final pickupPoint = LatLng(widget.ride.pickup.lat, widget.ride.pickup.lng);
     final dropoffPoint =
         LatLng(widget.ride.dropoff.lat, widget.ride.dropoff.lng);
+    const center = Offset(0.5, 0.5);
 
     return Stack(
       children: [
-        FlutterMap(
-          mapController: _mapController,
-          options: MapOptions(
-            // Center on the passenger (pickup) when the active ride opens, so
-            // the driver immediately sees where to pick them up.
-            initialCenter: pickupPoint,
-            initialZoom: 15,
-          ),
-          children: [
-            TileLayer(
-              urlTemplate:
-                  'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-              userAgentPackageName: 'khfif_drif',
+        GoogleMap(
+          gestureRecognizers: mapGestureRecognizers,
+          onMapCreated: (controller) => _mapController = controller,
+          // Center on the passenger (pickup) when the active ride opens, so
+          // the driver immediately sees where to pick them up.
+          initialCameraPosition: CameraPosition(target: pickupPoint, zoom: 15),
+          zoomControlsEnabled: false,
+          myLocationButtonEnabled: false,
+          mapToolbarEnabled: false,
+          markers: {
+            Marker(
+              markerId: const MarkerId('pickup'),
+              position: pickupPoint,
+              icon: _pickupIcon,
+              anchor: center,
             ),
-            MarkerLayer(
-              markers: [
-                // Pickup marker
-                Marker(
-                  point: pickupPoint,
-                  child: Container(
-                    padding: EdgeInsets.all(6.w),
-                    decoration: BoxDecoration(
-                      color: AppColors.primary,
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.primary.withValues(alpha: 0.4),
-                          blurRadius: 8,
-                          spreadRadius: 2,
-                        ),
-                      ],
-                    ),
-                    child: Icon(Icons.trip_origin_rounded,
-                        color: AppColors.white, size: 16.w),
-                  ),
-                ),
-                // Dropoff marker
-                Marker(
-                  point: dropoffPoint,
-                  child: Container(
-                    padding: EdgeInsets.all(6.w),
-                    decoration: const BoxDecoration(
-                      color: AppColors.error,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(Icons.location_on_rounded,
-                        color: AppColors.white, size: 16.w),
-                  ),
-                ),
-                // Driver's own GPS position
-                if (widget.driverPosition != null)
-                  Marker(
-                    point: LatLng(
-                      widget.driverPosition!.latitude,
-                      widget.driverPosition!.longitude,
-                    ),
-                    child: Container(
-                      padding: EdgeInsets.all(6.w),
-                      decoration: BoxDecoration(
-                        color: Colors.blue.shade700,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.blue.withValues(alpha: 0.4),
-                            blurRadius: 8,
-                            spreadRadius: 2,
-                          ),
-                        ],
-                      ),
-                      child: Icon(Icons.directions_car_rounded,
-                          color: AppColors.white, size: 16.w),
-                    ),
-                  ),
-              ],
+            Marker(
+              markerId: const MarkerId('dropoff'),
+              position: dropoffPoint,
+              icon: _dropoffIcon,
+              anchor: center,
             ),
-          ],
+            // Driver's own GPS position
+            if (widget.driverPosition != null)
+              Marker(
+                markerId: const MarkerId('driver'),
+                position: LatLng(
+                  widget.driverPosition!.latitude,
+                  widget.driverPosition!.longitude,
+                ),
+                icon: _driverIcon,
+                anchor: center,
+                zIndexInt: 1,
+              ),
+          },
         ),
 
         // Map controls: current location + zoom in/out (top-right)

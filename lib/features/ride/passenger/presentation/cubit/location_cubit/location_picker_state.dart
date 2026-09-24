@@ -1,5 +1,5 @@
 import 'package:equatable/equatable.dart';
-import 'package:latlong2/latlong.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class NominatimPlace {
   const NominatimPlace({

@@ -1,4 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:khfif_drif/core/errors/api_exception.dart';
 
 import '../../../data/driver_profile_repository.dart';
 import 'driver_profile_state.dart';
@@ -28,7 +29,7 @@ class DriverProfileCubit extends Cubit<DriverProfileState> {
     } catch (e) {
       emit(state.copyWith(
         status: DriverProfileStatus.failed,
-        errorMessage: e is String ? e : 'Failed to update preference.',
+        errorMessage: e is ApiException ? e.message : 'Failed to update preference.',
       ));
     }
   }

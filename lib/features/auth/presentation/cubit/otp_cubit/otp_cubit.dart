@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:khfif_drif/core/errors/api_exception.dart';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -53,7 +54,7 @@ final class OtpCubit extends Cubit<OtpState> {
       } else {
         emit(state.copyWith(
           status: OtpStatus.failure,
-          errorMessage: e is String ? e : 'Incorrect code, try again',
+          errorMessage: e is ApiException ? e.message : 'Incorrect code, try again',
         ));
       }
     }
@@ -78,7 +79,7 @@ final class OtpCubit extends Cubit<OtpState> {
       emit(state.copyWith(
         status: OtpStatus.failure,
         errorMessage:
-            e is String ? e : 'Could not resend OTP. Please try again.',
+            e is ApiException ? e.message : 'Could not resend OTP. Please try again.',
       ));
     }
   }

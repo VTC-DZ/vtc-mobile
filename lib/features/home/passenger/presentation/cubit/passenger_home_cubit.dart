@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:khfif_drif/core/errors/api_exception.dart';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:khfif_drif/core/session/auth_session.dart';
@@ -31,7 +32,7 @@ class PassengerHomeCubit extends Cubit<PassengerHomeState> {
     } catch (e) {
       emit(state.copyWith(
         status: PassengerHomeStatus.failure,
-        errorMessage: e is String ? e : 'Failed to load profile.',
+        errorMessage: e is ApiException ? e.message : 'Failed to load profile.',
       ));
     }
   }

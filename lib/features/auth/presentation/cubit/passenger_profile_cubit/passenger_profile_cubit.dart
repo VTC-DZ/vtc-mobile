@@ -1,4 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:khfif_drif/core/errors/api_exception.dart';
 
 import '../../../../../core/utils/validators.dart';
 import '../../../data/models/gender.dart';
@@ -43,7 +44,7 @@ final class PassengerProfileCubit extends Cubit<PassengerProfileState> {
       emit(state.copyWith(
         status: ProfileStatus.failure,
         errorMessage:
-            e is String ? e : 'Something went wrong. Please try again.',
+            e is ApiException ? e.message : 'Something went wrong. Please try again.',
       ));
     }
   }

@@ -2,12 +2,14 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_text_styles.dart';
+import '../../../../../core/utils/map_gestures.dart';
+import '../../../../../core/utils/map_marker_factory.dart';
 import '../../../../../core/widgets/app_toast.dart';
 import '../../../../../shared/widgets/bottomsheets/app_option_sheet.dart';
 import '../../../../../shared/widgets/primary_button.dart';
@@ -31,7 +33,8 @@ class LocationPickerView extends StatefulWidget {
 }
 
 class _LocationPickerViewState extends State<LocationPickerView> {
-  final _mapController = MapController();
+  GoogleMapController? _mapController;
+  BitmapDescriptor _pinIcon = BitmapDescriptor.defaultMarker;
   final _searchCtrl = TextEditingController();
   final _searchFocus = FocusNode();
   final _addressRepository = const AddressRepository();
@@ -42,11 +45,17 @@ class _LocationPickerViewState extends State<LocationPickerView> {
   void initState() {
     super.initState();
     context.read<LocationPickerCubit>().init(initial: widget.args.initial);
+    _loadPinIcon();
+  }
+
+  Future<void> _loadPinIcon() async {
+    final icon = await MapMarkerFactory.pin(color: AppColors.primary);
+    if (mounted) setState(() => _pinIcon = icon);
   }
 
   @override
   void dispose() {
-    _mapController.dispose();
+    _mapController?.dispose();
     _searchCtrl.dispose();
     _searchFocus.dispose();
     _searchDebounce?.cancel();
@@ -60,15 +69,12 @@ class _LocationPickerViewState extends State<LocationPickerView> {
     });
   }
 
-  void _zoomIn() {
-    final camera = _mapController.camera;
-    _mapController.move(camera.center, (camera.zoom + 1).clamp(0, 19));
-  }
+  void _zoomIn() => _mapController?.animateCamera(CameraUpdate.zoomIn());
 
-  void _zoomOut() {
-    final camera = _mapController.camera;
-    _mapController.move(camera.center, (camera.zoom - 1).clamp(0, 19));
-  }
+  void _zoomOut() => _mapController?.animateCamera(CameraUpdate.zoomOut());
+
+  void _moveCamera(LatLng target) =>
+      _mapController?.animateCamera(CameraUpdate.newLatLng(target));
 
   /// Moves the camera to the device's current GPS position.
   ///
@@ -82,8 +88,7 @@ class _LocationPickerViewState extends State<LocationPickerView> {
     final ok = await cubit.goToMyLocation();
     if (!mounted) return;
     if (ok) {
-      _mapController.move(
-          cubit.state.mapCenter, _mapController.camera.zoom);
+      _moveCamera(cubit.state.mapCenter);
     } else {
       AppToast.error(
           cubit.state.errorMessage ?? 'Could not get your location.');
@@ -138,7 +143,7 @@ class _LocationPickerViewState extends State<LocationPickerView> {
     return BlocListener<LocationPickerCubit, LocationPickerState>(
       listenWhen: (prev, curr) => prev.mapCenter != curr.mapCenter,
       listener: (context, state) {
-        _mapController.move(state.mapCenter, _mapController.camera.zoom);
+        _moveCamera(state.mapCenter);
       },
       child: Scaffold(
         body: BlocBuilder<LocationPickerCubit, LocationPickerState>(
@@ -148,44 +153,28 @@ class _LocationPickerViewState extends State<LocationPickerView> {
             return Stack(
               children: [
                 // ── Map ──────────────────────────────────────────────────────
-                FlutterMap(
-                  mapController: _mapController,
-                  options: MapOptions(
-                    initialCenter: state.mapCenter,
-                    initialZoom: 15,
-                    onTap: (tapPosition, latLng) => cubit.onMapTap(latLng),
-                  ),
-                  children: [
-                    TileLayer(
-                      urlTemplate:
-                          'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                      userAgentPackageName: 'com.khfif.drif',
-                    ),
+                GoogleMap(
+                  gestureRecognizers: mapGestureRecognizers,
+                  onMapCreated: (controller) {
+                    _mapController = controller;
+                    // The GPS fix may have landed before the map existed.
+                    _moveCamera(cubit.state.mapCenter);
+                  },
+                  initialCameraPosition:
+                      CameraPosition(target: state.mapCenter, zoom: 15),
+                  onTap: cubit.onMapTap,
+                  zoomControlsEnabled: false,
+                  myLocationButtonEnabled: false,
+                  mapToolbarEnabled: false,
+                  markers: {
                     if (state.selectedPosition != null)
-                      MarkerLayer(
-                        markers: [
-                          Marker(
-                            point: state.selectedPosition!,
-                            width: 44.w,
-                            height: 44.w,
-                            alignment: Alignment.topCenter,
-                            child: Icon(
-                              Icons.location_on_rounded,
-                              size: 44.w,
-                              color: AppColors.primary,
-                              shadows: [
-                                Shadow(
-                                  color:
-                                      AppColors.black.withValues(alpha: 0.3),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
+                      Marker(
+                        markerId: const MarkerId('selected'),
+                        position: state.selectedPosition!,
+                        icon: _pinIcon,
+                        anchor: const Offset(0.5, 1),
                       ),
-                  ],
+                  },
                 ),
 
                 // ── Geocoding indicator ───────────────────────────────────────

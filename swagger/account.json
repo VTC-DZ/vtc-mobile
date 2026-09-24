@@ -6,7 +6,10 @@
     "version": "0.1.0-SNAPSHOT"
   },
   "servers": [
-    { "url": "http://localhost:8080", "description": "Generated server url" }
+    {
+      "url": "http://vtc-api-dev.duckdns.org",
+      "description": "Generated server url"
+    }
   ],
   "tags": [
     {
