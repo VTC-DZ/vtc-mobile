@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:math' as math;
 
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -130,6 +131,35 @@ abstract final class MapGeo {
     if (path.length < 2) return path;
     final nearest = nearestOnPath(position, path);
     return [nearest.snapped, ...path.skip(nearest.segmentIndex + 1)];
+  }
+
+  /// Points of a GeoJSON `LineString` — given as the geometry itself, a
+  /// `Feature` wrapping it, or either one encoded as a JSON string. GeoJSON
+  /// positions are `[lng, lat]`. Returns `null` for anything else, or when
+  /// fewer than two positions parse.
+  static List<LatLng>? lineStringPoints(Object? geoJson) {
+    var json = geoJson;
+    if (json is String) {
+      try {
+        json = jsonDecode(json);
+      } on FormatException {
+        return null;
+      }
+    }
+    if (json is! Map) return null;
+    if (json['type'] == 'Feature') json = json['geometry'];
+    if (json is! Map || json['type'] != 'LineString') return null;
+    final coordinates = json['coordinates'];
+    if (coordinates is! List) return null;
+
+    final points = <LatLng>[];
+    for (final c in coordinates) {
+      if (c is! List || c.length < 2) return null;
+      final (lng, lat) = (c[0], c[1]);
+      if (lng is! num || lat is! num) return null;
+      points.add(LatLng(lat.toDouble(), lng.toDouble()));
+    }
+    return points.length < 2 ? null : points;
   }
 
   static double _rad(double deg) => deg * math.pi / 180;

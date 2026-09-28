@@ -120,4 +120,72 @@ void main() {
       expect(remaining, path);
     });
   });
+
+  group('MapGeo.lineStringPoints', () {
+    const lineString = {
+      'type': 'LineString',
+      'coordinates': [
+        [3.0588, 36.7538],
+        [3.06, 36.76],
+      ],
+    };
+    const expected = [LatLng(36.7538, 3.0588), LatLng(36.76, 3.06)];
+
+    test('reads a LineString geometry as [lng, lat] positions', () {
+      expect(MapGeo.lineStringPoints(lineString), expected);
+    });
+
+    test('unwraps a Feature', () {
+      expect(
+        MapGeo.lineStringPoints(const {
+          'type': 'Feature',
+          'properties': <String, dynamic>{},
+          'geometry': lineString,
+        }),
+        expected,
+      );
+    });
+
+    test('decodes a JSON-encoded geometry', () {
+      expect(
+        MapGeo.lineStringPoints(
+          '{"type":"LineString","coordinates":[[3.0588,36.7538],[3.06,36.76]]}',
+        ),
+        expected,
+      );
+    });
+
+    test('returns null for anything that is not a usable LineString', () {
+      expect(MapGeo.lineStringPoints(null), isNull);
+      expect(MapGeo.lineStringPoints('not json'), isNull);
+      expect(MapGeo.lineStringPoints(const <String, dynamic>{}), isNull);
+      expect(
+        MapGeo.lineStringPoints(const {
+          'type': 'Point',
+          'coordinates': [3.0588, 36.7538],
+        }),
+        isNull,
+      );
+      expect(
+        MapGeo.lineStringPoints(const {
+          'type': 'LineString',
+          'coordinates': [
+            [3.0588, 36.7538],
+          ],
+        }),
+        isNull,
+        reason: 'a single position is not a path',
+      );
+      expect(
+        MapGeo.lineStringPoints(const {
+          'type': 'LineString',
+          'coordinates': [
+            [3.0588, 36.7538],
+            ['x', 'y'],
+          ],
+        }),
+        isNull,
+      );
+    });
+  });
 }

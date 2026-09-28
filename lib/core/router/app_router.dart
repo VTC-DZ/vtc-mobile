@@ -44,11 +44,14 @@ import '../../features/ride/passenger/data/places_repository.dart';
 import '../../features/ride/passenger/presentation/cubit/location_cubit/location_picker_cubit.dart';
 import '../../features/ride/passenger/presentation/cubit/location_cubit/location_picker_state.dart';
 import '../../features/ride/passenger/presentation/cubit/passenger_active_ride_cubit/passenger_active_ride_cubit.dart';
+import '../../features/ride/passenger/data/models/passenger_ride_history_models.dart';
+import '../../features/ride/passenger/presentation/cubit/passenger_ride_detail_cubit/passenger_ride_detail_cubit.dart';
 import '../../features/ride/passenger/presentation/cubit/passenger_ride_history_cubit/passenger_ride_history_cubit.dart';
 import '../../features/ride/passenger/presentation/cubit/ride_request_cubit/ride_request_cubit.dart';
 import '../../features/ride/passenger/presentation/cubit/waiting_offers_cubit/waiting_offers_cubit.dart';
 import '../../features/ride/passenger/presentation/views/location_picker_view.dart';
 import '../../features/ride/passenger/presentation/views/passenger_active_ride_view.dart';
+import '../../features/ride/passenger/presentation/views/passenger_ride_detail_view.dart';
 import '../../features/ride/passenger/presentation/views/passenger_ride_history_view.dart';
 import '../../features/ride/passenger/presentation/views/ride_request_view.dart';
 import '../../features/ride/passenger/presentation/views/waiting_offers_view.dart';
@@ -256,6 +259,22 @@ final class AppRouter {
                     const PassengerRideRepository(),
                   )..loadHistory(),
                   child: const PassengerRideHistoryView(),
+                );
+              },
+            ),
+            GoRoute(
+              path: RouteNames.passengerRideDetail,
+              builder: (context, state) {
+                final summary = state.extra;
+                if (summary is! PassengerRideHistoryItem) {
+                  return const PassengerRideDetailMissing();
+                }
+                return BlocProvider<PassengerRideDetailCubit>(
+                  create: (_) => PassengerRideDetailCubit(
+                    const PassengerRideRepository(),
+                    summary: summary,
+                  )..load(),
+                  child: const PassengerRideDetailView(),
                 );
               },
             ),

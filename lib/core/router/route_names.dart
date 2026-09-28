@@ -35,4 +35,5 @@ abstract final class RouteNames {
   static const String driverActiveRide = '/driver-active-ride';
   static const String passengerActiveRide = '/passenger-active-ride';
   static const String passengerRideHistory = '/passenger-ride-history';
+  static const String passengerRideDetail = '/passenger-ride-detail';
 }

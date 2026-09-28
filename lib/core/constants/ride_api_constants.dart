@@ -15,6 +15,8 @@ abstract final class PassengerRideApiConstants {
   static String counterOffer(String rideRequestId) =>
       '$_base/$rideRequestId/counter-offer';
   static String cancel(String rideRequestId) => '$_base/$rideRequestId/cancel';
-  static String get(String rideId) => '$_base/$rideId';
+
+  /// Detail of a past or current ride, keyed by its ride *request* id.
+  static String detail(String rideRequestId) => '$_base/$rideRequestId';
   static const String active = '$_base/active';
 }

@@ -1,6 +1,8 @@
 import 'package:equatable/equatable.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
+import '../../../../../core/utils/map_geo.dart';
+
 /// A driving route that follows the road network.
 final class RoadRoute extends Equatable {
   const RoadRoute({
@@ -22,17 +24,12 @@ final class RoadRoute extends Equatable {
       throw FormatException('No route found (${json['code']})');
     }
     final route = routes.first as Map<String, dynamic>;
-    final geometry = route['geometry'] as Map<String, dynamic>;
-    final coordinates = geometry['coordinates'] as List<dynamic>;
+    final points = MapGeo.lineStringPoints(route['geometry']);
+    if (points == null) {
+      throw const FormatException('Route geometry is not a LineString');
+    }
     return RoadRoute(
-      // GeoJSON positions are [lng, lat].
-      points: coordinates.map((c) {
-        final position = c as List<dynamic>;
-        return LatLng(
-          (position[1] as num).toDouble(),
-          (position[0] as num).toDouble(),
-        );
-      }).toList(),
+      points: points,
       distanceMeters: (route['distance'] as num).toDouble(),
       durationSeconds: (route['duration'] as num).toDouble(),
     );

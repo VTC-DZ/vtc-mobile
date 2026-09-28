@@ -252,13 +252,13 @@ final class DriverInRide {
   factory DriverInRide.fromJson(Map<String, dynamic> json) {
     final pos = json['currentPosition'] as Map<String, dynamic>?;
     return DriverInRide(
-      id: json['id'] as String,
-      fullName: json['fullName'] as String,
-      phone: json['phone'] as String,
-      vehicleModel: json['vehicleModel'] as String,
-      vehiclePlate: json['vehiclePlate'] as String,
-      currentLat: pos != null ? (pos['lat'] as num).toDouble() : null,
-      currentLng: pos != null ? (pos['lng'] as num).toDouble() : null,
+      id: (json['id'] as String?) ?? '',
+      fullName: (json['fullName'] as String?) ?? '',
+      phone: (json['phone'] as String?) ?? '',
+      vehicleModel: (json['vehicleModel'] as String?) ?? '',
+      vehiclePlate: (json['vehiclePlate'] as String?) ?? '',
+      currentLat: (pos?['lat'] as num?)?.toDouble(),
+      currentLng: (pos?['lng'] as num?)?.toDouble(),
     );
   }
 }
