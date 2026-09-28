@@ -66,4 +66,58 @@ void main() {
       expect(bounds.contains(p), isTrue);
     });
   });
+
+  // An L-shaped path in Algiers: east along a street, then north.
+  const corner = LatLng(36.7500, 3.0600);
+  const path = [LatLng(36.7500, 3.0500), corner, LatLng(36.7600, 3.0600)];
+
+  group('MapGeo.nearestOnPath', () {
+    test('a point on the path snaps to itself', () {
+      const p = LatLng(36.7500, 3.0550);
+      final nearest = MapGeo.nearestOnPath(p, path);
+      expect(nearest.segmentIndex, 0);
+      expect(nearest.distanceMeters, closeTo(0, 0.01));
+      expect(nearest.snapped.longitude, closeTo(3.0550, 1e-9));
+    });
+
+    test('a point beside a segment snaps perpendicularly onto it', () {
+      // ~111 m north of the first segment's midpoint.
+      const p = LatLng(36.7510, 3.0550);
+      final nearest = MapGeo.nearestOnPath(p, path);
+      expect(nearest.segmentIndex, 0);
+      expect(nearest.distanceMeters, closeTo(111.2, 1));
+      expect(nearest.snapped.latitude, closeTo(36.7500, 1e-9));
+      expect(nearest.snapped.longitude, closeTo(3.0550, 1e-9));
+    });
+
+    test('picks the closer segment', () {
+      const p = LatLng(36.7550, 3.0605);
+      final nearest = MapGeo.nearestOnPath(p, path);
+      expect(nearest.segmentIndex, 1);
+      expect(nearest.snapped.longitude, closeTo(3.0600, 1e-9));
+    });
+
+    test('a point beyond the ends clamps to the endpoint', () {
+      const p = LatLng(36.7500, 3.0400);
+      final nearest = MapGeo.nearestOnPath(p, path);
+      expect(nearest.segmentIndex, 0);
+      expect(nearest.snapped, path.first);
+    });
+  });
+
+  group('MapGeo.remainingPath', () {
+    test('drops the travelled part and starts at the snapped position', () {
+      final remaining =
+          MapGeo.remainingPath(const LatLng(36.7552, 3.0601), path);
+      expect(remaining, hasLength(2));
+      expect(remaining.first.latitude, closeTo(36.7552, 1e-9));
+      expect(remaining.first.longitude, closeTo(3.0600, 1e-9));
+      expect(remaining.last, path.last);
+    });
+
+    test('before the start keeps the whole path', () {
+      final remaining = MapGeo.remainingPath(const LatLng(36.75, 3.04), path);
+      expect(remaining, path);
+    });
+  });
 }

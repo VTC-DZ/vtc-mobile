@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -6,13 +7,16 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../../../../../../../core/utils/map_geo.dart';
 import '../../../../../../../core/utils/map_gestures.dart';
 import '../../../../../../../core/widgets/app_toast.dart';
+import '../../../../../shared/presentation/cubit/ride_route_cubit/ride_route_cubit.dart';
+import '../../../../../shared/presentation/cubit/ride_route_cubit/ride_route_state.dart';
 import '../../../../../shared/widgets/ride_map_style.dart';
 import '../../../../data/models/driver_ride_models.dart';
 import '../../../../../passenger/presentation/views/widgets/location/map_button.dart';
 
 /// Full-screen live map for the driver's active ride. Shows pickup and dropoff
 /// pins, the driver's own GPS position as a car that turns with its heading,
-/// and stage-aware guide lines, with built-in camera controls.
+/// and stage-aware road routes (from the ambient [RideRouteCubit]), with
+/// built-in camera controls.
 class ActiveRideMap extends StatefulWidget {
   const ActiveRideMap({
     super.key,
@@ -56,6 +60,7 @@ class _ActiveRideMapState extends State<ActiveRideMap> {
   void initState() {
     super.initState();
     _updateHeading();
+    _syncRoute();
     RideMapIcons.load().then((icons) {
       if (mounted) setState(() => _icons = icons);
     });
@@ -64,14 +69,33 @@ class _ActiveRideMapState extends State<ActiveRideMap> {
   @override
   void didUpdateWidget(ActiveRideMap oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.driverPosition != oldWidget.driverPosition) _updateHeading();
+    final moved = widget.driverPosition != oldWidget.driverPosition;
+    final stageChanged = widget.ride.state != oldWidget.ride.state;
+    if (moved) _updateHeading();
+    if (moved || stageChanged) _syncRoute();
 
     // Reframe when the first GPS fix arrives, and when the trip starts (the
     // target switches from pickup to dropoff).
     final gotFirstFix = !_fittedWithDriver && widget.driverPosition != null;
-    final stageChanged = widget.ride.state != oldWidget.ride.state;
     if (gotFirstFix || stageChanged) _fitRoute();
   }
+
+  void _syncRoute() {
+    context.read<RideRouteCubit>().update(
+          driver: _driver,
+          pickup: _pickup,
+          dropoff: _dropoff,
+          tripStarted: _tripStarted,
+        );
+  }
+
+  RideMapLegs _legs(RideRouteState route) => RideMapStyle.resolveLegs(
+        route,
+        driver: _driver,
+        pickup: _pickup,
+        dropoff: _dropoff,
+        tripStarted: _tripStarted,
+      );
 
   void _updateHeading() {
     final position = widget.driverPosition;
@@ -99,15 +123,14 @@ class _ActiveRideMapState extends State<ActiveRideMap> {
 
   /// Frames the leg that matters now: driver → pickup before the trip,
   /// driver → dropoff during it (pickup → dropoff while GPS is unknown).
+  /// Frames the whole road path, which can bulge past its endpoints.
   void _fitRoute() {
     final controller = _mapController;
     if (controller == null) return;
-    final driver = _driver;
-    _fittedWithDriver = driver != null;
-    final target = _tripStarted ? _dropoff : _pickup;
+    _fittedWithDriver = _driver != null;
     RideMapStyle.fitCamera(
       controller,
-      driver == null ? [_pickup, _dropoff] : [driver, target],
+      _legs(context.read<RideRouteCubit>().state).focus,
     );
   }
 
@@ -134,60 +157,64 @@ class _ActiveRideMapState extends State<ActiveRideMap> {
 
     return Stack(
       children: [
-        GoogleMap(
-          gestureRecognizers: mapGestureRecognizers,
-          onMapCreated: (controller) {
-            _mapController = controller;
-            _fitRoute();
-          },
-          // Center on the passenger (pickup) until the camera is framed.
-          initialCameraPosition: CameraPosition(target: _pickup, zoom: 15),
-          // Keep framed content clear of the back button and bottom sheet.
-          padding: EdgeInsets.only(
-            top: media.padding.top + 56.h,
-            bottom: media.size.height * 0.42,
-          ),
-          zoomControlsEnabled: false,
-          myLocationButtonEnabled: false,
-          mapToolbarEnabled: false,
-          compassEnabled: false,
-          polylines: RideMapStyle.polylines(
-            driver: driver,
-            pickup: _pickup,
-            dropoff: _dropoff,
-            tripStarted: _tripStarted,
-          ),
-          markers: {
-            if (icons != null) ...{
-              Marker(
-                markerId: const MarkerId('pickup'),
-                position: _pickup,
-                icon: icons.pickup.descriptor,
-                anchor: icons.pickup.anchor,
-                // The passenger is on board once the trip starts.
-                alpha: _tripStarted ? 0.5 : 1,
-                zIndexInt: 1,
-              ),
-              Marker(
-                markerId: const MarkerId('dropoff'),
-                position: _dropoff,
-                icon: icons.dropoff.descriptor,
-                anchor: icons.dropoff.anchor,
-                zIndexInt: 1,
-              ),
-              // Driver's own GPS position
-              if (driver != null)
-                Marker(
-                  markerId: const MarkerId('driver'),
-                  position: driver,
-                  icon: icons.car,
-                  anchor: const Offset(0.5, 0.5),
-                  flat: true,
-                  rotation: _heading,
-                  zIndexInt: 2,
-                ),
+        BlocConsumer<RideRouteCubit, RideRouteState>(
+          // Reframe once when a stage's road path first arrives.
+          listenWhen: (previous, current) =>
+              previous.activeLeg == null && current.activeLeg != null,
+          listener: (context, _) => _fitRoute(),
+          builder: (context, route) => GoogleMap(
+            gestureRecognizers: mapGestureRecognizers,
+            onMapCreated: (controller) {
+              _mapController = controller;
+              _fitRoute();
             },
-          },
+            // Center on the passenger (pickup) until the camera is framed.
+            initialCameraPosition: CameraPosition(target: _pickup, zoom: 15),
+            // Keep framed content clear of the back button and bottom sheet.
+            padding: EdgeInsets.only(
+              top: media.padding.top + 56.h,
+              bottom: media.size.height * 0.42,
+            ),
+            zoomControlsEnabled: false,
+            myLocationButtonEnabled: false,
+            mapToolbarEnabled: false,
+            compassEnabled: false,
+            polylines: RideMapStyle.polylines(
+              _legs(route),
+              tripStarted: _tripStarted,
+            ),
+            markers: {
+              if (icons != null) ...{
+                Marker(
+                  markerId: const MarkerId('pickup'),
+                  position: _pickup,
+                  icon: icons.pickup.descriptor,
+                  anchor: icons.pickup.anchor,
+                  // The passenger is on board once the trip starts.
+                  alpha: _tripStarted ? 0.5 : 1,
+                  zIndexInt: 1,
+                ),
+                Marker(
+                  markerId: const MarkerId('dropoff'),
+                  position: _dropoff,
+                  icon: icons.dropoff.descriptor,
+                  anchor: icons.dropoff.anchor,
+                  zIndexInt: 1,
+                ),
+                // Driver's own GPS position
+                if (driver != null)
+                  Marker(
+                    markerId: const MarkerId('driver'),
+                    position: driver,
+                    icon: icons.car,
+                    anchor: const Offset(0.5, 0.5),
+                    flat: true,
+                    rotation: _heading,
+                    zIndexInt: 2,
+                  ),
+              },
+            },
+          ),
         ),
 
         // Map controls: route overview, current location, zoom (top-right)

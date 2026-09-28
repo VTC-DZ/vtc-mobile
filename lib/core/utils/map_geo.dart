@@ -2,7 +2,8 @@ import 'dart:math' as math;
 
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
-/// Small spherical-geometry helpers for map markers and camera framing.
+/// Small spherical-geometry helpers for map markers, camera framing and
+/// route snapping.
 abstract final class MapGeo {
   MapGeo._();
 
@@ -63,6 +64,72 @@ abstract final class MapGeo {
       southwest: LatLng(south, west),
       northeast: LatLng(north, east),
     );
+  }
+
+  /// Closest point to [point] on the polyline [path], with the index of the
+  /// segment it lies on (`path[segmentIndex] → path[segmentIndex + 1]`) and
+  /// its distance in meters.
+  ///
+  /// Uses a local flat-earth projection around [point] — accurate to well
+  /// under a meter at city scale, which is all route snapping needs.
+  static ({int segmentIndex, LatLng snapped, double distanceMeters})
+      nearestOnPath(LatLng point, List<LatLng> path) {
+    assert(path.isNotEmpty, 'nearestOnPath needs at least one point');
+    if (path.length == 1) {
+      return (
+        segmentIndex: 0,
+        snapped: path.first,
+        distanceMeters: distanceMeters(point, path.first),
+      );
+    }
+
+    // Meters per degree around [point]; [point] itself is the origin.
+    const metersPerDegLat = _earthRadiusMeters * math.pi / 180;
+    final metersPerDegLng = metersPerDegLat * math.cos(_rad(point.latitude));
+    double x(LatLng p) => (p.longitude - point.longitude) * metersPerDegLng;
+    double y(LatLng p) => (p.latitude - point.latitude) * metersPerDegLat;
+
+    var bestIndex = 0;
+    var bestT = 0.0;
+    var bestDistanceSq = double.infinity;
+    for (var i = 0; i < path.length - 1; i++) {
+      final ax = x(path[i]);
+      final ay = y(path[i]);
+      final dx = x(path[i + 1]) - ax;
+      final dy = y(path[i + 1]) - ay;
+      final lengthSq = dx * dx + dy * dy;
+      // Parameter of the origin's projection onto a→b, clamped to the segment.
+      final t = lengthSq == 0
+          ? 0.0
+          : (-(ax * dx + ay * dy) / lengthSq).clamp(0.0, 1.0);
+      final cx = ax + t * dx;
+      final cy = ay + t * dy;
+      final distanceSq = cx * cx + cy * cy;
+      if (distanceSq < bestDistanceSq) {
+        bestDistanceSq = distanceSq;
+        bestIndex = i;
+        bestT = t;
+      }
+    }
+
+    final a = path[bestIndex];
+    final b = path[bestIndex + 1];
+    return (
+      segmentIndex: bestIndex,
+      snapped: LatLng(
+        a.latitude + bestT * (b.latitude - a.latitude),
+        a.longitude + bestT * (b.longitude - a.longitude),
+      ),
+      distanceMeters: math.sqrt(bestDistanceSq),
+    );
+  }
+
+  /// The part of [path] still ahead of [position]: starts at [position]
+  /// snapped onto the path and drops everything already travelled.
+  static List<LatLng> remainingPath(LatLng position, List<LatLng> path) {
+    if (path.length < 2) return path;
+    final nearest = nearestOnPath(position, path);
+    return [nearest.snapped, ...path.skip(nearest.segmentIndex + 1)];
   }
 
   static double _rad(double deg) => deg * math.pi / 180;

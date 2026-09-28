@@ -61,6 +61,8 @@ import '../../features/ride/driver/presentation/cubit/driver_ride_detail_cubit/d
 import '../../features/ride/driver/presentation/cubit/driver_ride_history_cubit/driver_ride_history_cubit.dart';
 import '../../features/ride/driver/presentation/views/available_rides_view.dart';
 import '../../features/ride/driver/presentation/views/driver_active_ride_view.dart';
+import '../../features/ride/shared/data/routing_repository.dart';
+import '../../features/ride/shared/presentation/cubit/ride_route_cubit/ride_route_cubit.dart';
 import '../../features/ride/driver/presentation/views/driver_ride_detail_view.dart';
 import '../../features/ride/driver/presentation/views/driver_ride_history_view.dart';
 import '../../features/wallet/driver/data/receipt_picker_service.dart';
@@ -231,10 +233,17 @@ final class AppRouter {
             GoRoute(
               path: RouteNames.passengerActiveRide,
               builder: (context, state) {
-                return BlocProvider<PassengerActiveRideCubit>(
-                  create: (_) => PassengerActiveRideCubit(
-                    const PassengerRideRepository(),
-                  )..loadActiveRide(),
+                return MultiBlocProvider(
+                  providers: [
+                    BlocProvider<PassengerActiveRideCubit>(
+                      create: (_) => PassengerActiveRideCubit(
+                        const PassengerRideRepository(),
+                      )..loadActiveRide(),
+                    ),
+                    BlocProvider<RideRouteCubit>(
+                      create: (_) => RideRouteCubit(const RoutingRepository()),
+                    ),
+                  ],
                   child: const PassengerActiveRideView(),
                 );
               },
@@ -412,9 +421,16 @@ final class AppRouter {
           GoRoute(
             path: RouteNames.driverActiveRide,
             builder: (context, state) {
-              return BlocProvider<DriverActiveRideCubit>(
-                create: (_) =>
-                    DriverActiveRideCubit(const DriverRideRepository()),
+              return MultiBlocProvider(
+                providers: [
+                  BlocProvider<DriverActiveRideCubit>(
+                    create: (_) =>
+                        DriverActiveRideCubit(const DriverRideRepository()),
+                  ),
+                  BlocProvider<RideRouteCubit>(
+                    create: (_) => RideRouteCubit(const RoutingRepository()),
+                  ),
+                ],
                 child: const DriverActiveRideView(),
               );
             },

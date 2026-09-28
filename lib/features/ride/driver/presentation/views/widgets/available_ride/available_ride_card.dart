@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
@@ -9,24 +7,16 @@ import '../../../../data/models/driver_ride_models.dart';
 import '../../../../../shared/utils/fare_formatter.dart';
 import '../../../../../shared/widgets/ride_route_preview.dart';
 import '../../../../../shared/widgets/service_type_chip.dart';
-
-/// Local warning tier for the 30s..10s urgency window — no app-wide token
-/// exists for amber, so it's kept as a single shared constant here.
-const Color _warningAmber = Color(0xFFF59E0B);
-
-/// Shared green→amber→red urgency ladder used by both the top progress bar
-/// and the footer countdown pill, so they can't drift out of sync.
-Color _urgencyColor(num remainingSeconds) {
-  if (remainingSeconds <= 10) return AppColors.error;
-  if (remainingSeconds <= 30) return _warningAmber;
-  return AppColors.primary;
-}
+import 'expiry_indicators.dart';
+import 'ride_request_badges.dart';
+import 'ride_request_details_sheet.dart';
 
 /// A single incoming ride request shown to the driver. Service & vehicle chips
 /// and an optional female-only badge on top, the pickup→dropoff route, a meta
 /// row with a live expiry countdown and distance, then the proposed fare and a
 /// Bid button. A draining [LinearProgressIndicator] at the top of the card
-/// shows time remaining visually.
+/// shows time remaining visually. Tapping the card opens
+/// [showRideRequestDetailsSheet] with a map preview and the full details.
 ///
 /// Pass [compact] for the floating [BroadcastOverlay] to render the same card
 /// at a tighter density.
@@ -68,155 +58,173 @@ class AvailableRideCard extends StatelessWidget {
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(m.cardRadius.r),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // --- Linear timer bar ---
-            _ExpiryProgressBar(
-              expiresAt: ride.expiresAt,
-              barHeight: m.progressHeight,
-              onExpired: onExpired,
-            ),
+        // Transparent Material above the card's decoration so the ripple shows.
+        child: Material(
+          type: MaterialType.transparency,
+          child: InkWell(
+            onTap: () => _openDetails(context),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // --- Linear timer bar ---
+                ExpiryProgressBar(
+                  expiresAt: ride.expiresAt,
+                  barHeight: m.progressHeight,
+                  onExpired: onExpired,
+                ),
 
-            Padding(
-              padding: EdgeInsets.fromLTRB(m.contentPadding.w, m.contentTop.h,
-                  m.contentPadding.w, m.contentPadding.h),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // --- Header: service / vehicle chips / female-only · fare ---
-                  Row(
+                Padding(
+                  padding: EdgeInsets.fromLTRB(m.contentPadding.w,
+                      m.contentTop.h, m.contentPadding.w, m.contentPadding.h),
+                  child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(
-                        child: Wrap(
-                          spacing: 6.w,
-                          runSpacing: 4.h,
-                          crossAxisAlignment: WrapCrossAlignment.center,
-                          children: [
-                            ServiceTypeChip(
-                              serviceType: ride.serviceType,
-                              iconSize: m.serviceIconSize,
-                              hPad: m.chipHPad,
-                              vPad: m.chipVPad,
+                      // --- Header: service / vehicle chips / female-only · fare ---
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Wrap(
+                              spacing: 6.w,
+                              runSpacing: 4.h,
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              children: [
+                                ServiceTypeChip(
+                                  serviceType: ride.serviceType,
+                                  iconSize: m.serviceIconSize,
+                                  hPad: m.chipHPad,
+                                  vPad: m.chipVPad,
+                                ),
+                                if (ride.vehicleCategory != null)
+                                  VehicleCategoryChip(
+                                    category: ride.vehicleCategory!,
+                                    iconSize: m.serviceIconSize,
+                                    hPad: m.chipHPad,
+                                    vPad: m.chipVPad,
+                                  ),
+                                if (ride.femaleOnly) const FemaleOnlyBadge(),
+                              ],
                             ),
-                            if (ride.vehicleCategory != null)
-                              _ServiceVehicleChip(
-                                category: ride.vehicleCategory!,
-                                iconSize: m.serviceIconSize,
-                                hPad: m.chipHPad,
-                                vPad: m.chipVPad,
+                          ),
+                          SizedBox(width: 6.w),
+                          _FareBlock(
+                            amount: ride.proposedFare,
+                            fareFontSize: m.fareFontSize,
+                            captionFontSize: m.fareCaptionSize,
+                          ),
+                        ],
+                      ),
+
+                      SizedBox(height: m.gapHeaderRoute.h),
+
+                      // --- Route: pickup → dropoff ---
+                      RideRoutePreview(
+                        pickup: ride.pickup.address,
+                        dropoff: ride.dropoff.address,
+                        iconSize: m.locationIconSize,
+                        spacing: m.locationSpacing,
+                        connectorHeight: m.connectorHeight,
+                        connectorInset: m.connectorInset,
+                        iconTopPadding: 0,
+                        addressStyle: AppTextStyles.bodySmall(context),
+                      ),
+                      SizedBox(height: m.gapRouteFooter.h),
+
+                      // --- Footer: countdown · distance · Ignore · Bid ---
+                      Row(
+                        children: [
+                          ExpiryCountdown(
+                            expiresAt: ride.expiresAt,
+                            iconSize: m.countdownIconSize,
+                          ),
+                          if (ride.distanceMeters != null) ...[
+                            _MetaDot(),
+                            Icon(Icons.straighten_rounded,
+                                size: m.metaIconSize.w,
+                                color: AppColors.textSecondary(context)),
+                            SizedBox(width: 2.w),
+                            Text(
+                              formatDistance(ride.distanceMeters!),
+                              style: AppTextStyles.labelSmall(context).copyWith(
+                                color: AppColors.textSecondary(context),
                               ),
-                            if (ride.femaleOnly) const _FemaleOnlyBadge(),
+                            ),
                           ],
-                        ),
-                      ),
-                      SizedBox(width: 6.w),
-                      _FareBlock(
-                        amount: ride.proposedFare,
-                        fareFontSize: m.fareFontSize,
-                        captionFontSize: m.fareCaptionSize,
-                      ),
-                    ],
-                  ),
-
-                  SizedBox(height: m.gapHeaderRoute.h),
-
-                  // --- Route: pickup → dropoff ---
-                  RideRoutePreview(
-                    pickup: ride.pickup.address,
-                    dropoff: ride.dropoff.address,
-                    iconSize: m.locationIconSize,
-                    spacing: m.locationSpacing,
-                    connectorHeight: m.connectorHeight,
-                    connectorInset: m.connectorInset,
-                    iconTopPadding: 0,
-                    addressStyle: AppTextStyles.bodySmall(context),
-                  ),
-                  SizedBox(height: m.gapRouteFooter.h),
-
-                  // --- Footer: countdown · distance · Ignore · Bid ---
-                  Row(
-                    children: [
-                      _ExpiryCountdown(
-                        expiresAt: ride.expiresAt,
-                        iconSize: m.countdownIconSize,
-                      ),
-                      if (ride.distanceMeters != null) ...[
-                        _MetaDot(),
-                        Icon(Icons.straighten_rounded,
-                            size: m.metaIconSize.w,
-                            color: AppColors.textSecondary(context)),
-                        SizedBox(width: 2.w),
-                        Text(
-                          _formatDistance(ride.distanceMeters!),
-                          style: AppTextStyles.labelSmall(context).copyWith(
-                            color: AppColors.textSecondary(context),
+                          const Spacer(),
+                          OutlinedButton(
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: AppColors.textSecondary(context),
+                              side: BorderSide(
+                                  color: AppColors.borderDefault(context)),
+                              minimumSize: Size(0, m.buttonHeight.h),
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: m.ignoreButtonHPad.w),
+                              shape: RoundedRectangleBorder(
+                                borderRadius:
+                                    BorderRadius.circular(m.buttonRadius.r),
+                              ),
+                            ),
+                            onPressed: onIgnore,
+                            child: Text(
+                              'Ignore',
+                              style: AppTextStyles.labelSmall(context).copyWith(
+                                color: AppColors.textSecondary(context),
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
                           ),
-                        ),
-                      ],
-                      const Spacer(),
-                      OutlinedButton(
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: AppColors.textSecondary(context),
-                          side: BorderSide(
-                              color: AppColors.borderDefault(context)),
-                          minimumSize: Size(0, m.buttonHeight.h),
-                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          padding: EdgeInsets.symmetric(
-                              horizontal: m.ignoreButtonHPad.w),
-                          shape: RoundedRectangleBorder(
-                            borderRadius:
-                                BorderRadius.circular(m.buttonRadius.r),
+                          SizedBox(width: m.buttonGap.w),
+                          ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primary,
+                              foregroundColor: AppColors.white,
+                              elevation: 0,
+                              minimumSize: Size(0, m.buttonHeight.h),
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: m.bidButtonHPad.w),
+                              shape: RoundedRectangleBorder(
+                                borderRadius:
+                                    BorderRadius.circular(m.buttonRadius.r),
+                              ),
+                            ),
+                            onPressed: onBid,
+                            child: Text(
+                              'Bid',
+                              style: AppTextStyles.labelSmall(context).copyWith(
+                                color: AppColors.white,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
                           ),
-                        ),
-                        onPressed: onIgnore,
-                        child: Text(
-                          'Ignore',
-                          style: AppTextStyles.labelSmall(context).copyWith(
-                            color: AppColors.textSecondary(context),
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                      SizedBox(width: m.buttonGap.w),
-                      ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          foregroundColor: AppColors.white,
-                          elevation: 0,
-                          minimumSize: Size(0, m.buttonHeight.h),
-                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          padding: EdgeInsets.symmetric(
-                              horizontal: m.bidButtonHPad.w),
-                          shape: RoundedRectangleBorder(
-                            borderRadius:
-                                BorderRadius.circular(m.buttonRadius.r),
-                          ),
-                        ),
-                        onPressed: onBid,
-                        child: Text(
-                          'Bid',
-                          style: AppTextStyles.labelSmall(context).copyWith(
-                            color: AppColors.white,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
+                        ],
                       ),
                     ],
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
   }
-}
 
-String _formatDistance(int meters) =>
-    meters >= 1000 ? '${(meters / 1000).toStringAsFixed(1)} km' : '$meters m';
+  /// Opens the full details sheet (map, addresses, distances) and forwards
+  /// the driver's choice to the same callbacks the card's buttons use.
+  Future<void> _openDetails(BuildContext context) async {
+    final action = await showRideRequestDetailsSheet(context, ride: ride);
+    switch (action) {
+      case RideRequestAction.bid:
+        onBid();
+      case RideRequestAction.ignore:
+        onIgnore?.call();
+      case null:
+        break;
+    }
+  }
+}
 
 /// All tunable dimensions for [AvailableRideCard], stored as raw values so the
 /// `.w/.h/.r` ScreenUtil scaling is applied at each use site. Two presets:
@@ -337,220 +345,6 @@ class _CardMetrics {
     fareFontSize: 14,
     fareCaptionSize: 9,
   );
-}
-
-/// Full-width draining progress bar at the top of the card.
-/// Rebuilds every second; only this widget re-renders, not the card.
-class _ExpiryProgressBar extends StatefulWidget {
-  const _ExpiryProgressBar({
-    required this.expiresAt,
-    required this.barHeight,
-    this.onExpired,
-  });
-
-  final String expiresAt;
-  final double barHeight;
-  final VoidCallback? onExpired;
-
-  @override
-  State<_ExpiryProgressBar> createState() => _ExpiryProgressBarState();
-}
-
-class _ExpiryProgressBarState extends State<_ExpiryProgressBar> {
-  Timer? _timer;
-  DateTime? _deadline;
-  late double _totalSeconds;
-  bool _expired = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _deadline = DateTime.tryParse(widget.expiresAt);
-    if (_deadline != null) {
-      _totalSeconds =
-          _deadline!.difference(DateTime.now()).inSeconds.toDouble();
-      if (_totalSeconds <= 0) _totalSeconds = 1;
-      _timer = Timer.periodic(const Duration(seconds: 1), (_) {
-        if (!mounted) return;
-        setState(() {});
-        if (!_expired && _deadline!.isBefore(DateTime.now())) {
-          _expired = true;
-          widget.onExpired?.call();
-        }
-      });
-    }
-  }
-
-  @override
-  void dispose() {
-    _timer?.cancel();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final remaining = _deadline == null
-        ? Duration.zero
-        : _deadline!.difference(DateTime.now());
-    final remainingSeconds =
-        remaining.isNegative ? 0.0 : remaining.inSeconds.toDouble();
-    final progress = (remainingSeconds / _totalSeconds).clamp(0.0, 1.0);
-    final color = _urgencyColor(remainingSeconds);
-
-    return LinearProgressIndicator(
-      value: progress,
-      minHeight: widget.barHeight.h,
-      backgroundColor: AppColors.borderDefault(context),
-      valueColor: AlwaysStoppedAnimation<Color>(color),
-    );
-  }
-}
-
-/// Live `m:ss` text countdown to [expiresAt] (ISO-8601), floored at `0:00`.
-class _ExpiryCountdown extends StatefulWidget {
-  const _ExpiryCountdown({
-    required this.expiresAt,
-    required this.iconSize,
-  });
-
-  final String expiresAt;
-  final double iconSize;
-
-  @override
-  State<_ExpiryCountdown> createState() => _ExpiryCountdownState();
-}
-
-class _ExpiryCountdownState extends State<_ExpiryCountdown> {
-  Timer? _timer;
-  late DateTime? _deadline;
-
-  @override
-  void initState() {
-    super.initState();
-    _deadline = DateTime.tryParse(widget.expiresAt);
-    if (_deadline != null) {
-      _timer = Timer.periodic(const Duration(seconds: 1), (_) {
-        if (mounted) setState(() {});
-      });
-    }
-  }
-
-  @override
-  void dispose() {
-    _timer?.cancel();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final remaining = _deadline == null
-        ? Duration.zero
-        : _deadline!.difference(DateTime.now());
-    final clamped = remaining.isNegative ? Duration.zero : remaining;
-    final color = _urgencyColor(clamped.inSeconds);
-
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
-      padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(6.r),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.timer_outlined, size: widget.iconSize.w, color: color),
-          SizedBox(width: 4.w),
-          Text(
-            _formatRemaining(clamped),
-            style: AppTextStyles.labelSmall(context).copyWith(
-              color: color,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-String _formatRemaining(Duration d) {
-  final minutes = d.inMinutes;
-  final seconds = d.inSeconds % 60;
-  return '$minutes:${seconds.toString().padLeft(2, '0')}';
-}
-
-class _FemaleOnlyBadge extends StatelessWidget {
-  const _FemaleOnlyBadge();
-
-  static const Color _color = Color(0xFFEC4899);
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
-      decoration: BoxDecoration(
-        color: _color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(8.r),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.female_rounded, size: 14.w, color: _color),
-          SizedBox(width: 3.w),
-          Text(
-            'Women',
-            style: AppTextStyles.labelSmall(context).copyWith(
-              color: _color,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Quiet neutral pill surfacing the ride's vehicle category (icon + label),
-/// data that previously existed on the model but was never rendered.
-class _ServiceVehicleChip extends StatelessWidget {
-  const _ServiceVehicleChip({
-    required this.category,
-    required this.iconSize,
-    required this.hPad,
-    required this.vPad,
-  });
-
-  final VehicleCategory category;
-  final double iconSize;
-  final double hPad;
-  final double vPad;
-
-  @override
-  Widget build(BuildContext context) {
-    final color = AppColors.textSecondary(context);
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: hPad.w, vertical: vPad.h),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(8.r),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(category.icon, size: iconSize.w, color: color),
-          SizedBox(width: 3.w),
-          Text(
-            category.label,
-            style: AppTextStyles.labelSmall(context).copyWith(
-              color: color,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
 /// Right-aligned proposed-fare block, the card's primary visual hook.

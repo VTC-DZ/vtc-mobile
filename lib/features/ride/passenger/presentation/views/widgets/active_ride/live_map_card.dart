@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -9,13 +10,16 @@ import '../../../../../../../core/utils/map_geo.dart';
 import '../../../../../../../core/utils/map_gestures.dart';
 import '../../../../../driver/data/models/ride_socket_event.dart';
 import '../../../../../shared/models/shared_ride_models.dart';
+import '../../../../../shared/presentation/cubit/ride_route_cubit/ride_route_cubit.dart';
+import '../../../../../shared/presentation/cubit/ride_route_cubit/ride_route_state.dart';
 import '../../../../../shared/widgets/ride_map_style.dart';
 
 /// Full-screen capable live map. Sizes to whatever its parent gives it.
 /// Caller is responsible for bounding the widget (e.g. Positioned.fill or SizedBox).
 ///
 /// Shows pickup/dropoff pins, the driver as a car turned toward its direction
-/// of travel, the passenger's own position, and stage-aware guide lines.
+/// of travel, the passenger's own position, and stage-aware road routes (from
+/// the ambient [RideRouteCubit]).
 class LiveMapCard extends StatefulWidget {
   const LiveMapCard({
     super.key,
@@ -69,6 +73,7 @@ class _LiveMapCardState extends State<LiveMapCard> {
   @override
   void initState() {
     super.initState();
+    _syncRoute();
     RideMapIcons.load().then((icons) {
       if (mounted) setState(() => _icons = icons);
     });
@@ -87,12 +92,39 @@ class _LiveMapCardState extends State<LiveMapCard> {
       }
       if (previous != driver) _keepDriverInView(driver);
     }
+    _syncRoute();
 
     // Reframe when the driver first appears, and when the trip starts (the
     // target switches from pickup to dropoff).
     final gotFirstFix = !_fittedWithDriver && driver != null;
     final stageChanged = widget.rideState != oldWidget.rideState;
     if (gotFirstFix || stageChanged) _fitRoute();
+  }
+
+  /// Road routing needs both ride ends; until then nothing is drawn.
+  void _syncRoute() {
+    final pickup = _pickup;
+    final dropoff = _dropoff;
+    if (pickup == null || dropoff == null) return;
+    context.read<RideRouteCubit>().update(
+          driver: _driver,
+          pickup: pickup,
+          dropoff: dropoff,
+          tripStarted: _tripStarted,
+        );
+  }
+
+  RideMapLegs? _legs(RideRouteState route) {
+    final pickup = _pickup;
+    final dropoff = _dropoff;
+    if (pickup == null || dropoff == null) return null;
+    return RideMapStyle.resolveLegs(
+      route,
+      driver: _driver,
+      pickup: pickup,
+      dropoff: dropoff,
+      tripStarted: _tripStarted,
+    );
   }
 
   /// Follows the driver only when they leave the visible area, so the camera
@@ -112,14 +144,17 @@ class _LiveMapCardState extends State<LiveMapCard> {
 
   /// Frames the leg that matters now: driver → pickup before the trip,
   /// driver → dropoff during it (pickup → dropoff while the driver is unknown).
+  /// Frames the whole road path, which can bulge past its endpoints.
   void _fitRoute() {
     final controller = _mapController;
     if (controller == null) return;
     final driver = _driver;
     _fittedWithDriver = driver != null;
-    final target = _tripStarted ? _dropoff : _pickup;
-    final points = driver == null ? [_pickup, _dropoff] : [driver, target];
-    RideMapStyle.fitCamera(controller, points.whereType<LatLng>().toList());
+    final legs = _legs(context.read<RideRouteCubit>().state);
+    RideMapStyle.fitCamera(
+      controller,
+      legs?.focus ?? [driver, _pickup, _dropoff].whereType<LatLng>().toList(),
+    );
   }
 
   @override
@@ -141,76 +176,80 @@ class _LiveMapCardState extends State<LiveMapCard> {
 
     return Stack(
       children: [
-        GoogleMap(
-          gestureRecognizers: mapGestureRecognizers,
-          // setState so _MapZoomButtons receives the controller.
-          onMapCreated: (controller) {
-            setState(() => _mapController = controller);
-            _fitRoute();
-          },
-          initialCameraPosition:
-              CameraPosition(target: initialTarget, zoom: 14),
-          // Keep framed content clear of the status badge and bottom sheet.
-          padding: EdgeInsets.only(
-            top: controlsTop,
-            bottom: media.size.height * 0.42,
-          ),
-          zoomControlsEnabled: false,
-          myLocationButtonEnabled: false,
-          mapToolbarEnabled: false,
-          compassEnabled: false,
-          polylines: pickup == null || dropoff == null
-              ? const {}
-              : RideMapStyle.polylines(
-                  driver: driver,
-                  pickup: pickup,
-                  dropoff: dropoff,
-                  tripStarted: _tripStarted,
-                ),
-          markers: {
-            if (icons != null) ...{
-              if (pickup != null)
-                Marker(
-                  markerId: const MarkerId('pickup'),
-                  position: pickup,
-                  icon: icons.pickup.descriptor,
-                  anchor: icons.pickup.anchor,
-                  // The passenger is on board once the trip starts.
-                  alpha: _tripStarted ? 0.5 : 1,
-                  zIndexInt: 1,
-                ),
-              if (dropoff != null)
-                Marker(
-                  markerId: const MarkerId('dropoff'),
-                  position: dropoff,
-                  icon: icons.dropoff.descriptor,
-                  anchor: icons.dropoff.anchor,
-                  zIndexInt: 1,
-                ),
-              // Passenger's own position ("you"). Hidden during the trip —
-              // they're in the car.
-              if (own != null && !_tripStarted)
-                Marker(
-                  markerId: const MarkerId('own'),
-                  position: LatLng(own.latitude, own.longitude),
-                  icon: icons.userDot,
-                  anchor: const Offset(0.5, 0.5),
-                  zIndexInt: 2,
-                ),
-              // Driver's live position
-              if (driver != null)
-                Marker(
-                  markerId: const MarkerId('driver'),
-                  position: driver,
-                  icon: icons.car,
-                  anchor: const Offset(0.5, 0.5),
-                  flat: true,
-                  rotation: _driverBearing,
-                  zIndexInt: 3,
-                  infoWindow: InfoWindow(title: widget.driverLabel ?? 'Driver'),
-                ),
+        BlocConsumer<RideRouteCubit, RideRouteState>(
+          // Reframe once when a stage's road path first arrives.
+          listenWhen: (previous, current) =>
+              previous.activeLeg == null && current.activeLeg != null,
+          listener: (context, _) => _fitRoute(),
+          builder: (context, route) => GoogleMap(
+            gestureRecognizers: mapGestureRecognizers,
+            // setState so _MapZoomButtons receives the controller.
+            onMapCreated: (controller) {
+              setState(() => _mapController = controller);
+              _fitRoute();
             },
-          },
+            initialCameraPosition:
+                CameraPosition(target: initialTarget, zoom: 14),
+            // Keep framed content clear of the status badge and bottom sheet.
+            padding: EdgeInsets.only(
+              top: controlsTop,
+              bottom: media.size.height * 0.42,
+            ),
+            zoomControlsEnabled: false,
+            myLocationButtonEnabled: false,
+            mapToolbarEnabled: false,
+            compassEnabled: false,
+            polylines: switch (_legs(route)) {
+              final legs? =>
+                RideMapStyle.polylines(legs, tripStarted: _tripStarted),
+              null => const {},
+            },
+            markers: {
+              if (icons != null) ...{
+                if (pickup != null)
+                  Marker(
+                    markerId: const MarkerId('pickup'),
+                    position: pickup,
+                    icon: icons.pickup.descriptor,
+                    anchor: icons.pickup.anchor,
+                    // The passenger is on board once the trip starts.
+                    alpha: _tripStarted ? 0.5 : 1,
+                    zIndexInt: 1,
+                  ),
+                if (dropoff != null)
+                  Marker(
+                    markerId: const MarkerId('dropoff'),
+                    position: dropoff,
+                    icon: icons.dropoff.descriptor,
+                    anchor: icons.dropoff.anchor,
+                    zIndexInt: 1,
+                  ),
+                // Passenger's own position ("you"). Hidden during the trip —
+                // they're in the car.
+                if (own != null && !_tripStarted)
+                  Marker(
+                    markerId: const MarkerId('own'),
+                    position: LatLng(own.latitude, own.longitude),
+                    icon: icons.userDot,
+                    anchor: const Offset(0.5, 0.5),
+                    zIndexInt: 2,
+                  ),
+                // Driver's live position
+                if (driver != null)
+                  Marker(
+                    markerId: const MarkerId('driver'),
+                    position: driver,
+                    icon: icons.car,
+                    anchor: const Offset(0.5, 0.5),
+                    flat: true,
+                    rotation: _driverBearing,
+                    zIndexInt: 3,
+                    infoWindow:
+                        InfoWindow(title: widget.driverLabel ?? 'Driver'),
+                  ),
+              },
+            },
+          ),
         ),
         if (driver == null)
           Positioned(

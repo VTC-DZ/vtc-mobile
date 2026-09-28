@@ -6,6 +6,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/map_geo.dart';
 import '../../../../core/utils/map_marker_factory.dart';
+import '../presentation/cubit/ride_route_cubit/ride_route_state.dart';
 
 /// The marker bitmaps shared by the passenger and driver active-ride maps.
 final class RideMapIcons {
@@ -45,48 +46,80 @@ final class RideMapIcons {
   }
 }
 
+/// The paths drawn on an active-ride map for its current stage.
+final class RideMapLegs {
+  const RideMapLegs({required this.approach, required this.trip});
+
+  /// Driver → pickup, before the trip starts and once the driver is known.
+  final List<LatLng>? approach;
+
+  /// Pickup → dropoff before the trip; driver → dropoff during it.
+  final List<LatLng> trip;
+
+  /// The leg that matters now — what the camera frames.
+  List<LatLng> get focus => approach ?? trip;
+}
+
 /// Route lines and camera framing shared by both active-ride maps.
 abstract final class RideMapStyle {
   RideMapStyle._();
 
   static const Color _approachColor = Color(0xFF64748B);
 
-  /// Straight (geodesic) guide lines — not road routes.
-  ///
-  /// Before the trip starts: a dotted grey "approach" leg driver → pickup and
-  /// a dashed trip leg pickup → dropoff. Once [tripStarted]: a solid trip leg
-  /// with a white casing, and no approach leg.
-  static Set<Polyline> polylines({
+  /// Picks the road paths from [route] for the current stage, falling back to
+  /// straight lines for any leg that has no road route (yet).
+  static RideMapLegs resolveLegs(
+    RideRouteState route, {
     required LatLng? driver,
     required LatLng pickup,
     required LatLng dropoff,
     required bool tripStarted,
+  }) {
+    if (tripStarted) {
+      return RideMapLegs(
+        approach: null,
+        trip: route.activeLeg ?? [driver ?? pickup, dropoff],
+      );
+    }
+    return RideMapLegs(
+      approach: driver == null ? null : route.activeLeg ?? [driver, pickup],
+      trip: route.tripPreview ?? [pickup, dropoff],
+    );
+  }
+
+  /// Before the trip starts: a dotted grey approach leg and a dashed trip
+  /// preview. Once [tripStarted]: a solid trip leg with a white casing.
+  static Set<Polyline> polylines(
+    RideMapLegs legs, {
+    required bool tripStarted,
   }) =>
       {
-        if (!tripStarted && driver != null)
+        if (legs.approach case final approach?)
           Polyline(
             polylineId: const PolylineId('approach'),
-            points: [driver, pickup],
+            points: approach,
             color: _approachColor,
             width: 4,
             geodesic: true,
+            jointType: JointType.round,
             patterns: [PatternItem.dot, PatternItem.gap(8)],
             zIndex: 1,
           ),
         if (tripStarted)
           Polyline(
             polylineId: const PolylineId('trip_casing'),
-            points: [pickup, dropoff],
+            points: legs.trip,
             color: Colors.white,
             width: 9,
             geodesic: true,
             startCap: Cap.roundCap,
             endCap: Cap.roundCap,
+            jointType: JointType.round,
             zIndex: 2,
           ),
         Polyline(
           polylineId: const PolylineId('trip'),
-          points: [pickup, dropoff],
+          points: legs.trip,
           color: tripStarted
               ? AppColors.primary
               : AppColors.primary.withValues(alpha: 0.75),
