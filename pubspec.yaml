@@ -52,6 +52,7 @@ dependencies:
   # Map & location
   geolocator: ^13.0.1
   google_maps_flutter: ^2.18.1
+  url_launcher: ^6.3.1 # opens Google Maps for turn-by-turn navigation
 
 dev_dependencies:
   flutter_test:

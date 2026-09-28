@@ -19,6 +19,7 @@ import 'widgets/active/active_ride_map.dart';
 import 'widgets/active/cancel_ride_button.dart';
 import 'widgets/active/fare_card.dart';
 import 'widgets/active/floating_back_button.dart';
+import 'widgets/active/navigate_button.dart';
 import 'widgets/active/passenger_info_card.dart';
 
 class DriverActiveRideView extends StatefulWidget {
@@ -207,6 +208,14 @@ class _SheetContent extends StatelessWidget {
       _ => ('', null as VoidCallback?),
     };
 
+    // Where Google Maps should guide the driver. None while arrived — they
+    // are already at the pickup.
+    final navigationTarget = switch (ride.state) {
+      ActiveDriverRideState.accepted => ride.pickup,
+      ActiveDriverRideState.inProgress => ride.dropoff,
+      _ => null,
+    };
+
     return Container(
       decoration: BoxDecoration(
         color: AppColors.background(context),
@@ -247,6 +256,7 @@ class _SheetContent extends StatelessWidget {
               _PeekRow(
                 fullName: ride.passengerFullName,
                 rideState: ride.state,
+                navigationTarget: navigationTarget,
               ),
               SizedBox(height: 16.h),
 
@@ -289,10 +299,15 @@ class _SheetContent extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _PeekRow extends StatelessWidget {
-  const _PeekRow({required this.fullName, required this.rideState});
+  const _PeekRow({
+    required this.fullName,
+    required this.rideState,
+    this.navigationTarget,
+  });
 
   final String fullName;
   final ActiveDriverRideState rideState;
+  final CoordinatePoint? navigationTarget;
 
   @override
   Widget build(BuildContext context) {
@@ -337,6 +352,10 @@ class _PeekRow extends StatelessWidget {
               ),
             ),
           ),
+        if (navigationTarget case final target?) ...[
+          SizedBox(width: 8.w),
+          NavigateButton(target: target),
+        ],
       ],
     );
   }
