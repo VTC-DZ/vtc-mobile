@@ -3,9 +3,9 @@
 Spec vs. app implementation status. Source: `swagger/driver.json` + `swagger/websocket.json` (driver surface), cross-checked with `swagger/epic-03-ride.md` §5/§13 and `swagger/driver-flow.md`.
 Legend: ✅ implemented & wired to UI · ❌ not implemented · ⚠️ partial / by design
 
-**Summary: 20/21 REST endpoints done (1 by-design WS substitution) · WS: 6/9 server events handled, 1 by design, 2 missing · 2/2 upstream · +6 wallet events (outside websocket.json)**
+**Summary: 20/21 REST endpoints done (1 by-design WS substitution) · WS: 8/9 server events handled, 1 by design, 0 missing · 2/2 upstream · +6 wallet events (outside websocket.json)**
 
-Last checked: 2026-09-28
+Last checked: 2026-09-29
 
 ---
 
@@ -70,15 +70,15 @@ Last checked: 2026-09-28
 
 | Status | Event | Notes |
 |--------|-------|-------|
-| ✅ | `ride.broadcast` | `available_rides_cubit.dart:76` — upserted by `rideRequestId` (`_upsertRide`, `:98`) |
-| ✅ | `ride.broadcast_cancelled` | `available_rides_cubit.dart:78` |
-| ✅ | `offer.accepted` | `available_rides_cubit.dart:80` — bid won |
+| ✅ | `ride.broadcast` | `available_rides_cubit.dart:89` — upserted by `rideRequestId` (`_upsertRide`, `:115`) |
+| ✅ | `ride.broadcast_cancelled` | `available_rides_cubit.dart:91` |
+| ✅ | `offer.accepted` | `available_rides_cubit.dart:93` — bid won |
 | ✅ | `ride.state_changed` | `driver_active_ride_cubit.dart:23` — refetches active ride |
 | ✅ | `ride.cancelled` | `driver_active_ride_cubit.dart:25` |
 | ✅ | `system.token_expiring` | Handled centrally: `ride_socket_service.dart:180-192` → REST refresh + upstream `system.auth_refresh` |
 | ⚠️ | `offer.countered` | **Reserved / not emitted in v1** (epic-03 §5: "Don't build counter-offer UI"). Not parsed — correct for now |
-| ❌ | `offer.rejected` | Parsed in `ride_socket_event.dart:283` but no cubit consumes it — driver never learns a bid was rejected (`EXPLICIT_REJECT`, `SIBLING_ACCEPTED`, …) |
-| ❌ | `offer.expired` | Parsed (`ride_socket_event.dart:296`) but unused — the card's countdown (`expiry_indicators.dart`) tracks the *request's* `expiresAt`, not the bid's 30 s window |
+| ✅ | `offer.rejected` | `available_rides_cubit.dart:104` → `_endBid` — card removed + reason toast in `driver_home_shell.dart` (`EXPLICIT_REJECT` / `SIBLING_ACCEPTED` / `REQUEST_CANCELLED`); silent for `DRIVER_OFFLINE` or when no local bid is on record |
+| ✅ | `offer.expired` | `available_rides_cubit.dart:106` → `_endBid` — card removed + "Your bid expired" toast. Live bids are tracked in `AvailableRidesState.pendingBids` (from the bid `BidResponse`); the card shows "Bid sent" and counts down to the bid's own `expiresAt` |
 
 ### Server → driver — wallet events (not in `websocket.json`; from the wallet epic)
 
@@ -101,11 +101,11 @@ Last checked: 2026-09-28
 | Status | Item | Notes |
 |--------|------|-------|
 | ✅ | WS with `Authorization` header; refresh on `system.token_expiring` | `ride_socket_service.dart` |
-| ⚠️ | On (re)connect, refetch and reconcile | `AvailableRidesCubit._onStatus` reloads `/rides/available` (`available_rides_cubit.dart:69`); `DriverActiveRideCubit` has **no** `statusStream` listener, so a reconnect mid-trip doesn't refetch `/rides/active` |
+| ⚠️ | On (re)connect, refetch and reconcile | `AvailableRidesCubit._onStatus` reloads `/rides/available` (`available_rides_cubit.dart:82`) and prunes `pendingBids` for closed requests / past-deadline bids; `DriverActiveRideCubit` has **no** `statusStream` listener, so a reconnect mid-trip doesn't refetch `/rides/active` |
 | ✅ | Reconnect backoff 1→2→4→8→16 s | `WebSocketConstants.backoffSteps`, `ride_socket_service.dart:245` |
 | ✅ | Dedupe broadcasts by `rideRequestId` | `_upsertRide` |
 | ✅ | Drive UI from `ride.state_changed` | Refetch on every state change |
-| ⚠️ | Count down to server fields | ✅ request `expiresAt` (`expiry_indicators.dart`); ❌ `arrivalWaitDeadline` / `inProgressDeadline` are parsed in `driver_ride_models.dart` but not shown |
+| ⚠️ | Count down to server fields | ✅ request `expiresAt` and bid `expiresAt` (`expiry_indicators.dart`); ❌ `arrivalWaitDeadline` / `inProgressDeadline` are parsed in `driver_ride_models.dart` but not shown |
 | ⚠️ | 409s → refetch, not failure (bid races) | `ApiException.isConflict` exists (`api_exception.dart:26`) but no ride cubit uses it — only wallet flows treat 409 as stale view |
 | ⚠️ | Stream `driver.location`; REST `/location` fallback | Streaming ✅, fallback ❌ (see Location above) |
 

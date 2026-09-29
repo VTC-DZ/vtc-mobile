@@ -27,12 +27,25 @@ final class WaitingOffersCubit extends Cubit<WaitingOffersState> {
     _poll();
     _wsSub = RideSocketService.frameStream.listen((frame) {
       final event = RideSocketEvent.tryParse(frame);
-      if (event is OfferCreated && event.rideRequestId == _rideRequestId) {
-        if (kDebugMode) {
-          debugPrint('[Passenger] offer.created → '
-              'offerId=${event.offerId} fare=${event.fare} DZD');
-        }
-        _poll();
+      switch (event) {
+        case OfferCreated(:final rideRequestId, :final offerId, :final fare)
+            when rideRequestId == _rideRequestId:
+          if (kDebugMode) {
+            debugPrint('[Passenger] offer.created → '
+                'offerId=$offerId fare=$fare DZD');
+          }
+          _poll();
+        // The offer is gone server-side (timed out, or the driver went
+        // offline / took another ride) — drop the card before the passenger
+        // taps Accept on it and gets a 409.
+        case OfferRejected(:final rideRequestId, :final offerId)
+            when rideRequestId == _rideRequestId:
+          removeOffer(offerId);
+        case OfferExpired(:final rideRequestId, :final offerId)
+            when rideRequestId == _rideRequestId:
+          removeOffer(offerId);
+        default:
+          break;
       }
     });
     // REST is truth on (re)connect: reconcile offers once each time the socket

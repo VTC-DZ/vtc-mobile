@@ -31,9 +31,19 @@ final class AvailableRidesCubit extends Cubit<AvailableRidesState> {
         state.copyWith(status: AvailableRidesStatus.loading, errorMessage: ''));
     try {
       final response = await _repository.listAvailableRides();
+      // Keep bids only for requests that are still open and bids that haven't
+      // timed out — the rest ended while the socket was down, so their
+      // offer.rejected / offer.expired frames were missed.
+      final openIds = {for (final r in response.requests) r.rideRequestId};
+      final now = DateTime.now();
+      final pendingBids = Map.of(state.pendingBids)
+        ..removeWhere((id, bid) =>
+            !openIds.contains(id) ||
+            (DateTime.tryParse(bid.expiresAt)?.isBefore(now) ?? false));
       emit(state.copyWith(
         status: AvailableRidesStatus.loaded,
         rides: response.requests,
+        pendingBids: pendingBids,
       ));
     } catch (e) {
       emit(state.copyWith(
@@ -47,8 +57,11 @@ final class AvailableRidesCubit extends Cubit<AvailableRidesState> {
     emit(
         state.copyWith(status: AvailableRidesStatus.bidding, errorMessage: ''));
     try {
-      await _repository.submitBid(rideRequestId, fare);
-      emit(state.copyWith(status: AvailableRidesStatus.bidSuccess));
+      final bid = await _repository.submitBid(rideRequestId, fare);
+      emit(state.copyWith(
+        status: AvailableRidesStatus.bidSuccess,
+        pendingBids: {...state.pendingBids, rideRequestId: bid},
+      ));
     } catch (e) {
       // The wallet gate blocks bidding just as it blocks going online. It has a
       // concrete fix, so it gets its own status: DriverHomeShell renders it as
@@ -81,13 +94,17 @@ final class AvailableRidesCubit extends Cubit<AvailableRidesState> {
         // The driver's bid was accepted — drop this card so it can't resurface
         // (e.g. after the ride is later cancelled and the driver returns home).
         // The cubit is shell-scoped, so the list otherwise persists in memory.
-        final rides = state.rides
-            .where((r) => r.rideRequestId != rideRequestId)
-            .toList();
+        final rides =
+            state.rides.where((r) => r.rideRequestId != rideRequestId).toList();
         emit(state.copyWith(
           status: AvailableRidesStatus.offerAccepted,
           rides: rides,
+          pendingBids: _withoutBid(rideRequestId),
         ));
+      case OfferRejected(:final rideRequestId, :final reason):
+        _endBid(rideRequestId, reason);
+      case OfferExpired(:final rideRequestId):
+        _endBid(rideRequestId, bidExpiredReason);
       default:
         break;
     }
@@ -112,8 +129,33 @@ final class AvailableRidesCubit extends Cubit<AvailableRidesState> {
   void _removeRide(String rideRequestId) {
     final rides =
         state.rides.where((r) => r.rideRequestId != rideRequestId).toList();
-    emit(state.copyWith(status: AvailableRidesStatus.loaded, rides: rides));
+    emit(state.copyWith(
+      status: AvailableRidesStatus.loaded,
+      rides: rides,
+      pendingBids: _withoutBid(rideRequestId),
+    ));
   }
+
+  // The driver's bid ended without acceptance (driver-flow.md Step 6): the
+  // card goes either way. Only tell the driver when we actually held that bid,
+  // and not for DRIVER_OFFLINE — going offline was their own action.
+  void _endBid(String rideRequestId, String reason) {
+    final hadBid = state.pendingBids.containsKey(rideRequestId);
+    if (!hadBid || reason == 'DRIVER_OFFLINE') {
+      _removeRide(rideRequestId);
+      return;
+    }
+    emit(state.copyWith(
+      status: AvailableRidesStatus.bidEnded,
+      bidEndedReason: reason,
+      rides:
+          state.rides.where((r) => r.rideRequestId != rideRequestId).toList(),
+      pendingBids: _withoutBid(rideRequestId),
+    ));
+  }
+
+  Map<String, BidResponse> _withoutBid(String rideRequestId) =>
+      Map.of(state.pendingBids)..remove(rideRequestId);
 
   @override
   Future<void> close() {

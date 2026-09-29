@@ -3,9 +3,9 @@
 Spec vs. app implementation status. Source: `swagger/passenger.json` + `swagger/websocket.json` (passenger surface), cross-checked with `swagger/epic-03-ride.md` §5/§13 and `swagger/passenger-flow.md` §13.
 Legend: ✅ implemented & wired to UI · ❌ not implemented · ⚠️ partial / by design
 
-**Summary: 15/15 REST endpoints done · WS: 6/12 server events handled, 3 by design, 3 missing (10 in websocket.json + 2 epic-03-only)**
+**Summary: 15/15 REST endpoints done · WS: 8/12 server events handled, 2 by design, 2 missing (10 in websocket.json + 2 epic-03-only)**
 
-Last checked: 2026-09-28
+Last checked: 2026-09-29
 
 ---
 
@@ -49,16 +49,16 @@ Last checked: 2026-09-28
 
 | Status | Event | Notes |
 |--------|-------|-------|
-| ✅ | `offer.created` | `waiting_offers_cubit.dart:30` — triggers REST repoll (offers replaced wholesale → deduped by `offerId`) |
+| ✅ | `offer.created` | `waiting_offers_cubit.dart:31` — triggers REST repoll (offers replaced wholesale → deduped by `offerId`) |
 | ✅ | `ride.state_changed` | `passenger_active_ride_cubit.dart:70` |
 | ✅ | `ride.cancelled` | `passenger_active_ride_cubit.dart:72` |
 | ✅ | `driver.location` | `passenger_active_ride_cubit.dart:74` — live driver position |
 | ✅ | `system.token_expiring` | Handled centrally: `ride_socket_service.dart:180-192` → REST refresh + upstream `system.auth_refresh` (`:264`) |
 | ✅ | `system.auth_refresh` (ack) | Nothing to do on ack; refresh already applied locally |
 | ⚠️ | `offer.accepted` | Parsed, not consumed — by design: the passenger triggers accept via REST and moves on from the response (`WaitingOffersCubit.acceptOffer` → `AcceptStatus.success`) |
-| ⚠️ | `offer.expired` | Parsed, not consumed — covered client-side: `offer_card.dart:49-66` counts down to `expiresAt` and calls `WaitingOffersCubit.removeOffer` (`waiting_offers_view.dart:111`) |
+| ✅ | `offer.expired` | `waiting_offers_cubit.dart:44` → `removeOffer`. The card's local countdown (`offer_card.dart:49-66` → `removeOffer`) remains as a fallback |
 | ⚠️ | `offer.countered` | **Reserved / not emitted in v1** (epic-03 §5: "Don't build counter-offer UI"). Not parsed — correct for now |
-| ❌ | `offer.rejected` | Parsed in `ride_socket_event.dart:283` but no cubit consumes it — e.g. a `DRIVER_OCCUPIED` bid stays on screen until the next repoll/expiry |
+| ✅ | `offer.rejected` | `waiting_offers_cubit.dart:41` → `removeOffer` — clears stale `DRIVER_OCCUPIED` / `DRIVER_OFFLINE` bids before the passenger can tap Accept (no-op after the passenger's own refuse) |
 
 ### Server → passenger — listed in `epic-03-ride.md` §5 only (not in `websocket.json`)
 
@@ -80,7 +80,7 @@ Last checked: 2026-09-28
 | Status | Item | Notes |
 |--------|------|-------|
 | ✅ | WS with `Authorization` header; refresh on `system.token_expiring` | `ride_socket_service.dart` |
-| ⚠️ | On (re)connect, `GET /rides/active` and reconcile | `WaitingOffersCubit` repolls on `connected` (`waiting_offers_cubit.dart:37`); `PassengerActiveRideCubit` has **no** `statusStream` listener, so a reconnect mid-trip doesn't refetch |
+| ⚠️ | On (re)connect, `GET /rides/active` and reconcile | `WaitingOffersCubit` repolls on `connected` (`waiting_offers_cubit.dart:53`); `PassengerActiveRideCubit` has **no** `statusStream` listener, so a reconnect mid-trip doesn't refetch |
 | ✅ | Reconnect backoff 1→2→4→8→16 s | `WebSocketConstants.backoffSteps`, `ride_socket_service.dart:245` |
 | ✅ | Dedupe offers by `offerId` | Offers list replaced from REST on each poll |
 | ✅ | Drive UI from `ride.state_changed` | `passenger_active_ride_cubit.dart:70` |

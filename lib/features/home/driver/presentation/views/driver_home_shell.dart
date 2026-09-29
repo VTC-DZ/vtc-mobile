@@ -91,6 +91,14 @@ class DriverHomeShell extends StatelessWidget {
         context.go(RouteNames.driverActiveRide);
       case AvailableRidesStatus.bidSuccess:
         AppToast.success('Bid submitted');
+      case AvailableRidesStatus.bidEnded:
+        AppToast.warning(switch (state.bidEndedReason) {
+          'EXPLICIT_REJECT' => 'The passenger declined your bid',
+          'SIBLING_ACCEPTED' => 'The passenger chose another driver',
+          'REQUEST_CANCELLED' => 'The ride request was cancelled',
+          bidExpiredReason => 'Your bid expired',
+          _ => 'Your bid is no longer active',
+        });
       case AvailableRidesStatus.gatedByBalance:
         // Same handling as the go-online gate: the cached gate was stale, so
         // refetch it — that locks the availability switch and surfaces the

@@ -16,7 +16,8 @@ class BroadcastOverlay extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<AvailableRidesCubit, AvailableRidesState>(
-      buildWhen: (prev, curr) => prev.rides != curr.rides,
+      buildWhen: (prev, curr) =>
+          prev.rides != curr.rides || prev.pendingBids != curr.pendingBids,
       builder: (context, state) {
         if (state.rides.isEmpty) return const SizedBox.shrink();
 
@@ -41,6 +42,7 @@ class BroadcastOverlay extends StatelessWidget {
                       AvailableRideCard(
                         key: ValueKey(ride.rideRequestId),
                         ride: ride,
+                        pendingBid: state.pendingBids[ride.rideRequestId],
                         compact: true,
                         onBid: () async {
                           final fare = await showBidSheet(context, ride: ride);

@@ -20,6 +20,11 @@ import 'ride_request_details_sheet.dart';
 ///
 /// Pass [compact] for the floating [BroadcastOverlay] to render the same card
 /// at a tighter density.
+///
+/// Once the driver has bid, pass [pendingBid]: the timer tracks the bid's own
+/// server `expiresAt` instead of the request's, and Ignore/Bid give way to a
+/// "Bid sent" pill. The card is then removed by the server's
+/// `offer.rejected` / `offer.expired`, not by the local countdown.
 class AvailableRideCard extends StatelessWidget {
   const AvailableRideCard({
     super.key,
@@ -27,6 +32,7 @@ class AvailableRideCard extends StatelessWidget {
     required this.onBid,
     this.onIgnore,
     this.onExpired,
+    this.pendingBid,
     this.compact = false,
   });
 
@@ -35,12 +41,17 @@ class AvailableRideCard extends StatelessWidget {
   final VoidCallback? onIgnore;
   final VoidCallback? onExpired;
 
+  /// The driver's live bid on this request, if any.
+  final BidResponse? pendingBid;
+
   /// Shrinks every dimension for the floating [BroadcastOverlay].
   final bool compact;
 
   @override
   Widget build(BuildContext context) {
     final m = compact ? _CardMetrics.compact : _CardMetrics.normal;
+    final bid = pendingBid;
+    final deadline = bid?.expiresAt ?? ride.expiresAt;
 
     return Container(
       margin: EdgeInsets.only(bottom: m.cardBottomMargin.h),
@@ -68,9 +79,10 @@ class AvailableRideCard extends StatelessWidget {
               children: [
                 // --- Linear timer bar ---
                 ExpiryProgressBar(
-                  expiresAt: ride.expiresAt,
+                  key: ValueKey(deadline),
+                  expiresAt: deadline,
                   barHeight: m.progressHeight,
-                  onExpired: onExpired,
+                  onExpired: bid == null ? onExpired : null,
                 ),
 
                 Padding(
@@ -134,7 +146,8 @@ class AvailableRideCard extends StatelessWidget {
                       Row(
                         children: [
                           ExpiryCountdown(
-                            expiresAt: ride.expiresAt,
+                            key: ValueKey(deadline),
+                            expiresAt: deadline,
                             iconSize: m.countdownIconSize,
                           ),
                           if (ride.distanceMeters != null) ...[
@@ -151,53 +164,60 @@ class AvailableRideCard extends StatelessWidget {
                             ),
                           ],
                           const Spacer(),
-                          OutlinedButton(
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: AppColors.textSecondary(context),
-                              side: BorderSide(
-                                  color: AppColors.borderDefault(context)),
-                              minimumSize: Size(0, m.buttonHeight.h),
-                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                              padding: EdgeInsets.symmetric(
-                                  horizontal: m.ignoreButtonHPad.w),
-                              shape: RoundedRectangleBorder(
-                                borderRadius:
-                                    BorderRadius.circular(m.buttonRadius.r),
+                          if (bid != null)
+                            _BidSentPill(fare: bid.fare, height: m.buttonHeight)
+                          else ...[
+                            OutlinedButton(
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor:
+                                    AppColors.textSecondary(context),
+                                side: BorderSide(
+                                    color: AppColors.borderDefault(context)),
+                                minimumSize: Size(0, m.buttonHeight.h),
+                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                padding: EdgeInsets.symmetric(
+                                    horizontal: m.ignoreButtonHPad.w),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius:
+                                      BorderRadius.circular(m.buttonRadius.r),
+                                ),
+                              ),
+                              onPressed: onIgnore,
+                              child: Text(
+                                'Ignore',
+                                style:
+                                    AppTextStyles.labelSmall(context).copyWith(
+                                  color: AppColors.textSecondary(context),
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
                             ),
-                            onPressed: onIgnore,
-                            child: Text(
-                              'Ignore',
-                              style: AppTextStyles.labelSmall(context).copyWith(
-                                color: AppColors.textSecondary(context),
-                                fontWeight: FontWeight.w600,
+                            SizedBox(width: m.buttonGap.w),
+                            ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.primary,
+                                foregroundColor: AppColors.white,
+                                elevation: 0,
+                                minimumSize: Size(0, m.buttonHeight.h),
+                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                padding: EdgeInsets.symmetric(
+                                    horizontal: m.bidButtonHPad.w),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius:
+                                      BorderRadius.circular(m.buttonRadius.r),
+                                ),
+                              ),
+                              onPressed: onBid,
+                              child: Text(
+                                'Bid',
+                                style:
+                                    AppTextStyles.labelSmall(context).copyWith(
+                                  color: AppColors.white,
+                                  fontWeight: FontWeight.w700,
+                                ),
                               ),
                             ),
-                          ),
-                          SizedBox(width: m.buttonGap.w),
-                          ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.primary,
-                              foregroundColor: AppColors.white,
-                              elevation: 0,
-                              minimumSize: Size(0, m.buttonHeight.h),
-                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                              padding: EdgeInsets.symmetric(
-                                  horizontal: m.bidButtonHPad.w),
-                              shape: RoundedRectangleBorder(
-                                borderRadius:
-                                    BorderRadius.circular(m.buttonRadius.r),
-                              ),
-                            ),
-                            onPressed: onBid,
-                            child: Text(
-                              'Bid',
-                              style: AppTextStyles.labelSmall(context).copyWith(
-                                color: AppColors.white,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ),
+                          ],
                         ],
                       ),
                     ],
@@ -215,6 +235,8 @@ class AvailableRideCard extends StatelessWidget {
   /// the driver's choice to the same callbacks the card's buttons use.
   Future<void> _openDetails(BuildContext context) async {
     final action = await showRideRequestDetailsSheet(context, ride: ride);
+    // A live bid can't be re-placed or withdrawn from here.
+    if (pendingBid != null) return;
     switch (action) {
       case RideRequestAction.bid:
         onBid();
@@ -382,6 +404,41 @@ class _FareBlock extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Non-interactive stand-in for Ignore/Bid while the driver's bid is live.
+class _BidSentPill extends StatelessWidget {
+  const _BidSentPill({required this.fare, required this.height});
+
+  final int fare;
+  final double height;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: height.h,
+      padding: EdgeInsets.symmetric(horizontal: 10.w),
+      decoration: BoxDecoration(
+        color: AppColors.primary.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(8.r),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.check_circle_rounded,
+              size: 14.w, color: AppColors.primary),
+          SizedBox(width: 4.w),
+          Text(
+            'Bid sent · ${formatFare(fare)} DZD',
+            style: AppTextStyles.labelSmall(context).copyWith(
+              color: AppColors.primary,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
