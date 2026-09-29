@@ -101,7 +101,7 @@ Last checked: 2026-09-29
 | Status | Item | Notes |
 |--------|------|-------|
 | ✅ | WS with `Authorization` header; refresh on `system.token_expiring` | `ride_socket_service.dart` |
-| ⚠️ | On (re)connect, refetch and reconcile | `AvailableRidesCubit._onStatus` reloads `/rides/available` (`available_rides_cubit.dart:82`) and prunes `pendingBids` for closed requests / past-deadline bids; `DriverActiveRideCubit` has **no** `statusStream` listener, so a reconnect mid-trip doesn't refetch `/rides/active` |
+| ✅ | On (re)connect, refetch and reconcile | `AvailableRidesCubit._onStatus` reloads `/rides/available` (`available_rides_cubit.dart:82`) and prunes `pendingBids` for closed requests / past-deadline bids; `DriverActiveRideCubit._onStatus` silently refetches `/rides/active` on `connected` — a missing ride means it was cancelled during the gap → toast + back to home |
 | ✅ | Reconnect backoff 1→2→4→8→16 s | `WebSocketConstants.backoffSteps`, `ride_socket_service.dart:245` |
 | ✅ | Dedupe broadcasts by `rideRequestId` | `_upsertRide` |
 | ✅ | Drive UI from `ride.state_changed` | Refetch on every state change |
