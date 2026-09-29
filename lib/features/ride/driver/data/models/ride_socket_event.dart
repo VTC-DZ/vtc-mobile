@@ -35,6 +35,7 @@ enum RideSocketEventType {
   offerAccepted('offer.accepted'),
   offerRejected('offer.rejected'),
   offerExpired('offer.expired'),
+  offerCountered('offer.countered'),
   rideStateChanged('ride.state_changed'),
   rideCancelled('ride.cancelled'),
   // Wallet downstream (driver only — see integration/epic-04-wallet.md §5)
@@ -113,6 +114,16 @@ sealed class RideSocketEvent {
         RideSocketEventType.offerExpired => OfferExpired(
             offerId: payload['offerId'] as String,
             rideRequestId: payload['rideRequestId'] as String,
+          ),
+        RideSocketEventType.offerCountered => OfferCountered(
+            offerId: payload['offerId'] as String,
+            rideRequestId: payload['rideRequestId'] as String,
+            previousOfferId: payload['previousOfferId'] as String?,
+            driverId: payload['driverId'] as String?,
+            fare: _asInt(payload['fare']),
+            direction: payload['direction'] as String? ?? '',
+            round: _asInt(payload['round']),
+            expiresAt: payload['expiresAt'] as String?,
           ),
         RideSocketEventType.rideStateChanged => RideStateChanged(
             rideId: payload['rideId'] as String,
@@ -301,6 +312,34 @@ final class OfferExpired extends RideSocketEvent {
 
   final String offerId;
   final String rideRequestId;
+}
+
+/// A new negotiation round superseding `previousOfferId`.
+///
+/// Reserved by the backend for a future multi-round engine — NOT emitted in v1
+/// (swagger/epic-03-ride.md §5). Parsed so consumers can reconcile against REST
+/// if it ever arrives; there is deliberately no counter-offer UI yet.
+/// `direction` is `DRIVER_TO_PASSENGER` or `PASSENGER_TO_DRIVER`.
+final class OfferCountered extends RideSocketEvent {
+  const OfferCountered({
+    required this.offerId,
+    required this.rideRequestId,
+    required this.fare,
+    required this.direction,
+    required this.round,
+    this.previousOfferId,
+    this.driverId,
+    this.expiresAt,
+  });
+
+  final String offerId;
+  final String rideRequestId;
+  final int fare;
+  final String direction;
+  final int round;
+  final String? previousOfferId;
+  final String? driverId;
+  final String? expiresAt;
 }
 
 /// The active ride transitioned to a new state.

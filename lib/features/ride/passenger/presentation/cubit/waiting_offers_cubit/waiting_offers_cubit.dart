@@ -44,6 +44,12 @@ final class WaitingOffersCubit extends Cubit<WaitingOffersState> {
         case OfferExpired(:final rideRequestId, :final offerId)
             when rideRequestId == _rideRequestId:
           removeOffer(offerId);
+        // Reserved (not emitted in v1): the counter supersedes the previous
+        // offer — drop that card, then let REST decide what is live.
+        case OfferCountered(:final rideRequestId, :final previousOfferId)
+            when rideRequestId == _rideRequestId:
+          if (previousOfferId != null) removeOffer(previousOfferId);
+          _poll();
         default:
           break;
       }

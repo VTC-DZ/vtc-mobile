@@ -3,7 +3,7 @@
 Spec vs. app implementation status. Source: `swagger/passenger.json` + `swagger/websocket.json` (passenger surface), cross-checked with `swagger/epic-03-ride.md` §5/§13 and `swagger/passenger-flow.md` §13.
 Legend: ✅ implemented & wired to UI · ❌ not implemented · ⚠️ partial / by design
 
-**Summary: 15/15 REST endpoints done · WS: 8/12 server events handled, 2 by design, 2 missing (10 in websocket.json + 2 epic-03-only)**
+**Summary: 15/15 REST endpoints done · WS: 9/12 server events handled, 1 by design, 2 missing (10 in websocket.json + 2 epic-03-only)**
 
 Last checked: 2026-09-29
 
@@ -57,7 +57,7 @@ Last checked: 2026-09-29
 | ✅ | `system.auth_refresh` (ack) | Nothing to do on ack; refresh already applied locally |
 | ⚠️ | `offer.accepted` | Parsed, not consumed — by design: the passenger triggers accept via REST and moves on from the response (`WaitingOffersCubit.acceptOffer` → `AcceptStatus.success`) |
 | ✅ | `offer.expired` | `waiting_offers_cubit.dart:44` → `removeOffer`. The card's local countdown (`offer_card.dart:49-66` → `removeOffer`) remains as a fallback |
-| ⚠️ | `offer.countered` | **Reserved / not emitted in v1** (epic-03 §5: "Don't build counter-offer UI"). Not parsed — correct for now |
+| ✅ | `offer.countered` | Reserved / not emitted in v1. Parsed as `OfferCountered` (`ride_socket_event.dart:323`); `waiting_offers_cubit.dart:49` drops the superseded `previousOfferId` card and repolls REST. No counter-offer UI (epic-03 §5) |
 | ✅ | `offer.rejected` | `waiting_offers_cubit.dart:41` → `removeOffer` — clears stale `DRIVER_OCCUPIED` / `DRIVER_OFFLINE` bids before the passenger can tap Accept (no-op after the passenger's own refuse) |
 
 ### Server → passenger — listed in `epic-03-ride.md` §5 only (not in `websocket.json`)

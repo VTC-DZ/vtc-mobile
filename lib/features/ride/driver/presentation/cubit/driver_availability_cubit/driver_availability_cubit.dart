@@ -37,9 +37,9 @@ class DriverAvailabilityCubit extends Cubit<DriverAvailabilityState> {
       // go offline. If connect() fails internally the service itself surfaces
       // a failed/reconnecting status and keeps retrying — the server-side
       // online flag stays as reported above either way. The location
-      // streamer is armed/disarmed in lockstep: it sends `driver.location`
-      // every 5s while connected (see swagger/epic-03-ride.md §9/§11) and
-      // auto-pauses/resumes across any reconnects on its own.
+      // streamer is armed/disarmed in lockstep: it sends the driver's position
+      // every 15s — over WS while connected, via REST while the socket is down
+      // (see swagger/epic-03-ride.md §9/§11).
       if (isOnline) {
         await RideSocketService.connect(ActiveRole.driver);
         DriverLocationStreamer.start();

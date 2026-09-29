@@ -105,6 +105,10 @@ final class AvailableRidesCubit extends Cubit<AvailableRidesState> {
         _endBid(rideRequestId, reason);
       case OfferExpired(:final rideRequestId):
         _endBid(rideRequestId, bidExpiredReason);
+      // Reserved (not emitted in v1) and no counter-offer UI yet: the pending
+      // bid is stale, so reconcile the whole list against REST.
+      case OfferCountered():
+        loadAvailableRides();
       default:
         break;
     }

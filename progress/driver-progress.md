@@ -3,7 +3,7 @@
 Spec vs. app implementation status. Source: `swagger/driver.json` + `swagger/websocket.json` (driver surface), cross-checked with `swagger/epic-03-ride.md` §5/§13 and `swagger/driver-flow.md`.
 Legend: ✅ implemented & wired to UI · ❌ not implemented · ⚠️ partial / by design
 
-**Summary: 20/21 REST endpoints done (1 by-design WS substitution) · WS: 8/9 server events handled, 1 by design, 0 missing · 2/2 upstream · +6 wallet events (outside websocket.json)**
+**Summary: 21/21 REST endpoints done · WS: 9/9 server events handled, 0 missing · 2/2 upstream · +6 wallet events (outside websocket.json)**
 
 Last checked: 2026-09-29
 
@@ -18,11 +18,11 @@ Last checked: 2026-09-29
 | ✅ | `PUT /api/driver/profile` (update profile) | `driver_profile_repository.dart:10` → driver profile screen "Preferences" (`acceptsFemaleOnly`) toggle |
 | ✅ | `PUT /api/driver/profile/service-types` | `driver_service_types_repository.dart:10` → driver profile screen |
 
-### Location — ⚠️ by design
+### Location — ✅ 1/1
 
 | Status | Endpoint | Notes |
 |--------|----------|-------|
-| ⚠️ | `POST /api/driver/location` | Not called as REST — GPS is streamed over WS `driver.location` every 15s while online (`driver_location_streamer.dart:92`), the primary transport per `websocket.json`. **Gap:** epic-03 §13 expects this REST endpoint as the fallback while the socket is down; the streamer just pauses instead |
+| ✅ | `POST /api/driver/location` | REST fallback in `driver_location_streamer.dart:107` — used on each 15s tick whenever the driver socket isn't connected (`reconnecting` / `disconnected` / `failed`) or the WS send fails. WS `driver.location` stays the primary transport |
 
 ### KYC — ✅ 2/2
 
@@ -76,7 +76,7 @@ Last checked: 2026-09-29
 | ✅ | `ride.state_changed` | `driver_active_ride_cubit.dart:23` — refetches active ride |
 | ✅ | `ride.cancelled` | `driver_active_ride_cubit.dart:25` |
 | ✅ | `system.token_expiring` | Handled centrally: `ride_socket_service.dart:180-192` → REST refresh + upstream `system.auth_refresh` |
-| ⚠️ | `offer.countered` | **Reserved / not emitted in v1** (epic-03 §5: "Don't build counter-offer UI"). Not parsed — correct for now |
+| ✅ | `offer.countered` | Reserved / not emitted in v1. Parsed as `OfferCountered` (`ride_socket_event.dart:323`); `available_rides_cubit.dart:110` reconciles via `loadAvailableRides()` since the pending bid is stale. No counter-offer UI (epic-03 §5) |
 | ✅ | `offer.rejected` | `available_rides_cubit.dart:104` → `_endBid` — card removed + reason toast in `driver_home_shell.dart` (`EXPLICIT_REJECT` / `SIBLING_ACCEPTED` / `REQUEST_CANCELLED`); silent for `DRIVER_OFFLINE` or when no local bid is on record |
 | ✅ | `offer.expired` | `available_rides_cubit.dart:106` → `_endBid` — card removed + "Your bid expired" toast. Live bids are tracked in `AvailableRidesState.pendingBids` (from the bid `BidResponse`); the card shows "Bid sent" and counts down to the bid's own `expiresAt` |
 
@@ -91,7 +91,7 @@ Last checked: 2026-09-29
 
 | Status | Event | Notes |
 |--------|-------|-------|
-| ✅ | `driver.location` | `driver_location_streamer.dart:92` — every 15s while online |
+| ✅ | `driver.location` | `driver_location_streamer.dart:98` — every 15s while online, plus an immediate send on reconnect |
 | ✅ | `system.auth_refresh` | `ride_socket_service.dart:264` — replies to token-expiring warning |
 
 ---
@@ -107,7 +107,7 @@ Last checked: 2026-09-29
 | ✅ | Drive UI from `ride.state_changed` | Refetch on every state change |
 | ⚠️ | Count down to server fields | ✅ request `expiresAt` and bid `expiresAt` (`expiry_indicators.dart`); ❌ `arrivalWaitDeadline` / `inProgressDeadline` are parsed in `driver_ride_models.dart` but not shown |
 | ⚠️ | 409s → refetch, not failure (bid races) | `ApiException.isConflict` exists (`api_exception.dart:26`) but no ride cubit uses it — only wallet flows treat 409 as stale view |
-| ⚠️ | Stream `driver.location`; REST `/location` fallback | Streaming ✅, fallback ❌ (see Location above) |
+| ✅ | Stream `driver.location`; REST `/location` fallback | `driver_location_streamer.dart` — WS while connected, REST while down |
 
 ---
 

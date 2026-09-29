@@ -3,18 +3,21 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
 
+import '../constants/driver_api_constants.dart';
 import '../models/token_payload.dart';
+import 'dio_client.dart';
 import 'ride_socket_service.dart';
 
-/// Streams the driver's GPS position upstream as `driver.location` envelopes
-/// every 5s while the driver socket is connected.
+/// Sends the driver's GPS position every 15s while armed: as a WS
+/// `driver.location` envelope while the driver socket is connected, and via
+/// REST `POST /api/driver/location` (same payload) while it is down, so the
+/// matching engine never works off a stale position across reconnect/backoff
+/// cycles or a failed socket.
 ///
 /// Armed by [DriverAvailabilityCubit] on go-online and disarmed on
-/// go-offline. While armed it follows [RideSocketService.statusStream], so it
-/// also pauses/resumes automatically across the service's own
-/// reconnect/backoff cycles — no extra wiring needed beyond the initial
-/// start/stop call. Implemented as a static singleton to match
-/// [RideSocketService].
+/// go-offline, role switch, logout and forced re-login — so the REST fallback
+/// can only fire for an online driver session. Implemented as a static
+/// singleton to match [RideSocketService].
 ///
 /// See `swagger/epic-03-ride.md` §7/§9/§11.
 final class DriverLocationStreamer {
@@ -25,24 +28,26 @@ final class DriverLocationStreamer {
   static StreamSubscription<RideSocketStatus>? _statusSub;
   static Timer? _timer;
   static bool _armed = false;
+  static bool _ticking = false;
+  static RideSocketStatus? _lastStatus;
 
-  /// Arms the streamer. Idempotent. Syncs against the socket's *current*
-  /// status immediately, so calling this right after a successful
-  /// [RideSocketService.connect] starts sending without waiting for the next
-  /// status event.
+  /// Arms the streamer and sends a first position straight away. Idempotent.
   static void start() {
     if (_armed) return;
     _armed = true;
+    _lastStatus = RideSocketService.status;
     _statusSub ??= RideSocketService.statusStream.listen(_onStatus);
-    _sync(RideSocketService.status);
+    unawaited(_tick());
+    _timer ??= Timer.periodic(_interval, (_) => _tick());
   }
 
-  /// Disarms the streamer and stops any in-flight timer. Idempotent.
+  /// Disarms the streamer and stops the timer. Idempotent.
   static void stop() {
     _armed = false;
     _statusSub?.cancel();
     _statusSub = null;
-    _stopTimer();
+    _timer?.cancel();
+    _timer = null;
   }
 
   /// Disarms the streamer and disconnects the driver socket together.
@@ -52,32 +57,20 @@ final class DriverLocationStreamer {
     await RideSocketService.disconnect();
   }
 
+  // The timer keeps running whatever the socket does; this only pushes a fresh
+  // position over WS the moment the socket comes back, instead of waiting up
+  // to a full interval.
   static void _onStatus(RideSocketStatus status) {
-    if (_armed) _sync(status);
-  }
-
-  static void _sync(RideSocketStatus status) {
-    final shouldStream = status == RideSocketStatus.connected &&
-        RideSocketService.activeRole == ActiveRole.driver;
-    if (shouldStream) {
-      _startTimer();
-    } else {
-      _stopTimer();
-    }
-  }
-
-  static void _startTimer() {
-    if (_timer != null) return;
-    unawaited(_tick());
-    _timer = Timer.periodic(_interval, (_) => _tick());
-  }
-
-  static void _stopTimer() {
-    _timer?.cancel();
-    _timer = null;
+    final reconnected = status == RideSocketStatus.connected &&
+        _lastStatus != RideSocketStatus.connected;
+    _lastStatus = status;
+    if (_armed && reconnected) unawaited(_tick());
   }
 
   static Future<void> _tick() async {
+    // A reconnect-triggered tick can overlap a timer tick while GPS resolves.
+    if (_ticking) return;
+    _ticking = true;
     try {
       if (!await _hasLocationPermission()) return;
 
@@ -87,22 +80,37 @@ final class DriverLocationStreamer {
           timeLimit: Duration(seconds: 5),
         ),
       );
+      // Disarmed while GPS was resolving — don't send anything.
+      if (!_armed) return;
 
-      final envelope = {
-        'type': 'driver.location',
-        'payload': {
-          'lat': position.latitude,
-          'lng': position.longitude,
-          'capturedAt': position.timestamp.toUtc().toIso8601String(),
-          'accuracyM': position.accuracy,
-        },
-        'timestamp': DateTime.now().toUtc().toIso8601String(),
+      final payload = {
+        'lat': position.latitude,
+        'lng': position.longitude,
+        'capturedAt': position.timestamp.toUtc().toIso8601String(),
+        'accuracyM': position.accuracy,
       };
 
-      final sent = RideSocketService.send(envelope);
-      _log('${sent ? 'sent' : 'send skipped'} driver.location $envelope');
+      // WS is the primary channel. `send` can still return false if the
+      // socket died between the status check and the write.
+      final socketUp = RideSocketService.status == RideSocketStatus.connected &&
+          RideSocketService.activeRole == ActiveRole.driver;
+      if (socketUp &&
+          RideSocketService.send({
+            'type': 'driver.location',
+            'payload': payload,
+            'timestamp': DateTime.now().toUtc().toIso8601String(),
+          })) {
+        _log('sent driver.location over WS $payload');
+        return;
+      }
+
+      await DioClient.post(path: DriverApiConstants.location, data: payload);
+      _log('socket down — sent location over REST $payload');
     } catch (e) {
+      // Best-effort: the next tick retries. The driver stays online either way.
       _log('tick failed: $e');
+    } finally {
+      _ticking = false;
     }
   }
 
