@@ -10,6 +10,7 @@ import '../../../../../core/widgets/app_toast.dart';
 import '../../../../../shared/widgets/app_slim_app_bar.dart';
 import '../../../../../shared/widgets/app_text_field.dart';
 import '../../../../../shared/widgets/primary_button.dart';
+import '../../../../home/passenger/presentation/cubit/passenger_home_cubit.dart';
 import '../../data/models/passenger_ride_models.dart';
 import '../cubit/location_cubit/location_picker_state.dart';
 import '../cubit/ride_request_cubit/ride_request_cubit.dart';
@@ -111,6 +112,14 @@ class _RideRequestViewState extends State<RideRequestView> {
               response: state.createRideResponse!,
             ),
           );
+        } else if (state.status == RideRequestStatus.alreadyActive) {
+          // Home's active-ride check routes to the live request or ride.
+          final home = context.read<PassengerHomeCubit>();
+          AppToast.warning('You already have a ride in progress.');
+          context.go(RouteNames.passengerHome);
+          home.checkActiveRide();
+        } else if (state.status == RideRequestStatus.cooldown) {
+          AppToast.warning(state.errorMessage);
         } else if (state.status == RideRequestStatus.failure) {
           AppToast.error(
             state.errorMessage.isNotEmpty
@@ -275,8 +284,11 @@ class _RideRequestViewState extends State<RideRequestView> {
                       ],
                     ),
                     child: PrimaryButton(
-                      label: 'Find a Driver',
+                      label: state.cooldownSeconds > 0
+                          ? 'Try again in ${state.cooldownSeconds}s'
+                          : 'Find a Driver',
                       isLoading: state.status == RideRequestStatus.loading,
+                      isEnabled: state.cooldownSeconds == 0,
                       onPressed: () => _submit(cubit, state),
                     ),
                   ),

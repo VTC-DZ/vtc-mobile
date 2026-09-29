@@ -2,7 +2,16 @@ import 'package:equatable/equatable.dart';
 
 import '../../../data/models/passenger_ride_models.dart';
 
-enum RideRequestStatus { initial, loading, success, failure }
+/// `alreadyActive` = a request/ride is already live (resume it); `cooldown` =
+/// inside the post-cancel window, see [RideRequestState.cooldownSeconds].
+enum RideRequestStatus {
+  initial,
+  loading,
+  success,
+  failure,
+  alreadyActive,
+  cooldown,
+}
 
 final class RideRequestState extends Equatable {
   const RideRequestState({
@@ -12,6 +21,7 @@ final class RideRequestState extends Equatable {
     this.status = RideRequestStatus.initial,
     this.errorMessage = '',
     this.createRideResponse,
+    this.cooldownSeconds = 0,
   });
 
   final ServiceType serviceType;
@@ -21,6 +31,9 @@ final class RideRequestState extends Equatable {
   final String errorMessage;
   final CreateRideResponse? createRideResponse;
 
+  /// Seconds left before a new request is allowed; `0` when not cooling down.
+  final int cooldownSeconds;
+
   RideRequestState copyWith({
     ServiceType? serviceType,
     VehicleCategory? vehicleCategory,
@@ -28,6 +41,7 @@ final class RideRequestState extends Equatable {
     RideRequestStatus? status,
     String? errorMessage,
     CreateRideResponse? createRideResponse,
+    int? cooldownSeconds,
   }) =>
       RideRequestState(
         serviceType: serviceType ?? this.serviceType,
@@ -36,6 +50,7 @@ final class RideRequestState extends Equatable {
         status: status ?? this.status,
         errorMessage: errorMessage ?? this.errorMessage,
         createRideResponse: createRideResponse ?? this.createRideResponse,
+        cooldownSeconds: cooldownSeconds ?? this.cooldownSeconds,
       );
 
   @override
@@ -46,5 +61,6 @@ final class RideRequestState extends Equatable {
         status,
         errorMessage,
         createRideResponse,
+        cooldownSeconds,
       ];
 }

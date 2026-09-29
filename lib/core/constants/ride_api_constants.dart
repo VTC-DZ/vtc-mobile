@@ -20,3 +20,16 @@ abstract final class PassengerRideApiConstants {
   static String detail(String rideRequestId) => '$_base/$rideRequestId';
   static const String active = '$_base/active';
 }
+
+/// Ride error codes from the API error envelope that the passenger app branches
+/// on, so nothing sniffs message text. See swagger/epic-03-ride.md §12 — every
+/// other ride `409` is treated generically as "your view is stale".
+abstract final class PassengerRideErrorCodes {
+  PassengerRideErrorCodes._();
+
+  /// `409` — create while a request/ride is already live; route to it.
+  static const String rideAlreadyActive = 'RIDE_ALREADY_ACTIVE';
+
+  /// `429` — create during the post-cancel cooldown; count down, then allow.
+  static const String rideCreateCooldown = 'RIDE_CREATE_COOLDOWN';
+}

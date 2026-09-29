@@ -2,7 +2,9 @@ import 'package:equatable/equatable.dart';
 
 import '../../../data/models/passenger_ride_models.dart';
 
-enum RideRequestPhase { requested, negotiating, accepted, cancelled }
+/// `expired` = the request ended server-side without an accepted offer (auto
+/// cancel on `NO_DRIVERS` / `TIMEOUT`), as opposed to the passenger's cancel.
+enum RideRequestPhase { requested, negotiating, accepted, cancelled, expired }
 
 enum AcceptStatus { initial, loading, success, failure }
 
@@ -19,6 +21,7 @@ final class WaitingOffersState extends Equatable {
     this.rideRequestPhase = RideRequestPhase.requested,
     this.errorMessage = '',
     this.acceptingOfferId = '',
+    this.endReason = '',
   });
 
   final AcceptStatus acceptStatus;
@@ -31,6 +34,9 @@ final class WaitingOffersState extends Equatable {
   /// The offer being (or last) accepted, so only its card shows a spinner.
   final String acceptingOfferId;
 
+  /// Why the request expired (`NO_DRIVERS` / `TIMEOUT`); empty when unknown.
+  final String endReason;
+
   WaitingOffersState copyWith({
     AcceptStatus? acceptStatus,
     CancelStatus? cancelStatus,
@@ -39,6 +45,7 @@ final class WaitingOffersState extends Equatable {
     RideRequestPhase? rideRequestPhase,
     String? errorMessage,
     String? acceptingOfferId,
+    String? endReason,
   }) =>
       WaitingOffersState(
         acceptStatus: acceptStatus ?? this.acceptStatus,
@@ -48,6 +55,7 @@ final class WaitingOffersState extends Equatable {
         rideRequestPhase: rideRequestPhase ?? this.rideRequestPhase,
         errorMessage: errorMessage ?? this.errorMessage,
         acceptingOfferId: acceptingOfferId ?? this.acceptingOfferId,
+        endReason: endReason ?? this.endReason,
       );
 
   @override
@@ -59,5 +67,6 @@ final class WaitingOffersState extends Equatable {
         rideRequestPhase,
         errorMessage,
         acceptingOfferId,
+        endReason,
       ];
 }

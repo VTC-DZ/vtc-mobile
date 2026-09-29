@@ -29,7 +29,9 @@ class WaitingOffersView extends StatelessWidget {
       listenWhen: (prev, curr) =>
           prev.acceptStatus != curr.acceptStatus ||
           prev.cancelStatus != curr.cancelStatus ||
-          prev.refuseStatus != curr.refuseStatus,
+          prev.refuseStatus != curr.refuseStatus ||
+          (prev.rideRequestPhase != curr.rideRequestPhase &&
+              curr.rideRequestPhase == RideRequestPhase.expired),
       buildWhen: (prev, curr) =>
           prev.offers != curr.offers ||
           prev.rideRequestPhase != curr.rideRequestPhase ||
@@ -39,6 +41,14 @@ class WaitingOffersView extends StatelessWidget {
           context.go(RouteNames.passengerActiveRide);
         }
         if (state.cancelStatus == CancelStatus.success) {
+          context.go(RouteNames.passengerHome);
+        }
+        if (state.rideRequestPhase == RideRequestPhase.expired) {
+          AppToast.warning(switch (state.endReason) {
+            'NO_DRIVERS' => 'No drivers available nearby — please try again.',
+            'TIMEOUT' => 'Your request expired before an offer was accepted.',
+            _ => 'Your ride request has ended.',
+          });
           context.go(RouteNames.passengerHome);
         }
         if (state.acceptStatus == AcceptStatus.failure ||

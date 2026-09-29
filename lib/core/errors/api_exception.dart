@@ -12,6 +12,7 @@ final class ApiException implements Exception {
     required this.message,
     this.code = '',
     this.statusCode,
+    this.retryAfter,
   });
 
   /// User-facing message, already localised by the backend.
@@ -22,6 +23,10 @@ final class ApiException implements Exception {
   final String code;
 
   final int? statusCode;
+
+  /// From the `Retry-After` response header (seconds form), when the server
+  /// sends one — e.g. on a `429` cooldown.
+  final Duration? retryAfter;
 
   bool get isConflict => statusCode == 409;
 

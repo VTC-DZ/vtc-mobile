@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../../../core/errors/api_exception.dart';
 import '../../../../../../core/models/token_payload.dart';
 import '../../../../../../core/network/ride_socket_service.dart';
 import '../../../data/models/passenger_ride_models.dart';
@@ -40,6 +41,10 @@ final class WaitingOffersCubit extends Cubit<WaitingOffersState> {
         case OfferAccepted(:final rideRequestId)
             when rideRequestId == _rideRequestId:
           _markAccepted();
+        // The system auto-cancelled the request (NO_DRIVERS / TIMEOUT).
+        case RideRequestCancelled(:final rideRequestId, :final reason)
+            when rideRequestId == _rideRequestId:
+          _markRequestEnded(reason);
         // The offer is gone server-side (timed out, or the driver went
         // offline / took another ride) — drop the card before the passenger
         // taps Accept on it and gets a 409.
@@ -59,22 +64,25 @@ final class WaitingOffersCubit extends Cubit<WaitingOffersState> {
           break;
       }
     });
-    // REST is truth on (re)connect: reconcile offers once each time the socket
-    // comes up, catching any bid that landed while it was down.
+    // REST is truth on (re)connect: reconcile once each time the socket comes
+    // up, catching any bid, accept or auto-cancel that landed while it was down.
     _statusSub = RideSocketService.statusStream.listen((status) {
-      if (status == RideSocketStatus.connected) _poll();
+      if (status == RideSocketStatus.connected) _reconcile();
     });
   }
 
   Future<void> _poll() async {
     if (state.acceptStatus == AcceptStatus.success ||
+        state.rideRequestPhase == RideRequestPhase.expired ||
         state.cancelStatus == CancelStatus.loading ||
         state.cancelStatus == CancelStatus.success) {
       return;
     }
     try {
       final result = await _repository.listOffers(_rideRequestId);
-      if (isClosed) return;
+      if (isClosed || state.rideRequestPhase == RideRequestPhase.expired) {
+        return;
+      }
       // An accept we missed (e.g. while the socket was down) — move on.
       if (result.offers.any((o) => o.status == 'ACCEPTED')) {
         _markAccepted();
@@ -88,6 +96,49 @@ final class WaitingOffersCubit extends Cubit<WaitingOffersState> {
     } catch (_) {
       // silently skip failed polls; show last known offers
     }
+  }
+
+  /// Resolves the request against `GET /rides/active` — it may have been
+  /// accepted (elsewhere) or auto-cancelled — then refreshes the offers.
+  Future<void> _reconcile() async {
+    try {
+      final result = await _repository.getActiveRide();
+      if (isClosed) return;
+      final request = result.request;
+      if (result.ride?.rideRequestId == _rideRequestId ||
+          (request?.rideRequestId == _rideRequestId &&
+              request?.state == 'ACCEPTED')) {
+        _markAccepted();
+        return;
+      }
+      if (request == null ||
+          request.rideRequestId != _rideRequestId ||
+          request.state == 'CANCELLED') {
+        _markRequestEnded('');
+        return;
+      }
+    } catch (_) {
+      // Fall through — the offers poll still refreshes what it can.
+    }
+    _poll();
+  }
+
+  /// The request ended server-side without an accepted offer. Runs once, and
+  /// never over an accept or the passenger's own cancel.
+  void _markRequestEnded(String reason) {
+    if (isClosed ||
+        state.acceptStatus == AcceptStatus.success ||
+        state.rideRequestPhase == RideRequestPhase.expired ||
+        state.cancelStatus == CancelStatus.loading ||
+        state.cancelStatus == CancelStatus.success) {
+      return;
+    }
+    _wsSub?.cancel();
+    _statusSub?.cancel();
+    emit(state.copyWith(
+      rideRequestPhase: RideRequestPhase.expired,
+      endReason: reason,
+    ));
   }
 
   /// The request now has a ride, however we learnt it: our REST accept, an
@@ -122,6 +173,16 @@ final class WaitingOffersCubit extends Cubit<WaitingOffersState> {
     } catch (e) {
       // The offer.accepted frame may have already won and navigated away.
       if (isClosed || state.acceptStatus == AcceptStatus.success) return;
+      // 409 = stale view (offer resolved, request closed, or accepted
+      // elsewhere) — let REST decide instead of showing an error.
+      if (e is ApiException && e.isConflict) {
+        emit(state.copyWith(
+          acceptStatus: AcceptStatus.initial,
+          acceptingOfferId: '',
+        ));
+        _reconcile();
+        return;
+      }
       emit(state.copyWith(
         acceptStatus: AcceptStatus.failure,
         errorMessage: e.toString(),
@@ -144,6 +205,15 @@ final class WaitingOffersCubit extends Cubit<WaitingOffersState> {
         rideRequestPhase: phase,
       ));
     } catch (e) {
+      if (isClosed) return;
+      // 409 = the offer was already resolved — it's gone either way, so drop
+      // the card and let REST decide what is still live.
+      if (e is ApiException && e.isConflict) {
+        emit(state.copyWith(refuseStatus: RefuseStatus.initial));
+        removeOffer(offerId);
+        _reconcile();
+        return;
+      }
       emit(state.copyWith(
         refuseStatus: RefuseStatus.failure,
         errorMessage: e.toString(),
@@ -167,6 +237,13 @@ final class WaitingOffersCubit extends Cubit<WaitingOffersState> {
     } catch (e) {
       // An accept landed mid-cancel and the screen already moved on.
       if (isClosed) return;
+      // 409 = the request is no longer cancellable (accepted or already
+      // ended) — reconcile routes to the active ride or ends the request.
+      if (e is ApiException && e.isConflict) {
+        emit(state.copyWith(cancelStatus: CancelStatus.initial));
+        _reconcile();
+        return;
+      }
       emit(state.copyWith(
         cancelStatus: CancelStatus.failure,
         errorMessage: e.toString(),

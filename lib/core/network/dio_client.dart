@@ -333,6 +333,7 @@ final class DioClient {
         message: apiError.message,
         code: apiError.code,
         statusCode: status,
+        retryAfter: _retryAfter(e.response),
       );
     }
     final message = switch (e.type) {
@@ -344,5 +345,10 @@ final class DioClient {
       _ => 'Something went wrong. Please try again.',
     };
     return ApiException(message: message, statusCode: status);
+  }
+
+  static Duration? _retryAfter(Response? response) {
+    final seconds = int.tryParse(response?.headers.value('retry-after') ?? '');
+    return seconds == null ? null : Duration(seconds: seconds);
   }
 }
