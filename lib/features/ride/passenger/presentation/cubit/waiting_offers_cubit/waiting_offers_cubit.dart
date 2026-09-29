@@ -35,6 +35,11 @@ final class WaitingOffersCubit extends Cubit<WaitingOffersState> {
                 'offerId=$offerId fare=$fare DZD');
           }
           _poll();
+        // Covers an accept made from another device, or our own accept whose
+        // REST response was lost after the server committed it.
+        case OfferAccepted(:final rideRequestId)
+            when rideRequestId == _rideRequestId:
+          _markAccepted();
         // The offer is gone server-side (timed out, or the driver went
         // offline / took another ride) — drop the card before the passenger
         // taps Accept on it and gets a 409.
@@ -69,6 +74,12 @@ final class WaitingOffersCubit extends Cubit<WaitingOffersState> {
     }
     try {
       final result = await _repository.listOffers(_rideRequestId);
+      if (isClosed) return;
+      // An accept we missed (e.g. while the socket was down) — move on.
+      if (result.offers.any((o) => o.status == 'ACCEPTED')) {
+        _markAccepted();
+        return;
+      }
       final active = result.offers.where((o) => o.status == 'ACTIVE').toList();
       final phase = active.isEmpty
           ? RideRequestPhase.requested
@@ -77,6 +88,19 @@ final class WaitingOffersCubit extends Cubit<WaitingOffersState> {
     } catch (_) {
       // silently skip failed polls; show last known offers
     }
+  }
+
+  /// The request now has a ride, however we learnt it: our REST accept, an
+  /// `offer.accepted` frame, or a poll showing an ACCEPTED offer. Runs once;
+  /// later signals are no-ops.
+  void _markAccepted() {
+    if (isClosed || state.acceptStatus == AcceptStatus.success) return;
+    _wsSub?.cancel();
+    _statusSub?.cancel();
+    emit(state.copyWith(
+      acceptStatus: AcceptStatus.success,
+      rideRequestPhase: RideRequestPhase.accepted,
+    ));
   }
 
   void removeOffer(String offerId) {
@@ -94,13 +118,10 @@ final class WaitingOffersCubit extends Cubit<WaitingOffersState> {
     ));
     try {
       await _repository.acceptOffer(_rideRequestId, offerId);
-      _wsSub?.cancel();
-      _statusSub?.cancel();
-      emit(state.copyWith(
-        acceptStatus: AcceptStatus.success,
-        rideRequestPhase: RideRequestPhase.accepted,
-      ));
+      _markAccepted();
     } catch (e) {
+      // The offer.accepted frame may have already won and navigated away.
+      if (isClosed || state.acceptStatus == AcceptStatus.success) return;
       emit(state.copyWith(
         acceptStatus: AcceptStatus.failure,
         errorMessage: e.toString(),
@@ -144,6 +165,8 @@ final class WaitingOffersCubit extends Cubit<WaitingOffersState> {
         rideRequestPhase: RideRequestPhase.cancelled,
       ));
     } catch (e) {
+      // An accept landed mid-cancel and the screen already moved on.
+      if (isClosed) return;
       emit(state.copyWith(
         cancelStatus: CancelStatus.failure,
         errorMessage: e.toString(),
