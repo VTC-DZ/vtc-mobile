@@ -111,8 +111,10 @@ class _AddressRow extends StatelessWidget {
         SizedBox(height: 2.h),
         Text(
           address,
-          style: AppTextStyles.bodyMedium(context)
-              .copyWith(fontWeight: FontWeight.w600),
+          style: AppTextStyles.bodyMedium(context).copyWith(
+            color: AppColors.text(context),
+            fontWeight: FontWeight.w600,
+          ),
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
         ),

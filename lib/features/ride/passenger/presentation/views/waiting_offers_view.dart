@@ -14,6 +14,7 @@ import '../cubit/waiting_offers_cubit/waiting_offers_cubit.dart';
 import '../cubit/waiting_offers_cubit/waiting_offers_state.dart';
 import 'widgets/waiting_offers/empty_offers_placeholder.dart';
 import 'widgets/waiting_offers/offer_card.dart';
+import 'widgets/waiting_offers/offer_details_sheet.dart';
 import 'widgets/waiting_offers/phase_badge.dart';
 import 'widgets/waiting_offers/ride_summary_card.dart';
 
@@ -101,7 +102,10 @@ class WaitingOffersView extends StatelessWidget {
                               key: ValueKey(offer.offerId),
                               offer: offer,
                               isAccepting: isAccepting,
+                              isAcceptingThis: isAccepting &&
+                                  state.acceptingOfferId == offer.offerId,
                               proposedFare: args.proposedFare,
+                              onTap: () => _openOfferDetails(context, offer),
                               onAccept: () => context
                                   .read<WaitingOffersCubit>()
                                   .acceptOffer(offer.offerId),
@@ -162,5 +166,22 @@ class WaitingOffersView extends StatelessWidget {
         );
       },
     );
+  }
+
+  /// Opens the offer's full details and forwards the passenger's choice to
+  /// the same cubit actions the card's buttons use.
+  Future<void> _openOfferDetails(BuildContext context, OfferEntry offer) async {
+    // Capture the cubit before the modal swaps the context.
+    final cubit = context.read<WaitingOffersCubit>();
+    final action =
+        await showOfferDetailsSheet(context, offer: offer, args: args);
+    switch (action) {
+      case OfferAction.accept:
+        cubit.acceptOffer(offer.offerId);
+      case OfferAction.decline:
+        cubit.refuseOffer(offer.offerId);
+      case null:
+        break;
+    }
   }
 }

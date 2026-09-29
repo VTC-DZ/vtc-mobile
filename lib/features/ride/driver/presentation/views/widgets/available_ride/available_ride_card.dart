@@ -7,7 +7,7 @@ import '../../../../data/models/driver_ride_models.dart';
 import '../../../../../shared/utils/fare_formatter.dart';
 import '../../../../../shared/widgets/ride_route_preview.dart';
 import '../../../../../shared/widgets/service_type_chip.dart';
-import 'expiry_indicators.dart';
+import '../../../../../shared/widgets/expiry_indicators.dart';
 import 'ride_request_badges.dart';
 import 'ride_request_details_sheet.dart';
 

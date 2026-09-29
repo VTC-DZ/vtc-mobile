@@ -87,12 +87,11 @@ class _AvailableRidesViewState extends State<AvailableRidesView> {
   ) async {
     // Capture the shell-scoped cubit before the modal swaps the context.
     final cubit = context.read<AvailableRidesCubit>();
-    final fare = await showBidSheet(context, proposedFare: ride.proposedFare);
+    final fare = await showBidSheet(context, ride: ride);
     if (fare != null) {
       cubit.submitBid(ride.rideRequestId, fare);
     }
   }
-
 }
 
 class _Message extends StatelessWidget {

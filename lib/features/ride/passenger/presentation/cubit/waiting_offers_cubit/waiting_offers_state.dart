@@ -18,6 +18,7 @@ final class WaitingOffersState extends Equatable {
     this.offers = const [],
     this.rideRequestPhase = RideRequestPhase.requested,
     this.errorMessage = '',
+    this.acceptingOfferId = '',
   });
 
   final AcceptStatus acceptStatus;
@@ -27,6 +28,9 @@ final class WaitingOffersState extends Equatable {
   final RideRequestPhase rideRequestPhase;
   final String errorMessage;
 
+  /// The offer being (or last) accepted, so only its card shows a spinner.
+  final String acceptingOfferId;
+
   WaitingOffersState copyWith({
     AcceptStatus? acceptStatus,
     CancelStatus? cancelStatus,
@@ -34,6 +38,7 @@ final class WaitingOffersState extends Equatable {
     List<OfferEntry>? offers,
     RideRequestPhase? rideRequestPhase,
     String? errorMessage,
+    String? acceptingOfferId,
   }) =>
       WaitingOffersState(
         acceptStatus: acceptStatus ?? this.acceptStatus,
@@ -42,6 +47,7 @@ final class WaitingOffersState extends Equatable {
         offers: offers ?? this.offers,
         rideRequestPhase: rideRequestPhase ?? this.rideRequestPhase,
         errorMessage: errorMessage ?? this.errorMessage,
+        acceptingOfferId: acceptingOfferId ?? this.acceptingOfferId,
       );
 
   @override
@@ -52,5 +58,6 @@ final class WaitingOffersState extends Equatable {
         offers,
         rideRequestPhase,
         errorMessage,
+        acceptingOfferId,
       ];
 }

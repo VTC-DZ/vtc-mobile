@@ -28,7 +28,10 @@ final class WaitingOffersCubit extends Cubit<WaitingOffersState> {
     _wsSub = RideSocketService.frameStream.listen((frame) {
       final event = RideSocketEvent.tryParse(frame);
       if (event is OfferCreated && event.rideRequestId == _rideRequestId) {
-        if (kDebugMode) debugPrint('[Passenger] offer.created → offerId=${event.offerId} fare=${event.fare} DZD');
+        if (kDebugMode) {
+          debugPrint('[Passenger] offer.created → '
+              'offerId=${event.offerId} fare=${event.fare} DZD');
+        }
         _poll();
       }
     });
@@ -48,7 +51,9 @@ final class WaitingOffersCubit extends Cubit<WaitingOffersState> {
     try {
       final result = await _repository.listOffers(_rideRequestId);
       final active = result.offers.where((o) => o.status == 'ACTIVE').toList();
-      final phase = active.isEmpty ? RideRequestPhase.requested : RideRequestPhase.negotiating;
+      final phase = active.isEmpty
+          ? RideRequestPhase.requested
+          : RideRequestPhase.negotiating;
       emit(state.copyWith(offers: active, rideRequestPhase: phase));
     } catch (_) {
       // silently skip failed polls; show last known offers
@@ -64,7 +69,10 @@ final class WaitingOffersCubit extends Cubit<WaitingOffersState> {
   }
 
   Future<void> acceptOffer(String offerId) async {
-    emit(state.copyWith(acceptStatus: AcceptStatus.loading));
+    emit(state.copyWith(
+      acceptStatus: AcceptStatus.loading,
+      acceptingOfferId: offerId,
+    ));
     try {
       await _repository.acceptOffer(_rideRequestId, offerId);
       _wsSub?.cancel();
@@ -87,7 +95,9 @@ final class WaitingOffersCubit extends Cubit<WaitingOffersState> {
       await _repository.refuseOffer(_rideRequestId, offerId);
       final remaining =
           state.offers.where((o) => o.offerId != offerId).toList();
-      final phase = remaining.isEmpty ? RideRequestPhase.requested : RideRequestPhase.negotiating;
+      final phase = remaining.isEmpty
+          ? RideRequestPhase.requested
+          : RideRequestPhase.negotiating;
       emit(state.copyWith(
         refuseStatus: RefuseStatus.success,
         offers: remaining,

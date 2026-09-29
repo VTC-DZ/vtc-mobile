@@ -1,21 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import '../../../../../../../core/theme/app_colors.dart';
 import '../../../../../../../core/theme/app_text_styles.dart';
 import '../../../../../../../core/utils/map_geo.dart';
 import '../../../../../../../core/utils/map_gestures.dart';
+import '../../../../../../../core/widgets/app_toast.dart';
 import '../../../../data/models/driver_ride_models.dart';
-import '../../../../../passenger/presentation/views/widgets/location/map_button.dart';
 import '../../../../../shared/utils/fare_formatter.dart';
+import '../../../../../shared/widgets/map_control_group.dart';
 import '../../../../../shared/widgets/ride_map_style.dart';
 import '../../../../../shared/widgets/ride_route_card.dart';
 import '../../../../../shared/widgets/service_type_chip.dart';
 import '../../../cubit/available_rides_cubit/available_rides_cubit.dart';
 import '../../../cubit/available_rides_cubit/available_rides_state.dart';
-import 'expiry_indicators.dart';
+import '../../../../../shared/widgets/expiry_indicators.dart';
 import 'ride_request_badges.dart';
 
 /// What the driver chose in the details sheet; `null` means dismissed.
@@ -237,7 +239,8 @@ class _FareHero extends StatelessWidget {
   }
 }
 
-/// "To pickup" (server-provided, optional) and the straight-line trip length.
+/// One card with "To pickup" (server-provided, optional) and the estimated
+/// straight-line trip length, split by a hairline divider.
 class _DistanceStats extends StatelessWidget {
   const _DistanceStats({required this.ride});
 
@@ -250,32 +253,46 @@ class _DistanceStats extends StatelessWidget {
       LatLng(ride.dropoff.lat, ride.dropoff.lng),
     ).round();
 
-    return Row(
-      children: [
-        if (ride.distanceMeters != null) ...[
-          Expanded(
-            child: _StatTile(
-              icon: Icons.near_me_rounded,
-              label: 'To pickup',
-              value: formatDistance(ride.distanceMeters!),
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
+      decoration: BoxDecoration(
+        color: AppColors.surface(context),
+        borderRadius: BorderRadius.circular(14.r),
+        border: Border.all(color: AppColors.borderDefault(context)),
+      ),
+      child: IntrinsicHeight(
+        child: Row(
+          children: [
+            if (ride.distanceMeters != null) ...[
+              Expanded(
+                child: _Stat(
+                  icon: Icons.near_me_rounded,
+                  label: 'To pickup',
+                  value: formatDistance(ride.distanceMeters!),
+                ),
+              ),
+              VerticalDivider(
+                width: 24.w,
+                thickness: 1,
+                color: AppColors.borderDefault(context),
+              ),
+            ],
+            Expanded(
+              child: _Stat(
+                icon: Icons.route_rounded,
+                label: 'Trip distance',
+                value: '≈\u00A0${formatDistance(tripMeters)}',
+              ),
             ),
-          ),
-          SizedBox(width: 12.w),
-        ],
-        Expanded(
-          child: _StatTile(
-            icon: Icons.route_rounded,
-            label: 'Trip (straight line)',
-            value: '≈ ${formatDistance(tripMeters)}',
-          ),
+          ],
         ),
-      ],
+      ),
     );
   }
 }
 
-class _StatTile extends StatelessWidget {
-  const _StatTile({
+class _Stat extends StatelessWidget {
+  const _Stat({
     required this.icon,
     required this.label,
     required this.value,
@@ -287,49 +304,42 @@ class _StatTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.all(12.w),
-      decoration: BoxDecoration(
-        color: AppColors.surface(context),
-        borderRadius: BorderRadius.circular(14.r),
-        border: Border.all(color: AppColors.borderDefault(context)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 34.w,
-            height: 34.w,
-            decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.12),
-              shape: BoxShape.circle,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Row(
+          children: [
+            Icon(icon, size: 14.w, color: AppColors.primary),
+            SizedBox(width: 4.w),
+            Flexible(
+              child: Text(
+                label,
+                maxLines: 1,
+                softWrap: false,
+                overflow: TextOverflow.fade,
+                style: AppTextStyles.labelSmall(context).copyWith(
+                  color: AppColors.textSecondary(context),
+                ),
+              ),
             ),
-            child: Icon(icon, size: 18.w, color: AppColors.primary),
-          ),
-          SizedBox(width: 10.w),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  value,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTextStyles.labelLarge(context)
-                      .copyWith(fontWeight: FontWeight.w700),
-                ),
-                Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTextStyles.labelSmall(context).copyWith(
-                    color: AppColors.textSecondary(context),
-                  ),
-                ),
-              ],
+          ],
+        ),
+        SizedBox(height: 4.h),
+        // Scale down rather than truncate so the unit is always visible.
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: AlignmentDirectional.centerStart,
+          child: Text(
+            value,
+            maxLines: 1,
+            style: AppTextStyles.headingSmall(context).copyWith(
+              fontWeight: FontWeight.w700,
+              height: 1.2,
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
@@ -392,7 +402,8 @@ class _Actions extends StatelessWidget {
 }
 
 /// Compact route preview: pickup and drop-off pins joined by the dashed trip
-/// line, the driver's own blue dot, and a button to re-frame the route.
+/// line, the driver's own blue dot, and controls to re-frame the route, jump
+/// to the driver's position and zoom.
 class _RideRequestMap extends StatefulWidget {
   const _RideRequestMap({required this.pickup, required this.dropoff});
 
@@ -406,6 +417,7 @@ class _RideRequestMap extends StatefulWidget {
 class _RideRequestMapState extends State<_RideRequestMap> {
   GoogleMapController? _mapController;
   RideMapIcons? _icons;
+  bool _locating = false;
 
   LatLng get _pickup => LatLng(widget.pickup.lat, widget.pickup.lng);
 
@@ -441,12 +453,46 @@ class _RideRequestMapState extends State<_RideRequestMap> {
     RideMapStyle.fitCamera(controller, [_pickup, _dropoff]);
   }
 
+  void _zoomIn() => _mapController?.animateCamera(CameraUpdate.zoomIn());
+
+  void _zoomOut() => _mapController?.animateCamera(CameraUpdate.zoomOut());
+
+  /// Centers the camera on the driver's GPS position, keeping the zoom.
+  /// Uses the last known fix when available so the jump feels instant.
+  Future<void> _goToMyLocation() async {
+    if (_locating) return;
+    setState(() => _locating = true);
+    try {
+      final permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
+        AppToast.error(
+            'Location permission is required to show your position.');
+        return;
+      }
+      final position = await Geolocator.getLastKnownPosition() ??
+          await Geolocator.getCurrentPosition(
+            locationSettings: const LocationSettings(
+              accuracy: LocationAccuracy.high,
+              timeLimit: Duration(seconds: 5),
+            ),
+          );
+      await _mapController?.animateCamera(
+        CameraUpdate.newLatLng(LatLng(position.latitude, position.longitude)),
+      );
+    } catch (_) {
+      AppToast.error('Couldn\'t get your location. Please try again.');
+    } finally {
+      if (mounted) setState(() => _locating = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final icons = _icons;
 
     return SizedBox(
-      height: 200.h,
+      height: 220.h,
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16.r),
         child: Stack(
@@ -491,9 +537,27 @@ class _RideRequestMapState extends State<_RideRequestMap> {
             Positioned(
               top: 10.h,
               right: 10.w,
-              child: MapButton(
-                icon: Icons.alt_route_rounded,
-                onTap: _fitRoute,
+              child: MapControlGroup(
+                buttonSize: 36,
+                actions: [
+                  MapControlAction(
+                    icon: Icons.alt_route_rounded,
+                    onTap: _fitRoute,
+                  ),
+                  MapControlAction(
+                    icon: Icons.my_location_rounded,
+                    onTap: _goToMyLocation,
+                    isLoading: _locating,
+                  ),
+                  MapControlAction(
+                    icon: Icons.add_rounded,
+                    onTap: _zoomIn,
+                  ),
+                  MapControlAction(
+                    icon: Icons.remove_rounded,
+                    onTap: _zoomOut,
+                  ),
+                ],
               ),
             ),
           ],

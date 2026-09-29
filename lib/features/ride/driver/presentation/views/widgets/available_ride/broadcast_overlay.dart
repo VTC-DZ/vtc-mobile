@@ -43,10 +43,7 @@ class BroadcastOverlay extends StatelessWidget {
                         ride: ride,
                         compact: true,
                         onBid: () async {
-                          final fare = await showBidSheet(
-                            context,
-                            proposedFare: ride.proposedFare,
-                          );
+                          final fare = await showBidSheet(context, ride: ride);
                           if (fare != null) {
                             cubit.submitBid(ride.rideRequestId, fare);
                           }

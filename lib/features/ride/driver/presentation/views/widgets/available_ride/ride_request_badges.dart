@@ -5,8 +5,25 @@ import '../../../../../../../core/theme/app_colors.dart';
 import '../../../../../../../core/theme/app_text_styles.dart';
 import '../../../../data/models/driver_ride_models.dart';
 
-String formatDistance(int meters) =>
-    meters >= 1000 ? '${(meters / 1000).toStringAsFixed(1)} km' : '$meters m';
+/// Human-friendly distance: `850 m`, `3.4 km`, `2 km`, `23 km`.
+///
+/// The number and unit are joined by a non-breaking space so the unit never
+/// wraps onto its own line.
+String formatDistance(int meters) {
+  const nbsp = ' ';
+  if (meters < 1000) {
+    final rounded = meters < 10 ? meters : (meters / 10).round() * 10;
+    // Rounding 995+ m up lands on 1000 — show it as kilometres.
+    if (rounded < 1000) return '$rounded${nbsp}m';
+  }
+  final km = meters / 1000;
+  if (km >= 10) return '${km.round()}${nbsp}km';
+  final oneDecimal = km.toStringAsFixed(1);
+  final trimmed = oneDecimal.endsWith('.0')
+      ? oneDecimal.substring(0, oneDecimal.length - 2)
+      : oneDecimal;
+  return '$trimmed${nbsp}km';
+}
 
 /// Pink pill flagging a women-only ride request.
 class FemaleOnlyBadge extends StatelessWidget {

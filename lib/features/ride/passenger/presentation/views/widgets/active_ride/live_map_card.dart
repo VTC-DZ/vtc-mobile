@@ -12,6 +12,7 @@ import '../../../../../driver/data/models/ride_socket_event.dart';
 import '../../../../../shared/models/shared_ride_models.dart';
 import '../../../../../shared/presentation/cubit/ride_route_cubit/ride_route_cubit.dart';
 import '../../../../../shared/presentation/cubit/ride_route_cubit/ride_route_state.dart';
+import '../../../../../shared/widgets/map_control_group.dart';
 import '../../../../../shared/widgets/ride_map_style.dart';
 
 /// Full-screen capable live map. Sizes to whatever its parent gives it.
@@ -157,6 +158,10 @@ class _LiveMapCardState extends State<LiveMapCard> {
     );
   }
 
+  void _zoom(double delta) {
+    _mapController?.animateCamera(CameraUpdate.zoomBy(delta));
+  }
+
   @override
   void dispose() {
     _mapController?.dispose();
@@ -183,7 +188,6 @@ class _LiveMapCardState extends State<LiveMapCard> {
           listener: (context, _) => _fitRoute(),
           builder: (context, route) => GoogleMap(
             gestureRecognizers: mapGestureRecognizers,
-            // setState so _MapZoomButtons receives the controller.
             onMapCreated: (controller) {
               setState(() => _mapController = controller);
               _fitRoute();
@@ -261,9 +265,21 @@ class _LiveMapCardState extends State<LiveMapCard> {
         Positioned(
           right: 12.w,
           top: controlsTop + (driver == null ? 48.h : 0),
-          child: _MapZoomButtons(
-            controller: _mapController,
-            onFitRoute: _fitRoute,
+          child: MapControlGroup(
+            actions: [
+              MapControlAction(
+                icon: Icons.alt_route_rounded,
+                onTap: _fitRoute,
+              ),
+              MapControlAction(
+                icon: Icons.add_rounded,
+                onTap: () => _zoom(1),
+              ),
+              MapControlAction(
+                icon: Icons.remove_rounded,
+                onTap: () => _zoom(-1),
+              ),
+            ],
           ),
         ),
       ],
@@ -309,80 +325,6 @@ class _WaitingForDriverPill extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _MapZoomButtons extends StatelessWidget {
-  const _MapZoomButtons({required this.controller, required this.onFitRoute});
-
-  final GoogleMapController? controller;
-  final VoidCallback onFitRoute;
-
-  void _zoom(double delta) {
-    controller?.animateCamera(CameraUpdate.zoomBy(delta));
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.background(context),
-        borderRadius: BorderRadius.circular(8.r),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.15),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _ZoomBtn(
-            icon: Icons.alt_route_rounded,
-            onTap: onFitRoute,
-          ),
-          Divider(
-            height: 1,
-            thickness: 1,
-            color: AppColors.borderDefault(context),
-          ),
-          _ZoomBtn(
-            icon: Icons.add_rounded,
-            onTap: () => _zoom(1),
-          ),
-          Divider(
-            height: 1,
-            thickness: 1,
-            color: AppColors.borderDefault(context),
-          ),
-          _ZoomBtn(
-            icon: Icons.remove_rounded,
-            onTap: () => _zoom(-1),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ZoomBtn extends StatelessWidget {
-  const _ZoomBtn({required this.icon, required this.onTap});
-
-  final IconData icon;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: SizedBox(
-        width: 40.w,
-        height: 40.w,
-        child: Icon(icon, size: 20.w, color: AppColors.text(context)),
       ),
     );
   }
