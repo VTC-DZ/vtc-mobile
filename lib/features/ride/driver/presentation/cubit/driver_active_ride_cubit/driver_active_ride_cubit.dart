@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../../../core/constants/driver_ride_api_constants.dart';
+import '../../../../../../core/errors/api_exception.dart';
 import '../../../../../../core/network/ride_socket_service.dart';
 import '../../../data/driver_ride_repository.dart';
 import '../../../data/models/driver_ride_models.dart';
@@ -81,6 +83,28 @@ final class DriverActiveRideCubit extends Cubit<DriverActiveRideState> {
     }
   }
 
+  // 409s mean "your view is stale" (epic-03 §12): re-render from the server
+  // instead of surfacing an error. The one real "not yet" is a no-show cancel
+  // before the grace period — tell the driver, and refresh the deadline in case
+  // the device clock drifted.
+  void _onActionError(Object e) {
+    if (e is ApiException && e.hasCode(RideErrorCodes.arrivalGraceNotElapsed)) {
+      emit(state.copyWith(
+        status: DriverActiveRideStatus.actionFailure,
+        errorMessage: e.message,
+      ));
+      _reconcile();
+    } else if (e is ApiException && e.isConflict) {
+      emit(state.copyWith(status: DriverActiveRideStatus.loaded));
+      _reconcile();
+    } else {
+      emit(state.copyWith(
+        status: DriverActiveRideStatus.actionFailure,
+        errorMessage: e.toString(),
+      ));
+    }
+  }
+
   Future<void> markArrived() async {
     final rideId = state.ride?.rideId;
     if (rideId == null) return;
@@ -89,10 +113,7 @@ final class DriverActiveRideCubit extends Cubit<DriverActiveRideState> {
       await _repository.markArrived(rideId);
       await loadActiveRide();
     } catch (e) {
-      emit(state.copyWith(
-        status: DriverActiveRideStatus.actionFailure,
-        errorMessage: e.toString(),
-      ));
+      _onActionError(e);
     }
   }
 
@@ -104,10 +125,7 @@ final class DriverActiveRideCubit extends Cubit<DriverActiveRideState> {
       await _repository.startRide(rideId);
       await loadActiveRide();
     } catch (e) {
-      emit(state.copyWith(
-        status: DriverActiveRideStatus.actionFailure,
-        errorMessage: e.toString(),
-      ));
+      _onActionError(e);
     }
   }
 
@@ -122,10 +140,7 @@ final class DriverActiveRideCubit extends Cubit<DriverActiveRideState> {
         completedFare: response.finalFare,
       ));
     } catch (e) {
-      emit(state.copyWith(
-        status: DriverActiveRideStatus.actionFailure,
-        errorMessage: e.toString(),
-      ));
+      _onActionError(e);
     }
   }
 
@@ -140,10 +155,7 @@ final class DriverActiveRideCubit extends Cubit<DriverActiveRideState> {
       );
       await loadActiveRide();
     } catch (e) {
-      emit(state.copyWith(
-        status: DriverActiveRideStatus.actionFailure,
-        errorMessage: e.toString(),
-      ));
+      _onActionError(e);
     }
   }
 

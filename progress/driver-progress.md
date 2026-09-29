@@ -105,8 +105,8 @@ Last checked: 2026-09-29
 | ✅ | Reconnect backoff 1→2→4→8→16 s | `WebSocketConstants.backoffSteps`, `ride_socket_service.dart:245` |
 | ✅ | Dedupe broadcasts by `rideRequestId` | `_upsertRide` |
 | ✅ | Drive UI from `ride.state_changed` | Refetch on every state change |
-| ⚠️ | Count down to server fields | ✅ request `expiresAt` and bid `expiresAt` (`expiry_indicators.dart`); ❌ `arrivalWaitDeadline` / `inProgressDeadline` are parsed in `driver_ride_models.dart` but not shown |
-| ⚠️ | 409s → refetch, not failure (bid races) | `ApiException.isConflict` exists (`api_exception.dart:26`) but no ride cubit uses it — only wallet flows treat 409 as stale view |
+| ✅ | Count down to server fields | Request `expiresAt` and bid `expiresAt` (`expiry_indicators.dart`); `arrivalWaitDeadline` → ARRIVED header `ExpiryCountdown` + penalty-free `PASSENGER_NO_SHOW` cancel once it passes (`driver_active_ride_view.dart` `_cancel`). `inProgressDeadline` not shown by design — admin-only alert, and absent from `/rides/active` |
+| ✅ | 409s → refetch, not failure (bid races) | Bid: `DRIVER_HAS_ACTIVE_RIDE` → active-ride screen; any other 409 → `bidConflict` warning toast + `loadAvailableRides()` (`available_rides_cubit.dart`). Ride actions: `_onActionError` in `driver_active_ride_cubit.dart` — 409 → silent `_reconcile()` against `/rides/active`; `ARRIVAL_GRACE_NOT_ELAPSED` → toast + reconcile. Codes in `RideErrorCodes` (`driver_ride_api_constants.dart`) |
 | ✅ | Stream `driver.location`; REST `/location` fallback | `driver_location_streamer.dart` — WS while connected, REST while down |
 
 ---

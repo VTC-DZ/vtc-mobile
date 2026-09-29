@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../../../core/constants/driver_ride_api_constants.dart';
 import '../../../../../../core/constants/wallet_api_constants.dart';
 import '../../../../../../core/errors/api_exception.dart';
 import '../../../../../../core/network/ride_socket_service.dart';
@@ -63,6 +64,20 @@ final class AvailableRidesCubit extends Cubit<AvailableRidesState> {
         pendingBids: {...state.pendingBids, rideRequestId: bid},
       ));
     } catch (e) {
+      // 409s mean "your view is stale" (epic-03 §12): refetch rather than fail.
+      if (e is ApiException && e.hasCode(RideErrorCodes.driverHasActiveRide)) {
+        // The shell routes offerAccepted to the active-ride screen.
+        emit(state.copyWith(status: AvailableRidesStatus.offerAccepted));
+        return;
+      }
+      if (e is ApiException && e.isConflict) {
+        emit(state.copyWith(
+          status: AvailableRidesStatus.bidConflict,
+          errorMessage: e.message,
+        ));
+        await loadAvailableRides();
+        return;
+      }
       // The wallet gate blocks bidding just as it blocks going online. It has a
       // concrete fix, so it gets its own status: DriverHomeShell renders it as
       // a "Top up" prompt instead of a generic failure snackbar.

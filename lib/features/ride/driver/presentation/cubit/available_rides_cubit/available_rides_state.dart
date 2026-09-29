@@ -17,6 +17,11 @@ enum AvailableRidesStatus {
   /// The bid was refused with `403 INSUFFICIENT_WALLET_BALANCE` — the driver
   /// needs a top-up, not an error toast.
   gatedByBalance,
+
+  /// The bid hit a `409` — the view was stale (request closed, 3 bids live,
+  /// …), so the list is refetched. A warning, not an error; the server's
+  /// message is in [AvailableRidesState.errorMessage].
+  bidConflict,
   failure,
 }
 

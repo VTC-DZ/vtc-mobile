@@ -51,8 +51,7 @@ class _DriverActiveRideViewState extends State<DriverActiveRideView> {
       return;
     }
     _positionSub = Geolocator.getPositionStream(
-      locationSettings:
-          const LocationSettings(accuracy: LocationAccuracy.high),
+      locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
     ).listen((pos) {
       if (mounted) setState(() => _driverPosition = pos);
     });
@@ -146,31 +145,53 @@ class _RideStack extends StatelessWidget {
   final Position? driverPosition;
   final bool isTransitioning;
 
+  // Evaluated at tap time against the server's arrivalWaitDeadline: once it
+  // passes, the driver may cancel as PASSENGER_NO_SHOW, which — unlike the
+  // driver-fault DRIVER_VEHICLE_ISSUE — carries no wallet penalty.
   Future<void> _cancel(BuildContext context) async {
-    final confirmed = await showDialog<bool>(
+    final isArrived = ride.state == ActiveDriverRideState.arrived;
+    final waitDeadline = DateTime.tryParse(ride.arrivalWaitDeadline ?? '');
+    final noShowAllowed = isArrived &&
+        waitDeadline != null &&
+        waitDeadline.isBefore(DateTime.now());
+
+    final reason = await showDialog<CancelReason>(
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: const Text('Cancel this ride?'),
-        content: const Text(
-          'The passenger will be notified and the ride will end.',
+        content: Text(
+          noShowAllowed
+              ? 'The wait time is over. If the passenger didn\'t show up, '
+                  'you can cancel without a penalty.'
+              : isArrived
+                  ? 'The passenger will be notified and the ride will end.\n\n'
+                      'You can cancel as a no-show without a penalty once '
+                      'the wait timer runs out.'
+                  : 'The passenger will be notified and the ride will end.',
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
+            onPressed: () => Navigator.of(dialogContext).pop(),
             child: const Text('Keep ride'),
           ),
           TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(true),
+            onPressed: () => Navigator.of(dialogContext)
+                .pop(CancelReason.driverVehicleIssue),
             style: TextButton.styleFrom(foregroundColor: AppColors.error),
-            child: const Text('Cancel ride'),
+            child: Text(noShowAllowed ? 'Vehicle issue' : 'Cancel ride'),
           ),
+          if (noShowAllowed)
+            TextButton(
+              onPressed: () =>
+                  Navigator.of(dialogContext).pop(CancelReason.passengerNoShow),
+              style: TextButton.styleFrom(foregroundColor: AppColors.error),
+              child: const Text('Passenger didn\'t show'),
+            ),
         ],
       ),
     );
-    if (confirmed == true && context.mounted) {
-      context
-          .read<DriverActiveRideCubit>()
-          .cancelRide(CancelReason.driverVehicleIssue);
+    if (reason != null && context.mounted) {
+      context.read<DriverActiveRideCubit>().cancelRide(reason);
     }
   }
 

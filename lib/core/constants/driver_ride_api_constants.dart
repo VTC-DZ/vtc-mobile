@@ -17,3 +17,16 @@ abstract final class DriverRideApiConstants {
   static String cancel(String rideId) => '$_base/$rideId/cancel';
   static const String active = '$_base/active';
 }
+
+/// Ride error codes from the API error envelope that the driver app branches
+/// on, so nothing sniffs message text. See swagger/epic-03-ride.md §12 — every
+/// other ride `409` is treated generically as "your view is stale".
+abstract final class RideErrorCodes {
+  RideErrorCodes._();
+
+  /// `409` — `PASSENGER_NO_SHOW` cancel before `arrivalWaitDeadline` passed.
+  static const String arrivalGraceNotElapsed = 'ARRIVAL_GRACE_NOT_ELAPSED';
+
+  /// `409` — bid while already on a ride; route to the active-ride screen.
+  static const String driverHasActiveRide = 'DRIVER_HAS_ACTIVE_RIDE';
+}

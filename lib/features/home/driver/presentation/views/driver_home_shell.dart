@@ -99,6 +99,12 @@ class DriverHomeShell extends StatelessWidget {
           bidExpiredReason => 'Your bid expired',
           _ => 'Your bid is no longer active',
         });
+      case AvailableRidesStatus.bidConflict:
+        AppToast.warning(
+          state.errorMessage.isEmpty
+              ? 'This ride is no longer available'
+              : state.errorMessage,
+        );
       case AvailableRidesStatus.gatedByBalance:
         // Same handling as the go-online gate: the cached gate was stale, so
         // refetch it — that locks the availability switch and surfaces the
