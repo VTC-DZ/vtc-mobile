@@ -114,7 +114,7 @@ class _Summary extends StatelessWidget {
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            DriverAvatar(name: offer.driverFullName),
+            InitialsAvatar(name: offer.driverFullName),
             SizedBox(width: 10.w),
             Expanded(
               child: Column(

@@ -461,6 +461,7 @@ final class AppRouter {
               return BlocProvider<DriverRideDetailCubit>(
                 create: (_) => DriverRideDetailCubit(
                   const DriverRideRepository(),
+                  const RoutingRepository(),
                   rideId: rideId,
                 )..load(),
                 child: const DriverRideDetailView(),

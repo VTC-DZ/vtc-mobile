@@ -10,15 +10,17 @@ import '../../../../../core/router/route_names.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_text_styles.dart';
 import '../../../../../core/widgets/app_toast.dart';
+import '../../../../../core/widgets/cancel_ride_dialog.dart';
 import '../../../../ride/driver/data/models/ride_socket_event.dart';
-import '../../../passenger/data/models/passenger_ride_models.dart';
+import '../../../shared/widgets/active_ride/active_ride_cancel_button.dart';
+import '../../../shared/widgets/active_ride/active_ride_sheet.dart';
+import '../../../shared/widgets/active_ride/ride_fare_row.dart';
+import '../../../shared/widgets/active_ride/ride_stage_header.dart';
+import '../../../shared/widgets/ride_detail/ride_detail_addresses_card.dart';
+import '../../../shared/widgets/ride_detail/ride_detail_person_card.dart';
 import '../cubit/passenger_active_ride_cubit/passenger_active_ride_cubit.dart';
 import '../cubit/passenger_active_ride_cubit/passenger_active_ride_state.dart';
-import 'widgets/active_ride/cancel_ride_button.dart';
-import 'widgets/active_ride/driver_card.dart';
-import 'widgets/active_ride/fare_card.dart';
 import 'widgets/active_ride/live_map_card.dart';
-import 'widgets/active_ride/state_badge.dart';
 
 class PassengerActiveRideView extends StatefulWidget {
   const PassengerActiveRideView({super.key});
@@ -114,6 +116,13 @@ class _RideBody extends StatelessWidget {
   final PassengerActiveRideState state;
   final Position? ownPosition;
 
+  Future<void> _cancel(BuildContext context) async {
+    final reason = await showCancelRideDialog(context);
+    if (reason != null && context.mounted) {
+      context.read<PassengerActiveRideCubit>().cancelRide(reason);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final ride = state.ride!;
@@ -122,8 +131,23 @@ class _RideBody extends StatelessWidget {
         rideState == RideState.accepted || rideState == RideState.arrived;
     final double? driverLat = state.driverLat ?? ride.driver.currentLat;
     final double? driverLng = state.driverLng ?? ride.driver.currentLng;
-    final topPadding = MediaQuery.of(context).padding.top;
-    final bottomPadding = MediaQuery.of(context).padding.bottom;
+    final pickup = ride.pickup;
+    final dropoff = ride.dropoff;
+
+    final (title, color, step) = switch (rideState) {
+      RideState.arrived => ('Driver has arrived', rideStageArrivedColor, 1),
+      RideState.inProgress => (
+          'On the way to drop-off',
+          rideStageInTripColor,
+          2,
+        ),
+      _ => ('Driver is on the way', AppColors.primary, 0),
+    };
+    final (subtitle, distanceSuffix) = switch (rideState) {
+      RideState.arrived => ('Meet them at the pickup', null),
+      RideState.inProgress => (dropoff?.address, 'to drop-off'),
+      _ => (pickup?.address, 'away'),
+    };
 
     return Stack(
       children: [
@@ -134,173 +158,40 @@ class _RideBody extends StatelessWidget {
             driverLng: driverLng,
             ownPosition: ownPosition,
             rideState: rideState,
-            pickup: ride.pickup,
-            dropoff: ride.dropoff,
+            pickup: pickup,
+            dropoff: dropoff,
             driverLabel:
                 ride.driver.fullName.split(' ').firstOrNull ?? 'Driver',
           ),
         ),
-
-        // Floating status badge
-        Positioned(
-          top: topPadding + 12.h,
-          left: 16.w,
-          right: 16.w,
-          child: RideStateBadge(rideState: rideState),
-        ),
-
-        // Draggable bottom sheet
-        DraggableScrollableSheet(
-          initialChildSize: 0.45,
-          minChildSize: 0.14,
-          maxChildSize: 0.88,
-          snap: true,
-          snapSizes: const [0.45],
-          builder: (ctx, scrollController) => _SheetContent(
-            scrollController: scrollController,
-            ride: ride,
-            rideState: rideState,
-            canCancel: canCancel,
-            bottomPadding: bottomPadding,
+        ActiveRideSheet(
+          header: RideStageHeader(
+            title: title,
+            color: color,
+            step: step,
+            subtitle: subtitle,
+            distanceSuffix: distanceSuffix,
           ),
-        ),
-      ],
-    );
-  }
-}
-
-class _SheetContent extends StatelessWidget {
-  const _SheetContent({
-    required this.scrollController,
-    required this.ride,
-    required this.rideState,
-    required this.canCancel,
-    required this.bottomPadding,
-  });
-
-  final ScrollController scrollController;
-  final ActiveRideSummary ride;
-  final RideState? rideState;
-  final bool canCancel;
-  final double bottomPadding;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.background(context),
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.12),
-            blurRadius: 20,
-            offset: const Offset(0, -4),
-          ),
-        ],
-      ),
-      child: SingleChildScrollView(
-        controller: scrollController,
-        physics: const ClampingScrollPhysics(),
-        child: Padding(
-          padding: EdgeInsets.fromLTRB(
-            20.w,
-            12.h,
-            20.w,
-            bottomPadding + 20.h,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Drag handle
-              Container(
-                width: 40.w,
-                height: 4.h,
-                margin: EdgeInsets.only(bottom: 16.h),
-                decoration: BoxDecoration(
-                  color: AppColors.borderDefault(context),
-                  borderRadius: BorderRadius.circular(2.r),
-                ),
-              ),
-
-              // Peek row — visible even when collapsed
-              _PeekRow(driver: ride.driver, finalFare: ride.finalFare),
-              SizedBox(height: 16.h),
-
-              // Full content
-              DriverCard(driver: ride.driver),
-              SizedBox(height: 12.h),
-              FareCard(finalFare: ride.finalFare),
-
-              if (canCancel) ...[
-                SizedBox(height: 10.h),
-                CancelRideButton(
-                  onCancel: (reason) => context
-                      .read<PassengerActiveRideCubit>()
-                      .cancelRide(reason),
-                ),
-              ],
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _PeekRow extends StatelessWidget {
-  const _PeekRow({required this.driver, required this.finalFare});
-
-  final DriverInRide driver;
-  final int finalFare;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        CircleAvatar(
-          radius: 18.r,
-          backgroundColor: AppColors.primary.withValues(alpha: 0.1),
-          child:
-              Icon(Icons.person_rounded, color: AppColors.primary, size: 20.w),
-        ),
-        SizedBox(width: 10.w),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                driver.fullName,
-                style: AppTextStyles.bodyMedium(context)
-                    .copyWith(fontWeight: FontWeight.w700),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              Text(
-                driver.vehicleModel,
-                style: AppTextStyles.bodySmall(context).copyWith(
-                  color: AppColors.textSecondary(context),
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
-          ),
-        ),
-        SizedBox(width: 8.w),
-        Container(
-          padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
-          decoration: BoxDecoration(
-            color: AppColors.primary.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(8.r),
-          ),
-          child: Text(
-            '$finalFare DZD',
-            style: AppTextStyles.labelSmall(context).copyWith(
-              color: AppColors.primary,
-              fontWeight: FontWeight.w700,
+          children: [
+            RideDetailPersonCard(
+              role: 'Your driver',
+              name: ride.driver.fullName.trim().isEmpty
+                  ? 'Driver'
+                  : ride.driver.fullName,
+              phone: ride.driver.phone,
+              vehicleModel: ride.driver.vehicleModel,
+              vehiclePlate: ride.driver.vehiclePlate,
             ),
-          ),
+            if (pickup != null && dropoff != null)
+              RideDetailAddressesCard(
+                pickup: pickup.address,
+                dropoff: dropoff.address,
+                pickupTime: ride.startedAt,
+              ),
+            RideFareRow(fare: ride.finalFare),
+            if (canCancel)
+              ActiveRideCancelButton(onPressed: () => _cancel(context)),
+          ],
         ),
       ],
     );

@@ -8,6 +8,7 @@ import '../../../../../../../core/theme/app_colors.dart';
 import '../../../../../../../core/theme/app_text_styles.dart';
 import '../../../../../../../core/utils/map_geo.dart';
 import '../../../../../../../core/utils/map_gestures.dart';
+import '../../../../../../../core/widgets/app_toast.dart';
 import '../../../../../driver/data/models/ride_socket_event.dart';
 import '../../../../../shared/models/shared_ride_models.dart';
 import '../../../../../shared/presentation/cubit/ride_route_cubit/ride_route_cubit.dart';
@@ -158,9 +159,22 @@ class _LiveMapCardState extends State<LiveMapCard> {
     );
   }
 
-  void _zoom(double delta) {
-    _mapController?.animateCamera(CameraUpdate.zoomBy(delta));
+  /// Recenters the camera on the passenger's own live GPS position (already
+  /// streamed by the parent view). Keeps the current zoom level.
+  void _goToMyLocation() {
+    final own = widget.ownPosition;
+    if (own == null) {
+      AppToast.error('Locating your position, please wait.');
+      return;
+    }
+    _mapController?.animateCamera(
+      CameraUpdate.newLatLng(LatLng(own.latitude, own.longitude)),
+    );
   }
+
+  void _zoomIn() => _mapController?.animateCamera(CameraUpdate.zoomIn());
+
+  void _zoomOut() => _mapController?.animateCamera(CameraUpdate.zoomOut());
 
   @override
   void dispose() {
@@ -176,7 +190,7 @@ class _LiveMapCardState extends State<LiveMapCard> {
     final dropoff = _dropoff;
     final own = widget.ownPosition;
     final media = MediaQuery.of(context);
-    final controlsTop = media.padding.top + 76.h;
+    final controlsTop = media.padding.top + 12.h;
     final initialTarget = driver ?? pickup ?? const LatLng(36.7538, 3.0588);
 
     return Stack(
@@ -194,7 +208,7 @@ class _LiveMapCardState extends State<LiveMapCard> {
             },
             initialCameraPosition:
                 CameraPosition(target: initialTarget, zoom: 14),
-            // Keep framed content clear of the status badge and bottom sheet.
+            // Keep framed content clear of the map controls and bottom sheet.
             padding: EdgeInsets.only(
               top: controlsTop,
               bottom: media.size.height * 0.42,
@@ -272,12 +286,16 @@ class _LiveMapCardState extends State<LiveMapCard> {
                 onTap: _fitRoute,
               ),
               MapControlAction(
+                icon: Icons.my_location_rounded,
+                onTap: _goToMyLocation,
+              ),
+              MapControlAction(
                 icon: Icons.add_rounded,
-                onTap: () => _zoom(1),
+                onTap: _zoomIn,
               ),
               MapControlAction(
                 icon: Icons.remove_rounded,
-                onTap: () => _zoom(-1),
+                onTap: _zoomOut,
               ),
             ],
           ),

@@ -9,9 +9,9 @@ import '../../../../../../../core/utils/map_gestures.dart';
 import '../../../../../../../core/widgets/app_toast.dart';
 import '../../../../../shared/presentation/cubit/ride_route_cubit/ride_route_cubit.dart';
 import '../../../../../shared/presentation/cubit/ride_route_cubit/ride_route_state.dart';
+import '../../../../../shared/widgets/map_control_group.dart';
 import '../../../../../shared/widgets/ride_map_style.dart';
 import '../../../../data/models/driver_ride_models.dart';
-import '../../../../../passenger/presentation/views/widgets/location/map_button.dart';
 
 /// Full-screen live map for the driver's active ride. Shows pickup and dropoff
 /// pins, the driver's own GPS position as a car that turns with its heading,
@@ -220,26 +220,22 @@ class _ActiveRideMapState extends State<ActiveRideMap> {
         // Map controls: route overview, current location, zoom (top-right)
         Positioned(
           top: media.padding.top + 8.h,
-          right: 16.w,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              MapButton(
+          right: 12.w,
+          child: MapControlGroup(
+            actions: [
+              MapControlAction(
                 icon: Icons.alt_route_rounded,
                 onTap: _fitRoute,
               ),
-              SizedBox(height: 12.h),
-              MapButton(
+              MapControlAction(
                 icon: Icons.my_location_rounded,
                 onTap: _goToDriverLocation,
               ),
-              SizedBox(height: 12.h),
-              MapButton(
+              MapControlAction(
                 icon: Icons.add_rounded,
                 onTap: _zoomIn,
               ),
-              SizedBox(height: 12.h),
-              MapButton(
+              MapControlAction(
                 icon: Icons.remove_rounded,
                 onTap: _zoomOut,
               ),

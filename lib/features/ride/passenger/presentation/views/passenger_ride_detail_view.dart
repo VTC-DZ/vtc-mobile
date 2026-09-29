@@ -9,93 +9,87 @@ import '../../../../../shared/widgets/app_slim_app_bar.dart';
 import '../../../shared/widgets/ride_detail/ride_cancellation_reason.dart';
 import '../../../shared/widgets/ride_detail/ride_detail_addresses_card.dart';
 import '../../../shared/widgets/ride_detail/ride_detail_message.dart';
-import '../../../shared/widgets/ride_detail/ride_detail_route_map.dart';
-import '../../../shared/widgets/ride_detail/ride_detail_status_header.dart';
+import '../../../shared/widgets/ride_detail/ride_detail_person_card.dart';
+import '../../../shared/widgets/ride_detail/ride_detail_scaffold.dart';
+import '../../../shared/widgets/ride_detail/ride_detail_skeleton.dart';
+import '../../../shared/widgets/ride_detail/ride_detail_summary.dart';
 import '../../../shared/widgets/ride_detail/ride_timeline_card.dart';
 import '../../../shared/widgets/ride_detail/ride_trip_facts_card.dart';
 import '../../data/models/passenger_ride_models.dart';
 import '../cubit/passenger_ride_detail_cubit/passenger_ride_detail_cubit.dart';
 import '../cubit/passenger_ride_detail_cubit/passenger_ride_detail_state.dart';
-import 'widgets/active_ride/driver_card.dart';
-import 'widgets/active_ride/fare_card.dart';
 
 /// Full detail for a single past ride, reached by tapping a history card.
 ///
-/// The tapped history entry renders at once; the route map, trip facts and
-/// timeline fill in when `GET /rides/{rideRequestId}` answers. A failed load
-/// only replaces those sections, never the whole page.
+/// The tapped history entry renders at once; the route map, trip facts,
+/// driver contact and timeline fill in when `GET /rides/{rideRequestId}`
+/// answers. A failed load only replaces those sections, never the whole page.
 class PassengerRideDetailView extends StatelessWidget {
   const PassengerRideDetailView({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppSlimAppBar(
-        title: 'Ride Details',
-        onLeadingTap: () => context.pop(),
-      ),
-      body: SafeArea(
-        child: BlocBuilder<PassengerRideDetailCubit, PassengerRideDetailState>(
-          builder: (context, state) {
-            final summary = state.summary;
-            final detail = state.detail;
-            // The detail is fresher; the history entry fills in until then.
-            final rideState = detail?.state ?? summary.state;
-            final finalFare = detail?.finalFare ?? summary.finalFare;
-            final route = detail?.routePoints;
+    return BlocBuilder<PassengerRideDetailCubit, PassengerRideDetailState>(
+      builder: (context, state) {
+        final summary = state.summary;
+        final detail = state.detail;
+        // The detail is fresher; the history entry fills in until then.
+        final rideState = detail?.state ?? summary.state;
+        final driver = detail?.driver;
 
-            return SingleChildScrollView(
-              padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 24.h),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  if (route != null) ...[
-                    RideDetailRouteMap(points: route),
-                    SizedBox(height: 12.h),
-                  ],
-                  RideDetailStatusHeader(
-                    serviceType: summary.serviceType,
-                    state: rideState,
-                    date: summary.displayDate,
-                  ),
-                  SizedBox(height: 12.h),
-                  DriverCard(
-                    driver: detail?.driver ??
-                        DriverInRide(
-                          id: '',
-                          fullName: summary.driverFullName.isEmpty
-                              ? 'Driver'
-                              : summary.driverFullName,
-                          phone: '',
-                          vehicleModel: summary.vehicleModel,
-                          vehiclePlate: summary.vehiclePlate,
-                        ),
-                  ),
-                  SizedBox(height: 12.h),
-                  RideDetailAddressesCard(
-                    pickup: summary.pickupAddress,
-                    dropoff: summary.dropoffAddress,
-                  ),
-                  SizedBox(height: 12.h),
-                  FareCard(finalFare: finalFare),
-                  SizedBox(height: 12.h),
-                  ..._detailSections(context, state),
-                  if (rideState == RideOutcome.cancelled &&
-                      (summary.cancellationReason?.isNotEmpty ?? false)) ...[
-                    SizedBox(height: 12.h),
-                    RideCancellationReason(reason: summary.cancellationReason!),
-                  ],
-                ],
+        return RideDetailScaffold(
+          onBack: () => context.pop(),
+          routePoints: detail?.routePoints,
+          state: rideState,
+          children: [
+            RideDetailSummary(
+              serviceType: summary.serviceType,
+              state: rideState,
+              fare: detail?.finalFare ?? summary.finalFare,
+              date: detail?.completedAt ??
+                  detail?.cancelledAt ??
+                  summary.displayDate,
+            ),
+            ..._detailSections(context, state),
+            RideDetailAddressesCard(
+              pickup: summary.pickupAddress,
+              dropoff: summary.dropoffAddress,
+              pickupTime: detail?.startedAt,
+              dropoffTime: detail?.completedAt,
+            ),
+            RideDetailPersonCard(
+              role: 'Your driver',
+              name: _orFallback(
+                driver?.fullName ?? summary.driverFullName,
+                'Driver',
               ),
-            );
-          },
-        ),
-      ),
+              phone: driver?.phone,
+              vehicleModel: driver?.vehicleModel ?? summary.vehicleModel,
+              vehiclePlate: driver?.vehiclePlate ?? summary.vehiclePlate,
+            ),
+            if (detail != null)
+              RideTimelineCard(
+                acceptedAt: detail.acceptedAt,
+                arrivedAt: detail.arrivedAt,
+                startedAt: detail.startedAt,
+                completedAt: detail.completedAt,
+                cancelledAt: detail.cancelledAt,
+              ),
+            if (rideState == RideOutcome.cancelled &&
+                (summary.cancellationReason?.isNotEmpty ?? false))
+              RideCancellationReason(reason: summary.cancellationReason!),
+          ],
+        );
+      },
     );
   }
 
-  /// The sections only the detail endpoint can fill: trip facts + timeline,
-  /// or a loader / inline error in their place.
+  static String _orFallback(String value, String fallback) =>
+      value.trim().isEmpty ? fallback : value;
+
+  /// What only the detail endpoint can fill in near the top: trip facts, or
+  /// a skeleton / inline error in their place. (The timeline follows once
+  /// loaded.)
   List<Widget> _detailSections(
     BuildContext context,
     PassengerRideDetailState state,
@@ -104,16 +98,9 @@ class PassengerRideDetailView extends StatelessWidget {
     switch (state.status) {
       case PassengerRideDetailStatus.initial:
       case PassengerRideDetailStatus.loading:
-        return [
-          Padding(
-            padding: EdgeInsets.symmetric(vertical: 24.h),
-            child: const Center(child: CircularProgressIndicator()),
-          ),
-        ];
+        return const [RideDetailSkeleton()];
       case PassengerRideDetailStatus.notFound:
-        return [
-          const _DetailUnavailable(message: 'Ride not found.'),
-        ];
+        return const [_DetailUnavailable(message: 'Ride not found.')];
       case PassengerRideDetailStatus.failure:
         return [
           _DetailUnavailable(
@@ -124,22 +111,14 @@ class PassengerRideDetailView extends StatelessWidget {
           ),
         ];
       case PassengerRideDetailStatus.loaded:
-        if (detail == null) return const [];
+        if (detail == null ||
+            (detail.distanceMeters == null && detail.durationSeconds == null)) {
+          return const [];
+        }
         return [
-          if (detail.distanceMeters != null ||
-              detail.durationSeconds != null) ...[
-            RideTripFactsCard(
-              distanceMeters: detail.distanceMeters,
-              durationSeconds: detail.durationSeconds,
-            ),
-            SizedBox(height: 12.h),
-          ],
-          RideTimelineCard(
-            acceptedAt: detail.acceptedAt,
-            arrivedAt: detail.arrivedAt,
-            startedAt: detail.startedAt,
-            completedAt: detail.completedAt,
-            cancelledAt: detail.cancelledAt,
+          RideTripFactsCard(
+            distanceMeters: detail.distanceMeters,
+            durationSeconds: detail.durationSeconds,
           ),
         ];
     }
@@ -159,8 +138,8 @@ class _DetailUnavailable extends StatelessWidget {
       padding: EdgeInsets.fromLTRB(14.w, 10.h, 6.w, 10.h),
       decoration: BoxDecoration(
         color: AppColors.surface(context),
-        borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(color: AppColors.borderDefault(context), width: 1.w),
+        borderRadius: BorderRadius.circular(16.r),
+        border: Border.all(color: AppColors.borderDefault(context)),
       ),
       child: Row(
         children: [

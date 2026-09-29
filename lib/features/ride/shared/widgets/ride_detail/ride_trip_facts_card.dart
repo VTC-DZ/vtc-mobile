@@ -4,8 +4,8 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_text_styles.dart';
 
-/// Distance and duration of a finished trip, side by side. A missing value
-/// renders as `—`.
+/// Distance and duration of a finished trip as side-by-side stat tiles. A
+/// missing value renders as `—`.
 class RideTripFactsCard extends StatelessWidget {
   const RideTripFactsCard({
     super.key,
@@ -18,81 +18,109 @@ class RideTripFactsCard extends StatelessWidget {
 
   String get _distance => distanceMeters == null
       ? '—'
-      : '${(distanceMeters! / 1000).toStringAsFixed(1)} km';
+      : (distanceMeters! / 1000).toStringAsFixed(1);
 
   String get _duration =>
-      durationSeconds == null ? '—' : '${(durationSeconds! / 60).round()} min';
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
-      decoration: BoxDecoration(
-        color: AppColors.surface(context),
-        borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(color: AppColors.borderDefault(context), width: 1.w),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: _Fact(
-              icon: Icons.route_rounded,
-              label: 'Distance',
-              value: _distance,
-            ),
-          ),
-          SizedBox(width: 12.w),
-          Expanded(
-            child: _Fact(
-              icon: Icons.timer_outlined,
-              label: 'Duration',
-              value: _duration,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _Fact extends StatelessWidget {
-  const _Fact({
-    required this.icon,
-    required this.label,
-    required this.value,
-  });
-
-  final IconData icon;
-  final String label;
-  final String value;
+      durationSeconds == null ? '—' : '${(durationSeconds! / 60).round()}';
 
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon, size: 20.w, color: AppColors.primary),
+        Expanded(
+          child: _StatTile(
+            icon: Icons.route_rounded,
+            label: 'Distance',
+            value: _distance,
+            unit: distanceMeters == null ? null : 'km',
+          ),
+        ),
         SizedBox(width: 10.w),
         Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: AppTextStyles.labelSmall(context).copyWith(
-                  color: AppColors.textSecondary(context),
-                ),
-              ),
-              SizedBox(height: 2.h),
-              Text(
-                value,
-                style: AppTextStyles.bodyMedium(context).copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
+          child: _StatTile(
+            icon: Icons.timer_outlined,
+            label: 'Duration',
+            value: _duration,
+            unit: durationSeconds == null ? null : 'min',
           ),
         ),
       ],
+    );
+  }
+}
+
+class _StatTile extends StatelessWidget {
+  const _StatTile({
+    required this.icon,
+    required this.label,
+    required this.value,
+    this.unit,
+  });
+
+  final IconData icon;
+  final String label;
+  final String value;
+  final String? unit;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.all(14.w),
+      decoration: BoxDecoration(
+        color: AppColors.surface(context),
+        borderRadius: BorderRadius.circular(16.r),
+        border: Border.all(color: AppColors.borderDefault(context)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 32.w,
+            height: 32.w,
+            decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(10.r),
+            ),
+            child: Icon(icon, size: 18.w, color: AppColors.primary),
+          ),
+          SizedBox(height: 12.h),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: AlignmentDirectional.centerStart,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.baseline,
+              textBaseline: TextBaseline.alphabetic,
+              children: [
+                Text(
+                  value,
+                  style: AppTextStyles.headingMedium(context).copyWith(
+                    fontWeight: FontWeight.w800,
+                    height: 1.1,
+                    fontFeatures: const [FontFeature.tabularFigures()],
+                  ),
+                ),
+                if (unit != null) ...[
+                  SizedBox(width: 4.w),
+                  Text(
+                    unit!,
+                    style: AppTextStyles.labelMedium(context).copyWith(
+                      color: AppColors.textSecondary(context),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          SizedBox(height: 2.h),
+          Text(
+            label,
+            style: AppTextStyles.labelSmall(context).copyWith(
+              color: AppColors.textSecondary(context),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

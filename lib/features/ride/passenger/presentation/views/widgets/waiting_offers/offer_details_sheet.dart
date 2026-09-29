@@ -195,7 +195,7 @@ class _DriverHero extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        DriverAvatar(name: offer.driverFullName, size: 64),
+        InitialsAvatar(name: offer.driverFullName, size: 64),
         SizedBox(width: 14.w),
         Expanded(
           child: Column(

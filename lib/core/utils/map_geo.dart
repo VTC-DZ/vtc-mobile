@@ -33,6 +33,16 @@ abstract final class MapGeo {
     return 2 * _earthRadiusMeters * math.asin(math.sqrt(h));
   }
 
+  /// Total length of [path] along its segments, in meters (`0` for fewer
+  /// than two points).
+  static double pathLengthMeters(List<LatLng> path) {
+    var total = 0.0;
+    for (var i = 1; i < path.length; i++) {
+      total += distanceMeters(path[i - 1], path[i]);
+    }
+    return total;
+  }
+
   /// Smallest bounds containing [points]. When the points are (nearly) the
   /// same, the box is widened to at least [minSpan] degrees on each axis so
   /// the camera doesn't zoom all the way in.

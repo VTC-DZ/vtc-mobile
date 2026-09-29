@@ -41,6 +41,23 @@ void main() {
     });
   });
 
+  group('MapGeo.pathLengthMeters', () {
+    test('sums the segment lengths', () {
+      const a = LatLng(0, 0);
+      const b = LatLng(1, 0);
+      const c = LatLng(1, 1);
+      expect(
+        MapGeo.pathLengthMeters(const [a, b, c]),
+        closeTo(MapGeo.distanceMeters(a, b) + MapGeo.distanceMeters(b, c), 1e-6),
+      );
+    });
+
+    test('is zero for fewer than two points', () {
+      expect(MapGeo.pathLengthMeters(const []), 0);
+      expect(MapGeo.pathLengthMeters(const [LatLng(1, 1)]), 0);
+    });
+  });
+
   group('MapGeo.boundsOf', () {
     test('contains every point', () {
       const points = [
