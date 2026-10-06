@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:khfif_drif/features/ride/passenger/data/models/passenger_ride_detail_models.dart';
-import 'package:khfif_drif/features/ride/shared/models/shared_ride_models.dart';
+import 'package:rapidoo/features/ride/passenger/data/models/passenger_ride_detail_models.dart';
+import 'package:rapidoo/features/ride/shared/models/shared_ride_models.dart';
 
 /// Fixtures mirror the `RideDetailResponse` schema in `swagger/passenger.json`.
 void main() {

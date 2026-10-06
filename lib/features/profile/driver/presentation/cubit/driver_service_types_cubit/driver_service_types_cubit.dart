@@ -1,5 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:khfif_drif/core/errors/api_exception.dart';
+import 'package:rapidoo/core/errors/api_exception.dart';
 
 import '../../../../../ride/shared/models/shared_ride_models.dart';
 import '../../../data/driver_service_types_repository.dart';

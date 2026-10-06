@@ -1,4 +1,4 @@
-package com.example.khfif_drif
+package com.rapidoo.app
 
 import io.flutter.embedding.android.FlutterActivity
 

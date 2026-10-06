@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:khfif_drif/core/helper/observer.dart';
+import 'package:rapidoo/core/helper/observer.dart';
 
 import 'core/constants/app_constants.dart';
 import 'core/network/dio_client.dart';

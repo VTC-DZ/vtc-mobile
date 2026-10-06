@@ -1,7 +1,7 @@
 // lib/features/auth/data/repo/driver_repository.dart
 
 import 'package:dio/dio.dart';
-import 'package:khfif_drif/core/session/auth_session.dart';
+import 'package:rapidoo/core/session/auth_session.dart';
 
 import '../../../../core/constants/auth_api_constants.dart';
 import '../../../../core/constants/driver_api_constants.dart';

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:khfif_drif/core/theme/app_colors.dart';
-import 'package:khfif_drif/core/theme/app_text_styles.dart';
+import 'package:rapidoo/core/theme/app_colors.dart';
+import 'package:rapidoo/core/theme/app_text_styles.dart';
 
 import '../../../../data/models/passenger_ride_history_models.dart';
 import '../../../../../shared/models/shared_ride_models.dart';

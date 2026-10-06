@@ -1,6 +1,6 @@
 import 'package:equatable/equatable.dart';
-import 'package:khfif_drif/features/ride/passenger/data/models/passenger_ride_history_models.dart';
-import 'package:khfif_drif/features/ride/shared/models/shared_ride_models.dart';
+import 'package:rapidoo/features/ride/passenger/data/models/passenger_ride_history_models.dart';
+import 'package:rapidoo/features/ride/shared/models/shared_ride_models.dart';
 
 enum PassengerRideHistoryStatus {
   initial,

@@ -2,9 +2,9 @@ import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:khfif_drif/features/ride/shared/data/models/road_route.dart';
-import 'package:khfif_drif/features/ride/shared/data/routing_repository.dart';
-import 'package:khfif_drif/features/ride/shared/presentation/cubit/ride_route_cubit/ride_route_cubit.dart';
+import 'package:rapidoo/features/ride/shared/data/models/road_route.dart';
+import 'package:rapidoo/features/ride/shared/data/routing_repository.dart';
+import 'package:rapidoo/features/ride/shared/presentation/cubit/ride_route_cubit/ride_route_cubit.dart';
 
 /// Records every request; answers with a straight [from, to] "road" unless a
 /// test takes over via [respond].

@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_zoom_drawer/flutter_zoom_drawer.dart';
 import 'package:go_router/go_router.dart';
-import 'package:khfif_drif/features/ride/passenger/data/models/passenger_ride_models.dart';
+import 'package:rapidoo/features/ride/passenger/data/models/passenger_ride_models.dart';
 
 import '../../../../../core/router/route_names.dart';
 import '../../../../../core/theme/app_colors.dart';

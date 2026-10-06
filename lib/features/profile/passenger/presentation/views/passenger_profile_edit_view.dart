@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
-import 'package:khfif_drif/features/home/passenger/presentation/cubit/passenger_home_cubit.dart';
-import 'package:khfif_drif/features/home/passenger/presentation/cubit/passenger_home_state.dart';
-import 'package:khfif_drif/features/home/passenger/presentation/views/widgets/top_bar.dart';
+import 'package:rapidoo/features/home/passenger/presentation/cubit/passenger_home_cubit.dart';
+import 'package:rapidoo/features/home/passenger/presentation/cubit/passenger_home_state.dart';
+import 'package:rapidoo/features/home/passenger/presentation/views/widgets/top_bar.dart';
 
 import '../../../../../core/router/route_names.dart';
 import '../../../../../core/widgets/app_toast.dart';

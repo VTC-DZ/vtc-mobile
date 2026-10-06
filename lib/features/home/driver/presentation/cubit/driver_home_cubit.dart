@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'package:khfif_drif/core/errors/api_exception.dart';
+import 'package:rapidoo/core/errors/api_exception.dart';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 

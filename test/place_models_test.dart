@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:khfif_drif/core/utils/uuid.dart';
-import 'package:khfif_drif/features/ride/passenger/data/models/place_models.dart';
+import 'package:rapidoo/core/utils/uuid.dart';
+import 'package:rapidoo/features/ride/passenger/data/models/place_models.dart';
 
 /// Fixtures mirror the `PlaceSummary` / `PlaceDetailResponse` schemas in
 /// `swagger/passenger.json`.

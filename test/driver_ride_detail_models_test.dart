@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:khfif_drif/features/ride/driver/data/models/driver_ride_detail_models.dart';
-import 'package:khfif_drif/features/ride/shared/models/shared_ride_models.dart';
+import 'package:rapidoo/features/ride/driver/data/models/driver_ride_detail_models.dart';
+import 'package:rapidoo/features/ride/shared/models/shared_ride_models.dart';
 
 /// Fixtures mirror the `DriverRideDetailResponse` schema in
 /// `swagger/driver.json` (lines 1376-1411).

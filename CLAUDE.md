@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-`khfif_drif` — an inDrive-style ride-hailing app for Algeria (whole-DZD fares, OTP auth, passenger-vs-driver negotiation, OTP/KYC flows). Flutter app, Dart SDK `^3.5.0`. Built against a Spring backend REST + raw-WebSocket "VTC" API.
+`rapidoo` — an inDrive-style ride-hailing app for Algeria (whole-DZD fares, OTP auth, passenger-vs-driver negotiation, OTP/KYC flows). Flutter app, Dart SDK `^3.5.0`. Built against a Spring backend REST + raw-WebSocket "VTC" API.
 
 ## Common commands
 

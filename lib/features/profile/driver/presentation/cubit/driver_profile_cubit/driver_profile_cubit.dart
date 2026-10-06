@@ -1,5 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:khfif_drif/core/errors/api_exception.dart';
+import 'package:rapidoo/core/errors/api_exception.dart';
 
 import '../../../data/driver_profile_repository.dart';
 import 'driver_profile_state.dart';

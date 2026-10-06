@@ -1,5 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:khfif_drif/core/errors/api_exception.dart';
+import 'package:rapidoo/core/errors/api_exception.dart';
 
 import '../../../../../core/utils/validators.dart';
 import '../../../data/models/gender.dart';

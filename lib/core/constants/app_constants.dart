@@ -4,7 +4,7 @@ abstract final class AppConstants {
   AppConstants._();
 
   // App info
-  static const String appName = 'Khfif Drif';
+  static const String appName = 'Rapidoo';
 
   // Algeria phone
   static const String countryCode = '+213';

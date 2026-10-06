@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:khfif_drif/features/ride/shared/utils/date_formatter.dart';
+import 'package:rapidoo/features/ride/shared/utils/date_formatter.dart';
 
 void main() {
   group('formatRideDate', () {

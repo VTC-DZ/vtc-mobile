@@ -1,9 +1,9 @@
 import 'dart:async';
-import 'package:khfif_drif/core/errors/api_exception.dart';
+import 'package:rapidoo/core/errors/api_exception.dart';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:khfif_drif/core/session/auth_session.dart';
-import 'package:khfif_drif/features/auth/data/models/passenger_profile_model.dart';
+import 'package:rapidoo/core/session/auth_session.dart';
+import 'package:rapidoo/features/auth/data/models/passenger_profile_model.dart';
 
 import '../../../../../features/auth/data/repo/profile_repository.dart';
 import '../../../../../features/ride/passenger/data/passenger_ride_repository.dart';

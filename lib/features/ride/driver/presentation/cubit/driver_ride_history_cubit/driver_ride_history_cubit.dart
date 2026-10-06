@@ -1,6 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:khfif_drif/features/ride/driver/data/driver_ride_repository.dart';
-import 'package:khfif_drif/features/ride/shared/models/shared_ride_models.dart';
+import 'package:rapidoo/features/ride/driver/data/driver_ride_repository.dart';
+import 'package:rapidoo/features/ride/shared/models/shared_ride_models.dart';
 
 import 'driver_ride_history_state.dart';
 
