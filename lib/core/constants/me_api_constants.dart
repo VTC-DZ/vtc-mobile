@@ -7,4 +7,10 @@ abstract final class MeApiConstants {
   static const String updateEmail = '$_base/email';
   static const String phoneRequest = '$_base/phone/request';
   static const String phoneConfirm = '$_base/phone/confirm';
+  static const String pushToken = '$_base/push-token';
+  static const String notifications = '$_base/notifications';
+  static const String notificationsUnreadCount =
+      '$_base/notifications/unread-count';
+  static String notificationRead(String id) => '$_base/notifications/$id/read';
+  static const String notificationsReadAll = '$_base/notifications/read-all';
 }

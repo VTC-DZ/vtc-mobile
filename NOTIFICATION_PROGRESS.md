@@ -1,6 +1,6 @@
 # Notifications (Push + Inbox): Implementation Progress
 
-**Status:** 🟡 In progress. Phase 0 is done. The iOS push token is expected to be missing until there is an Apple Developer account.
+**Status:** 🟡 In progress. Phases 0 to 3 are done. The iOS push token is expected to be missing until there is an Apple Developer account.
 
 **Spec:**
 - [Untitled.md](Untitled.md), the backend handoff of Oct 10, 2026.
@@ -206,69 +206,93 @@ Both active-ride screens load `GET /rides/active` themselves and `go` home when 
 
 ## Phase 1: Data layer
 
-- [ ] [me_api_constants.dart](lib/core/constants/me_api_constants.dart): add the `/api/me` paths:
-  - [ ] `pushToken` = `$_base/push-token`
-  - [ ] `notifications` = `$_base/notifications`
-  - [ ] `notificationsUnreadCount` = `$_base/notifications/unread-count`
-  - [ ] `notificationRead(String id)` = `$_base/notifications/$id/read`
-  - [ ] `notificationsReadAll` = `$_base/notifications/read-all`
-- [ ] `lib/features/notifications/data/models/app_notification.dart`
-  - [ ] `AppNotification` with `id`, `eventKey`, `title`, `body`, `data` (`Map<String, String>`), `read`, `createdAt`, `readAt?`.
-  - [ ] `fromJson` coerces every `data` value with `toString()` and tolerates a missing or `null` `data` / `readAt`.
-  - [ ] `copyWith(read:)` for optimistic mark-read.
-- [ ] `lib/features/notifications/data/notification_repository.dart`: a `const NotificationRepository()` over `DioClient`.
-  - [ ] `registerPushToken({token, platform})` → `POST pushToken`
-  - [ ] `list({page = 0, size = 20})` → `PageResponse.fromJson(json, AppNotification.fromJson)`
-  - [ ] `unreadCount()` → `int`
-  - [ ] `markRead(id)`
-  - [ ] `markAllRead()` → `int` updated
+Verified: `flutter analyze` reports nothing in these files, and `flutter test` passes, including the model test pulled forward from Phase 7.
+
+- [x] [me_api_constants.dart](lib/core/constants/me_api_constants.dart): add the `/api/me` paths:
+  - [x] `pushToken` = `$_base/push-token`
+  - [x] `notifications` = `$_base/notifications`
+  - [x] `notificationsUnreadCount` = `$_base/notifications/unread-count`
+  - [x] `notificationRead(String id)` = `$_base/notifications/$id/read`
+  - [x] `notificationsReadAll` = `$_base/notifications/read-all`
+- [x] [app_notification.dart](lib/features/notifications/data/models/app_notification.dart)
+  - [x] `AppNotification` with `id`, `eventKey`, `title`, `body`, `data` (`Map<String, String>`), `read`, `createdAt`, `readAt?`. The dates stay ISO strings, as in the wallet models.
+  - [x] `fromJson` coerces every `data` value with `toString()` and tolerates a missing or `null` `data` / `readAt`.
+    - A `null` value inside `data` is dropped, not turned into the string `"null"`.
+    - A row without an `id` throws, so `PageResponse` drops it.
+  - [x] `copyWith(read:)` for optimistic mark-read.
+- [x] [push_platform.dart](lib/features/notifications/data/models/push_platform.dart): `PushPlatform { ios, android }` with a `wireName` (`IOS` / `ANDROID`), so an unknown platform (`400 VALIDATION_ERROR`) can't be sent.
+- [x] [notification_repository.dart](lib/features/notifications/data/notification_repository.dart): a `const NotificationRepository()` over `DioClient`.
+  - [x] `registerPushToken({token, platform})` → `POST pushToken`
+  - [x] `list({page = 0, size = 20})` → `PageResponse.fromJson(json, AppNotification.fromJson)`
+  - [x] `unreadCount()` → `int`
+  - [x] `markRead(id)`
+  - [x] `markAllRead()` → `int` updated
 
 > Note: the Dio idempotency interceptor attaches an `Idempotency-Key` to these POSTs, because it only skips `/api/auth/*`. That is harmless.
 
-## Phase 2: `PushNotificationService` (`lib/core/push/push_notification_service.dart`)
+## Phase 2: `PushNotificationService` ([push_notification_service.dart](lib/core/push/push_notification_service.dart))
 
 A static singleton (`final class`, private constructor, static members), the same style as [dio_client.dart](lib/core/network/dio_client.dart).
 
-- [ ] **`init()`**, awaited in `main()` before `runApp`:
-  - [ ] Initialise `FlutterLocalNotificationsPlugin` with `AndroidInitializationSettings('@drawable/ic_stat_notification')` and `DarwinInitializationSettings(requestAlertPermission: false, requestBadgePermission: false, requestSoundPermission: false)`. Those default to `true` and would prompt on the phone-entry screen.
-  - [ ] Create the Android channel `AndroidNotificationChannel('rapidoo_alerts', …, importance: Importance.high)`.
-  - [ ] Call `FirebaseMessaging.instance.setForegroundNotificationPresentationOptions(alert: false, badge: false, sound: false)`.
-  - [ ] **`onMessage`**, the foreground policy:
-    - [ ] If `data['notificationId']` is present, `show()` a local notification (title and body from `message.notification`, payload `jsonEncode(data)`) and emit on `inboxChanges`.
-    - [ ] Otherwise, ignore the message.
-  - [ ] **`onMessageOpenedApp`**: background → foreground via a tap → `NotificationNavigator.openFromPush(data)`.
-  - [ ] **Local notification tap** (`onDidReceiveNotificationResponse`): decode the payload → `openFromPush`.
-  - [ ] **`onTokenRefresh`**: if `AuthSession.isLoggedIn`, re-register.
-- [ ] **`handleLaunchTap()`**, called after `runApp`:
-  - [ ] Cold start from an FCM tap: `getInitialMessage()`.
-  - [ ] Cold start from a local-notification tap: `getNotificationAppLaunchDetails()`.
-  - [ ] Route inside `WidgetsBinding.instance.addPostFrameCallback`, so the router is mounted.
-- [ ] **`registerDevice()`**: best-effort, de-duplicated while in flight, and it **never throws**.
-  - [ ] Call `requestPermission()`. This is also the Android 13+ `POST_NOTIFICATIONS` prompt, and it prompts only once.
-  - [ ] Register even if permission is denied: it is harmless, and pushes start working if the user enables them later in OS settings.
-  - [ ] On iOS, wait briefly for `getAPNSToken()` before `getToken()`; otherwise it fails with `apns-token-not-set`.
-  - [ ] **No token is a normal outcome.** If the APNs token is still `null` after the wait, or `getToken()` throws or returns `null`:
+Verified: `flutter analyze` reports nothing in these files, and `flutter test` passes. The service doesn't run yet, because nothing calls it until Phase 6.
+
+Also added in this phase:
+- [string_map.dart](lib/core/utils/string_map.dart): `asStringMap()`, moved out of `AppNotification`. The model, FCM's `RemoteMessage.data` and the local-notification payload now share one coercion rule.
+- [notification_navigator.dart](lib/core/push/notification_navigator.dart): a placeholder `NotificationNavigator.openFromPush` that only logs, so that Phase 2 compiles before Phase 3 exists.
+- `init()`, `handleLaunchTap()`, `registerDevice()` and `clearDisplayed()` never throw. `init()` runs before `runApp`, so a push failure must not block startup.
+
+- [x] **`init()`**, awaited in `main()` before `runApp`:
+  - [x] Initialise `FlutterLocalNotificationsPlugin` with `AndroidInitializationSettings('@drawable/ic_stat_notification')` and `DarwinInitializationSettings(requestAlertPermission: false, requestBadgePermission: false, requestSoundPermission: false)`. Those default to `true` and would prompt on the phone-entry screen.
+  - [x] Create the Android channel `AndroidNotificationChannel('rapidoo_alerts', …, importance: Importance.high)`. Its user-visible name is "Alerts".
+  - [x] Call `FirebaseMessaging.instance.setForegroundNotificationPresentationOptions(alert: false, badge: false, sound: false)`. The plugin makes this a no-op on Android.
+  - [x] **`onMessage`**, the foreground policy:
+    - [x] If `data['notificationId']` is present, emit on `inboxChanges`. If the message also has a `notification` block, `show()` a local notification (title and body from it, payload `jsonEncode(data)`).
+    - [x] Otherwise, ignore the message.
+  - [x] **`onMessageOpenedApp`**: background → foreground via a tap → `NotificationNavigator.openFromPush(data)`.
+  - [x] **Local notification tap** (`onDidReceiveNotificationResponse`): decode the payload → `openFromPush`.
+  - [x] **`onTokenRefresh`**: cache the new token; if `AuthSession.isLoggedIn`, re-register it.
+- [x] **`handleLaunchTap()`**, called after `runApp`:
+  - [x] Cold start from an FCM tap: `getInitialMessage()`.
+  - [x] Cold start from a local-notification tap: `getNotificationAppLaunchDetails()`, only when `didNotificationLaunchApp` is true.
+  - [x] Route after `await WidgetsBinding.instance.endOfFrame`, so the router is mounted.
+    - It is not a bare `addPostFrameCallback`. The platform calls can finish after the first frame, and a post-frame callback doesn't schedule a frame of its own, so it could wait indefinitely.
+    - `endOfFrame` schedules a frame when none is pending.
+- [x] **`registerDevice()`**: best-effort, de-duplicated while in flight, and it **never throws**.
+  - [x] Call `requestPermission()`. This is also the Android 13+ `POST_NOTIFICATIONS` prompt, and it prompts only once.
+  - [x] Register even if permission is denied: it is harmless, and pushes start working if the user enables them later in OS settings.
+  - [x] On iOS, wait briefly for `getAPNSToken()` before `getToken()` (up to 5 tries, 1 s apart); otherwise it fails with `apns-token-not-set`.
+  - [x] **No token is a normal outcome.** If the APNs token is still `null` after the wait, or `getToken()` throws or returns `null`:
     - skip registration quietly: one `debugPrint` in debug builds, no toast, no error state, no retry loop;
     - leave `_token` `null`, so `logout` sends `{}`.
 
     This is the current state on iOS until the Apple Developer account exists (see Phase 0 ▸ iOS).
-  - [ ] Call `getToken()` → `registerPushToken(token, Platform.isIOS ? 'IOS' : 'ANDROID')` → cache `_token`.
-  - [ ] `debugPrint` the token in debug builds, for Firebase console test messages.
-- [ ] **`currentToken()`**: returns the cached `_token`, otherwise `getToken()` with a short timeout; `null` on failure.
-- [ ] **`inboxChanges`**: a broadcast `Stream<void>`, the socket-free stand-in for `notification.created`. **`notifyInboxChanged()`** emits on it.
-- [ ] **`clearDisplayed()`**: `cancelAll()`, used on logout.
-- [ ] Local notification id = `notificationId.hashCode & 0x7fffffff`, so a re-push of the same item replaces it instead of stacking.
+  - [x] Call `getToken()` → `registerPushToken(token: token, platform: Platform.isIOS ? PushPlatform.ios : PushPlatform.android)` → cache `_token`.
+  - [x] `debugPrint` the token in debug builds, for Firebase console test messages.
+- [x] **`currentToken()`**: returns the cached `_token`, otherwise `getToken()` with a 3 s timeout; `null` on failure.
+- [x] **`inboxChanges`**: a broadcast `Stream<void>`, the socket-free stand-in for `notification.created`. **`notifyInboxChanged()`** emits on it.
+- [x] **`clearDisplayed()`**: `cancelAll()`, used on logout.
+- [x] Local notification id = `notificationId.hashCode & 0x7fffffff`, so a re-push of the same item replaces it instead of stacking.
 
 ## Phase 3: Tap routing (`lib/core/push/notification_destination.dart`)
 
-- [ ] A pure `resolveNotificationDestination({eventKey, data, ActiveRole role})` returning `({String path, Object? extra, bool replace})?`.
-  - [ ] It implements the tap routing table exactly. `ActiveRole` comes from [token_payload.dart](lib/core/models/token_payload.dart).
-  - [ ] It returns `null` for cross-role targets and for "none" rows.
-- [ ] `NotificationNavigator.open(eventKey, data)`:
-  - [ ] Guards: logged in, onboarding done (`resolveInitialRoute()` ∈ {`passengerHome`, `driverHome`}), and the role taken from `AuthSession.lastRole`.
-  - [ ] Applies the destination with `AppRouter.router.go(...)` or `.push(...)`. This is the same static use as [dio_client.dart:33](lib/core/network/dio_client.dart#L33).
-  - [ ] Skips a `push` when the current location already equals the target path.
-- [ ] `NotificationNavigator.openFromPush(data)`: if there is a `notificationId`, fire-and-forget `markRead`, then `PushNotificationService.notifyInboxChanged()`. After that, `open(data['eventKey'], data)`.
+`NotificationNavigator` lives in [notification_navigator.dart](lib/core/push/notification_navigator.dart). Phase 2 created it as a placeholder, and this phase fills it in. [notification_destination.dart](lib/core/push/notification_destination.dart) holds only the pure resolver, so its unit test doesn't import the router.
+
+Verified: `flutter analyze` reports nothing in these files, and `flutter test` passes, including the resolver test pulled forward from Phase 7. Real taps wait for Phase 5 (the inbox routes) and Phase 6 (`init()`).
+
+- [x] A pure `resolveNotificationDestination({eventKey, data, ActiveRole role})` returning `({String path, Object? extra, bool replace})?`, typedef'd as `NotificationDestination`.
+  - [x] It implements the tap routing table exactly. `ActiveRole` comes from [token_payload.dart](lib/core/models/token_payload.dart).
+  - [x] It returns `null` for cross-role targets and for "none" rows. A cross-role inbox item stays `null` too, even with a `notificationId`: for example `wallet.*` in the passenger role, whose item lives in the driver inbox.
+  - [x] Beyond the table:
+    - `ActiveRole.unknown` returns `null`.
+    - A driver `ride.completed` or `ride.cancelled` with no `rideId` pushes `driverRideHistory` instead of a detail screen with no id to load.
+- [x] `NotificationNavigator.open(eventKey, data)`:
+  - [x] Guards: logged in, onboarding done (`resolveInitialRoute()` ∈ {`passengerHome`, `driverHome`}), and the role taken from `AuthSession.lastRole`.
+    - One `switch` on `resolveInitialRoute()` does all three, because that method picks `driverHome` exactly when `lastRole` is `DRIVER`.
+  - [x] Applies the destination with `AppRouter.router.go(...)` or `.push(...)`. This is the same static use as [dio_client.dart:33](lib/core/network/dio_client.dart#L33).
+  - [x] Skips a `push` when the current location already equals the target path. The check is `AppRouter.router.state.matchedLocation`, the top route, pushed ones included (go_router 14.8.1).
+- [x] `NotificationNavigator.openFromPush(data)`: if there is a `notificationId`, fire-and-forget `markRead`, then `PushNotificationService.notifyInboxChanged()`. After that, `open(data['eventKey'], data)`.
+  - `notifyInboxChanged()` fires once `markRead` finishes, whether it succeeded or failed. The refetched count then already excludes the item, instead of racing the read.
+  - A `404` is only logged; the refresh realigns the view.
 
 ## Phase 4: State (`NotificationsCubit`)
 
@@ -291,7 +315,7 @@ Under `lib/features/notifications/presentation/cubit/notifications_cubit/`.
 
 ## Phase 5: UI
 
-- [ ] [route_names.dart](lib/core/router/route_names.dart): add `passengerNotifications = '/passenger-notifications'` and `driverNotifications = '/driver-notifications'`.
+- [x] [route_names.dart](lib/core/router/route_names.dart): add `passengerNotifications = '/passenger-notifications'` and `driverNotifications = '/driver-notifications'`. Added in Phase 3, because the resolver needs them.
 - [ ] [app_router.dart](lib/core/router/app_router.dart): add one `GoRoute` per shell, both building `const NotificationsView()`. The cubit comes from the shell.
 - [ ] `lib/features/notifications/presentation/views/notifications_view.dart`
   - [ ] `initState` calls `context.read<NotificationsCubit>().load()`.
@@ -324,8 +348,8 @@ Under `lib/features/notifications/presentation/cubit/notifications_cubit/`.
 
 Use the flat `test/` layout of the existing tests (e.g. [date_formatter_test.dart](test/date_formatter_test.dart)).
 
-- [ ] `test/notification_destination_test.dart`: every table row for both roles, cross-role targets → `null`, and unknown keys with and without a `notificationId`.
-- [ ] `test/app_notification_test.dart`: full parse, non-string `data` values, a missing `data`, and a `null` `readAt`.
+- [x] [notification_destination_test.dart](test/notification_destination_test.dart): every table row for both roles, cross-role targets → `null`, and unknown keys with and without a `notificationId`. Written in Phase 3; it also covers the `rideId` fallback and the `unknown` role.
+- [x] [app_notification_test.dart](test/app_notification_test.dart): full parse, non-string `data` values, a missing `data`, and a `null` `readAt`. Written in Phase 1; it also covers `copyWith` and a `PageResponse` row without an `id`.
 - [ ] `test/notification_time_formatter_test.dart`: each bucket, plus the fallback date.
 - [ ] [CLAUDE.md](CLAUDE.md): add a short "Push notifications" subsection covering the `PushNotificationService` singleton, the no-WS rule and the token lifecycle. Also fix the stale "test/ is currently empty" note.
 
