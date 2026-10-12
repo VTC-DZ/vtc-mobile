@@ -6,7 +6,9 @@ import 'models/push_platform.dart';
 
 /// The push token and the notification inbox under `/api/me`. The inbox
 /// follows the JWT's `activeRole`: there is no role parameter.
-final class NotificationRepository {
+///
+/// Not `final`, so tests can extend it with a fake.
+class NotificationRepository {
   const NotificationRepository();
 
   /// One token per user: each call overwrites the stored one.

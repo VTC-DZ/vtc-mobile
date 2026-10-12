@@ -25,6 +25,8 @@ import '../../features/home/driver/presentation/views/driver_home_shell.dart';
 import '../../features/profile/driver/presentation/views/driver_profile_view.dart';
 import '../../features/home/passenger/presentation/cubit/passenger_home_cubit.dart';
 import '../../features/home/passenger/presentation/views/passenger_home_view.dart';
+import '../../features/notifications/data/notification_repository.dart';
+import '../../features/notifications/presentation/cubit/notifications_cubit/notifications_cubit.dart';
 import '../../features/profile/shared/cubit/email_edit_cubit.dart';
 import '../../features/profile/shared/cubit/phone_edit_cubit.dart';
 import '../../features/profile/passenger/presentation/cubit/passenger_profile_edit_cubit.dart';
@@ -136,10 +138,21 @@ final class AppRouter {
         },
       ),
       ShellRoute(
-          builder: (context, state, child) => BlocProvider(
-                create: (context) => PassengerHomeCubit(_profileRepository)
-                  ..getProfile()
-                  ..checkActiveRide(),
+          builder: (context, state, child) => MultiBlocProvider(
+                providers: [
+                  BlocProvider(
+                    create: (context) => PassengerHomeCubit(_profileRepository)
+                      ..getProfile()
+                      ..checkActiveRide(),
+                  ),
+                  // Shell-scoped so the bell's unread dot survives navigation;
+                  // a role switch or logout disposes it with the shell.
+                  BlocProvider<NotificationsCubit>(
+                    create: (_) =>
+                        NotificationsCubit(const NotificationRepository())
+                          ..refreshUnreadCount(),
+                  ),
+                ],
                 child: PassengerHomeShell(child: child),
               ),
           routes: [
@@ -341,6 +354,12 @@ final class AppRouter {
             // events land on the same driver socket at any time.
             BlocProvider<WalletCubit>(
               create: (_) => WalletCubit(const WalletRepository())..load(),
+            ),
+            // Shell-scoped so the bell's unread dot survives navigation; a
+            // role switch or logout disposes it with the shell.
+            BlocProvider<NotificationsCubit>(
+              create: (_) => NotificationsCubit(const NotificationRepository())
+                ..refreshUnreadCount(),
             ),
           ],
           child: DriverHomeShell(child: child),

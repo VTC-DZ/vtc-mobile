@@ -1,6 +1,6 @@
 # Notifications (Push + Inbox): Implementation Progress
 
-**Status:** 🟡 In progress. Phases 0 to 3 are done. The iOS push token is expected to be missing until there is an Apple Developer account.
+**Status:** 🟡 In progress. Phases 0 to 4 are done. The iOS push token is expected to be missing until there is an Apple Developer account.
 
 **Spec:**
 - [Untitled.md](Untitled.md), the backend handoff of Oct 10, 2026.
@@ -296,22 +296,46 @@ Verified: `flutter analyze` reports nothing in these files, and `flutter test` p
 
 ## Phase 4: State (`NotificationsCubit`)
 
-Under `lib/features/notifications/presentation/cubit/notifications_cubit/`.
+Under `lib/features/notifications/presentation/cubit/notifications_cubit/`: [notifications_cubit.dart](lib/features/notifications/presentation/cubit/notifications_cubit/notifications_cubit.dart) and [notifications_state.dart](lib/features/notifications/presentation/cubit/notifications_cubit/notifications_state.dart).
 
-- [ ] `NotificationsState` (Equatable):
-  - [ ] Fields: `status` (`initial`, `loading`, `loaded`, `loadingMore`, `failure`), `items`, `currentPage`, `totalPages`, `unreadCount`, `errorMessage`.
-  - [ ] Getters: `isLoading`, `isLoadingMore`, `hasReachedMax`, the same as [passenger_ride_history_state.dart](lib/features/ride/passenger/presentation/cubit/passenger_ride_history_cubit/passenger_ride_history_state.dart), plus `hasUnread`.
-- [ ] `NotificationsCubit(NotificationRepository)`:
-  - [ ] `refreshUnreadCount()`: best-effort; keeps the old count on error.
-  - [ ] `load({bool silent = false})`: page 0 plus the count. `silent` keeps the current list on screen (no full-screen spinner). It is also the pull-to-refresh action.
-  - [ ] `loadMore()`: appends the next page; on error it keeps the items and sets `errorMessage` for a toast.
-  - [ ] `markRead(id)`: optimistic. It flips the item to `read`, decrements `unreadCount` (not below 0), then calls the API. On `404` it reloads silently.
-  - [ ] `markAllRead()`: optimistic. All items become read and the count becomes 0, then the API is called; on failure it reloads.
-  - [ ] Subscribes to `PushNotificationService.inboxChanges` and creates an `AppLifecycleListener(onResume: …)`. Both call `refreshUnreadCount()`, plus `load(silent: true)` if the list was already loaded.
-  - [ ] `close()` cancels the subscription and disposes the listener, the same way [wallet_cubit.dart](lib/features/wallet/driver/presentation/cubit/wallet_cubit/wallet_cubit.dart) disposes its subscriptions.
-- [ ] Provided at **both** `ShellRoute`s in [app_router.dart](lib/core/router/app_router.dart), created with `..refreshUnreadCount()`. Role switch and logout dispose the shell, so it resets with no extra code.
-  - [ ] Passenger shell ([app_router.dart:138](lib/core/router/app_router.dart#L138)): turn the single `BlocProvider` into a `MultiBlocProvider`.
-  - [ ] Driver shell ([app_router.dart:319](lib/core/router/app_router.dart#L319)): add it to the existing `providers`.
+Verified: `flutter analyze` reports nothing in these files, and `flutter test` passes, including the new cubit test.
+
+- **Mutation check:** with the race guards removed, both race tests fail. They pass with the guards back.
+- **No on-device check yet:** the provider is lazy, and nothing reads it until Phase 5 wires the bell.
+
+Design notes:
+- **`isClosed` guards:**
+  - Every emit after an `await` checks `isClosed` first.
+  - In bloc 8.1.4, `emit` after `close` throws. Refreshes run in the background, and a role switch or logout can dispose the shell while one is in flight.
+- **Count beside the list:**
+  - `load` fetches the count *alongside* the list, through the best-effort `refreshUnreadCount()`.
+  - It doesn't combine them with a record `.wait`. A failure there becomes a `ParallelWaitError` whose `toString()` prefixes the message ("ParallelWaitError: …"), and a count failure would blank the list.
+- **Stale results:**
+  - A load generation counter drops an older `load` that lands after a newer one.
+  - `loadMore` drops its page when a reload restarted the list meanwhile (`currentPage` moved), and it skips ids already on screen.
+- **A non-silent `load` resets the list:** items, `currentPage` and `totalPages` all start over, the same as ride history's `loadHistory`.
+- **The repository is a plain `class`:** `NotificationRepository` is now a plain `class`, not `final`, so the test can extend it. It is the same as `RoutingRepository`.
+
+- [x] `NotificationsState` (Equatable):
+  - [x] Fields: `status` (`initial`, `loading`, `loaded`, `loadingMore`, `failure`), `items`, `currentPage`, `totalPages`, `unreadCount`, `errorMessage`.
+  - [x] Getters: `isLoading`, `isLoadingMore`, `hasReachedMax`, the same as [passenger_ride_history_state.dart](lib/features/ride/passenger/presentation/cubit/passenger_ride_history_cubit/passenger_ride_history_state.dart), plus `hasUnread`.
+- [x] `NotificationsCubit(NotificationRepository)`:
+  - [x] `refreshUnreadCount()`: best-effort; keeps the old count on error.
+  - [x] `load({bool silent = false})`: page 0 plus the count. `silent` keeps the current list on screen (no full-screen spinner). It is also the pull-to-refresh action.
+    - A silent failure keeps the status and items and sets only `errorMessage`.
+  - [x] `loadMore()`: appends the next page; on error it keeps the items and sets `errorMessage` for a toast.
+  - [x] `markRead(id)`: optimistic. It flips the item to `read`, decrements `unreadCount` (not below 0), then calls the API. On `404` it reloads silently.
+    - Any failure reloads silently, not only a `404`, so the view realigns with the server.
+    - With no network, that reload surfaces the connection error.
+    - An item that is already read, or not loaded, makes no call.
+  - [x] `markAllRead()`: optimistic. All items become read and the count becomes 0, then the API is called; on failure it reloads.
+  - [x] Subscribes to `PushNotificationService.inboxChanges` and creates an `AppLifecycleListener(onResume: …)`. Both call `refreshUnreadCount()`, plus `load(silent: true)` if the list was already loaded.
+    - A loaded list gets `load(silent: true)` alone, because that load already includes the count.
+    - Any other status gets only `refreshUnreadCount()`, which also avoids reloading under an in-flight `loadMore`.
+  - [x] `close()` cancels the subscription and disposes the listener, the same way [wallet_cubit.dart](lib/features/wallet/driver/presentation/cubit/wallet_cubit/wallet_cubit.dart) disposes its subscriptions.
+- [x] Provided at **both** `ShellRoute`s in [app_router.dart](lib/core/router/app_router.dart), created with `..refreshUnreadCount()`. Role switch and logout dispose the shell, so it resets with no extra code. The provider is lazy, like the others; Phase 5's bell is the first reader.
+  - [x] Passenger shell ([app_router.dart:138](lib/core/router/app_router.dart#L138)): turn the single `BlocProvider` into a `MultiBlocProvider`.
+  - [x] Driver shell ([app_router.dart:319](lib/core/router/app_router.dart#L319)): add it to the existing `providers`.
 
 ## Phase 5: UI
 
@@ -350,6 +374,7 @@ Use the flat `test/` layout of the existing tests (e.g. [date_formatter_test.dar
 
 - [x] [notification_destination_test.dart](test/notification_destination_test.dart): every table row for both roles, cross-role targets → `null`, and unknown keys with and without a `notificationId`. Written in Phase 3; it also covers the `rideId` fallback and the `unknown` role.
 - [x] [app_notification_test.dart](test/app_notification_test.dart): full parse, non-string `data` values, a missing `data`, and a `null` `readAt`. Written in Phase 1; it also covers `copyWith` and a `PageResponse` row without an `id`.
+- [x] [notifications_cubit_test.dart](test/notifications_cubit_test.dart): load, optimistic `markRead` / `markAllRead` and their reloads on failure, `loadMore` dedupe and dropping stale pages, silent vs non-silent failures, `inboxChanges` refreshes, and no emit after `close`. Added in Phase 4; it wasn't in the original list.
 - [ ] `test/notification_time_formatter_test.dart`: each bucket, plus the fallback date.
 - [ ] [CLAUDE.md](CLAUDE.md): add a short "Push notifications" subsection covering the `PushNotificationService` singleton, the no-WS rule and the token lifecycle. Also fix the stale "test/ is currently empty" note.
 
