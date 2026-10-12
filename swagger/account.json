@@ -13,6 +13,14 @@
   ],
   "tags": [
     {
+      "name": "Account Notifications",
+      "description": "The caller's notification inbox for their active role, plus account-level notifications"
+    },
+    {
+      "name": "Account Push Token",
+      "description": "Register or unregister the device push notification token"
+    },
+    {
       "name": "Account Profile",
       "description": "View and update the authenticated user's profile"
     },
@@ -90,6 +98,71 @@
               }
             }
           }
+        },
+        "security": [{ "bearerAuth": [] }]
+      }
+    },
+    "/api/me/push-token": {
+      "post": {
+        "tags": ["Account Push Token"],
+        "summary": "Register push token",
+        "description": "Registers or overwrites the device push token and platform for the authenticated user.",
+        "operationId": "registerPushToken",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PushTokenRegisterRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Push token registered",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/PushTokenResponse" }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/PushTokenResponse" }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/PushTokenResponse" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }]
+      },
+      "delete": {
+        "tags": ["Account Push Token"],
+        "summary": "Unregister push token",
+        "description": "Clears the authenticated user's device push token so this device stops receiving pushes. With the token parameter, clears only if that is the stored token. Idempotent. Logout does this automatically.",
+        "operationId": "unregisterPushToken",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "query",
+            "description": "This device's push token; when given, only this token is cleared",
+            "required": false,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "204": { "description": "Token cleared (or there was none)" },
+          "401": { "description": "Unauthorized" }
         },
         "security": [{ "bearerAuth": [] }]
       }
@@ -175,6 +248,57 @@
             "content": {
               "*/*": {
                 "schema": { "$ref": "#/components/schemas/AuthTokensResponse" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }]
+      }
+    },
+    "/api/me/notifications/{id}/read": {
+      "post": {
+        "tags": ["Account Notifications"],
+        "summary": "Mark one notification read",
+        "description": "Idempotent.",
+        "operationId": "markRead",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "204": { "description": "Marked read (or already read)" },
+          "401": { "description": "Unauthorized" },
+          "404": {
+            "description": "NOTIFICATION_NOT_FOUND — unknown ID or another user's item"
+          }
+        },
+        "security": [{ "bearerAuth": [] }]
+      }
+    },
+    "/api/me/notifications/read-all": {
+      "post": {
+        "tags": ["Account Notifications"],
+        "summary": "Mark all notifications read",
+        "description": "Marks every unread item in the inbox for the token's activeRole.",
+        "operationId": "markAllRead",
+        "responses": {
+          "200": {
+            "description": "Number of items newly marked read",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/ReadAllResponse" }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/ReadAllResponse" }
               }
             }
           }
@@ -331,8 +455,15 @@
       "post": {
         "tags": ["Auth"],
         "summary": "Logout",
-        "description": "Invalidates the current user session.",
+        "description": "Invalidates the current user session and unregisters the device from push. Send this device's pushToken so only this device is unregistered.",
         "operationId": "logout",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/LogoutRequest" }
+            }
+          }
+        },
         "responses": {
           "204": { "description": "Logged out" },
           "401": { "description": "Unauthorized" }
@@ -376,6 +507,84 @@
             "content": {
               "*/*": {
                 "schema": { "$ref": "#/components/schemas/MeProfileResponse" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }]
+      }
+    },
+    "/api/me/notifications": {
+      "get": {
+        "tags": ["Account Notifications"],
+        "summary": "List notifications",
+        "description": "Newest first. Shows the items for the token's activeRole plus account-level items, with title and body in the user's current preferred language.",
+        "operationId": "list",
+        "parameters": [
+          {
+            "name": "unreadOnly",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "boolean", "default": false }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "integer", "format": "int32", "default": 0 }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "integer", "format": "int32", "default": 20 }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A page of notifications",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageResponseNotificationResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageResponseNotificationResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }]
+      }
+    },
+    "/api/me/notifications/unread-count": {
+      "get": {
+        "tags": ["Account Notifications"],
+        "summary": "Unread count",
+        "description": "Number of unread notifications for the token's activeRole.",
+        "operationId": "unreadCount",
+        "responses": {
+          "200": {
+            "description": "Unread count",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/UnreadCountResponse" }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/UnreadCountResponse" }
               }
             }
           }
@@ -451,6 +660,18 @@
           "savedAddressCount": { "type": "integer", "format": "int32" }
         }
       },
+      "PushTokenRegisterRequest": {
+        "type": "object",
+        "properties": {
+          "token": { "type": "string", "maxLength": 4096, "minLength": 0 },
+          "platform": { "type": "string", "enum": ["IOS", "ANDROID"] }
+        },
+        "required": ["platform", "token"]
+      },
+      "PushTokenResponse": {
+        "type": "object",
+        "properties": { "registered": { "type": "boolean" } }
+      },
       "ChangePhoneRequest": {
         "type": "object",
         "properties": { "newPhone": { "type": "string", "minLength": 1 } },
@@ -477,6 +698,10 @@
           "profileCompleted": { "type": "boolean" },
           "hasDriverProfile": { "type": "boolean" }
         }
+      },
+      "ReadAllResponse": {
+        "type": "object",
+        "properties": { "updated": { "type": "integer", "format": "int32" } }
       },
       "SwitchRoleRequest": {
         "type": "object",
@@ -505,9 +730,48 @@
         "properties": { "phone": { "type": "string", "minLength": 1 } },
         "required": ["phone"]
       },
+      "LogoutRequest": {
+        "type": "object",
+        "properties": {
+          "pushToken": { "type": "string", "maxLength": 4096, "minLength": 0 }
+        }
+      },
       "EmailUpdateRequest": {
         "type": "object",
         "properties": { "email": { "type": "string" } }
+      },
+      "NotificationResponse": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "eventKey": { "type": "string" },
+          "title": { "type": "string" },
+          "body": { "type": "string" },
+          "data": {
+            "type": "object",
+            "additionalProperties": { "type": "string" }
+          },
+          "read": { "type": "boolean" },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "readAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "PageResponseNotificationResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/NotificationResponse" }
+          },
+          "page": { "type": "integer", "format": "int32" },
+          "size": { "type": "integer", "format": "int32" },
+          "totalElements": { "type": "integer", "format": "int64" },
+          "totalPages": { "type": "integer", "format": "int32" }
+        }
+      },
+      "UnreadCountResponse": {
+        "type": "object",
+        "properties": { "count": { "type": "integer", "format": "int64" } }
       }
     },
     "securitySchemes": {
