@@ -4,88 +4,126 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-`rapidoo` — an inDrive-style ride-hailing app for Algeria (whole-DZD fares, OTP auth, passenger-vs-driver negotiation, OTP/KYC flows). Flutter app, Dart SDK `^3.5.0`. Built against a Spring backend REST + raw-WebSocket "VTC" API.
+`rapidoo` — an inDrive-style ride-hailing app for Algeria (whole-DZD fares, phone-OTP auth, passenger-vs-driver fare negotiation, driver KYC, a driver commission wallet, push notifications). Flutter app, Dart SDK `^3.5.0`, **Android and iOS only** (`firebase_options.dart` throws on web/desktop). Built against a Spring backend — REST + raw-WebSocket "VTC" API — plus Firebase Cloud Messaging.
 
 ## Common commands
 
 ```bash
-flutter pub get          # install/refresh dependencies
-flutter run              # run on the selected device (use -d <deviceId>)
-flutter analyze          # static analysis (flutter_lints; the project relies on this — run before considering work done)
-flutter test             # run widget/unit tests (NOTE: test/ is currently empty — no tests exist yet)
-flutter build apk        # or: flutter build ios / flutter build web
+flutter pub get                                   # install/refresh dependencies
+flutter run                                       # run on the selected device (use -d <deviceId>)
+flutter analyze                                   # static analysis (flutter_lints) — run before considering work done
+flutter test                                      # all tests
+flutter test test/notifications_cubit_test.dart   # one file
+flutter test --plain-name "passenger role"        # tests whose group/test name contains the string
+flutter build apk                                 # or: flutter build ios
 ```
 
-Backend target is `http://localhost:8080` ([api_constants.dart](lib/core/constants/api_constants.dart)). For the **Android emulator**, change `baseUrl` to `http://10.0.2.2:8080` (the emulator maps the host loopback to `10.0.2.2`). The WS base URL is derived from this REST base automatically ([ws_url.dart](lib/core/network/ws_url.dart)) — do not introduce a separate `wsBaseUrl` constant.
+`flutter analyze` is not at zero: a few pre-existing `info` lints (`avoid_print` in the Bloc observer, `use_build_context_synchronously` in the home drawers) are the baseline — don't add new issues.
+
+Backend target is `ApiConstants.baseUrl` in [api_constants.dart](lib/core/constants/api_constants.dart) — currently the hosted dev API `https://vtc-api-dev.duckdns.org` (Swagger UI at `/swagger-ui.html`). For a backend on your own machine use `http://localhost:8080`, or `http://10.0.2.2:8080` from the **Android emulator**. The WS base URL is derived from this REST base automatically ([ws_url.dart](lib/core/network/ws_url.dart)) — do not introduce a separate `wsBaseUrl` constant.
 
 ## Architecture
 
 ### Feature-sliced layout (`lib/`)
 
-- **`core/`** — cross-cutting infrastructure. Notable subfolders: `network/` (DioClient, RideSocketService, DriverLocationStreamer), `session/` (AuthSession), `router/` (go_router config + RouteNames), `storage/` (SecureStorageHelper), `constants/` (per-surface API path constants, app strings, validation patterns), `theme/`, `errors/`, `utils/` (jwt_decoder, validators, phone/image helpers), `widgets/`.
-- **`features/`** — vertical slices. Each feature mirrors the passenger/driver split: `features/auth`, `features/home/{passenger,driver}`, `features/ride/{passenger,driver,shared}`, `features/profile/{passenger,driver,shared}`, `features/saved_places`. Inside a slice the convention is `data/` (repositories + models) and `presentation/` (`cubit/` + `views/` + `views/widgets/`).
-- **`shared/widgets/`** — cross-feature reusable widgets.
+- **`core/`** — cross-cutting infrastructure: `network/` (DioClient, RideSocketService, DriverLocationStreamer), `push/` (PushNotificationService + notification tap routing), `session/` (AuthSession), `router/` (go_router config + RouteNames), `presentation/` (WebSocketConnectionCubit), `storage/` (SecureStorageHelper), `constants/` (per-surface API path + error-code constants, app strings, validation patterns), `errors/` (ApiException), `theme/`, `utils/` (map geometry/markers, validators, jwt_decoder, uuid), `widgets/` (AppToast, dialogs).
+- **`features/`** — vertical slices mirroring the passenger/driver split: `auth`, `home/{passenger,driver}`, `ride/{passenger,driver,shared}`, `profile/{passenger,driver,shared}`, `wallet/driver`, `notifications`, `saved_places`. Inside a slice: `data/` (repositories + models) and `presentation/` (`cubit/` + `views/` + `views/widgets/`).
+- **`shared/widgets/`** — cross-feature reusable widgets (app bars, bottom sheets, buttons, text fields).
+
+There are two unrelated `DriverProfileCubit` classes: `features/auth/.../driver_profile_cubit` runs driver onboarding/KYC (`DriverRegistrationView`), `features/profile/driver/.../driver_profile_cubit` edits an existing driver profile. Import the right one.
 
 ### Infrastructure is static singletons (no DI container)
 
-`DioClient`, `RideSocketService`, `DriverLocationStreamer`, and `AuthSession` are `final class` with a private constructor and `static` members. Repositories are `const`-constructible value types (e.g. `const PassengerRideRepository()`) that depend on these singletons statically. When wiring a new screen, repositories are passed into the Cubit in the route's `BlocProvider` (see [app_router.dart](lib/core/router/app_router.dart)) — they are not registered anywhere.
+`DioClient`, `RideSocketService`, `DriverLocationStreamer`, `PushNotificationService`, and `AuthSession` are `final class` with a private constructor and `static` members. `AppRouter.router` is a static `GoRouter`, which is how infrastructure navigates outside the widget tree (forced logout, notification taps). Repositories are `const`-constructible classes (e.g. `const PassengerRideRepository()`) that call these singletons statically; they are passed into the Cubit in the route's `BlocProvider` (see [app_router.dart](lib/core/router/app_router.dart)) — not registered anywhere.
 
 ### State & navigation
 
-- **State:** `flutter_bloc` (mostly **Cubits**, some Blocs) + `equatable` for immutable states. A `MyBlocObserver` ([observer.dart](lib/core/helper/observer.dart)) logs every create/change/error/close — this is intentionally verbose for debugging; expect noisy console output in debug.
-- **Navigation:** `go_router`. Routes live as string constants in [route_names.dart](lib/core/router/route_names.dart) — always reference `RouteNames.*`, never raw strings. The passenger and driver home areas are **`ShellRoute`s** whose builders provide shell-scoped Cubits (e.g. `PassengerHomeCubit`, `DriverHomeCubit`, `WebSocketConnectionCubit`, `AvailableRidesCubit`) that survive navigation between sibling screens. The startup route is decided at boot by `AuthSession.resolveInitialRoute()` (based on persisted tokens/role flags).
-- **Responsive sizing:** `flutter_screenutil` (design size in `AppConstants.designWidth/Height`). Use `.h/.w/.sp`. Fonts come from `google_fonts` (Plus Jakarta Sans + Inter) — no TTF assets needed.
+- **State:** `flutter_bloc` Cubits + `equatable` immutable states. `MyBlocObserver` ([observer.dart](lib/core/helper/observer.dart)) logs every create/change/error/close — intentionally verbose; expect noisy debug output.
+- **Navigation:** `go_router`. Paths are constants in [route_names.dart](lib/core/router/route_names.dart) — always `RouteNames.*`, never raw strings. Screen arguments travel in `state.extra` (an `*Args` object, a model, or an id string), not path/query params.
+- **Shells:** the passenger and driver home areas are `ShellRoute`s whose builders provide Cubits that must survive navigation between sibling screens; a role switch or logout leaves the shell and disposes them.
+  - passenger: `PassengerHomeCubit`, `NotificationsCubit` (plus a nested shell providing `SavedPlacesCubit`)
+  - driver: `DriverHomeCubit`, `DriverAvailabilityCubit`, `WebSocketConnectionCubit`, `AvailableRidesCubit` (keeps collecting `ride.broadcast` while online), `WalletCubit` (balance gate), `NotificationsCubit`
+- **Startup route:** `AuthSession.resolveInitialRoute()` — no token → phone entry; new user who hasn't applied as a driver → mode selection; otherwise driver or passenger home by the persisted `lastRole`.
+- **Responsive sizing:** `flutter_screenutil` (design size in `AppConstants.designWidth/Height`). Use `.h/.w/.sp`. Fonts come from `google_fonts` (Plus Jakarta Sans + Inter) — no TTF assets.
+- **User feedback:** `AppToast.success/warning/error` ([app_toast.dart](lib/core/widgets/app_toast.dart)).
 
 ### Networking — `DioClient` ([dio_client.dart](lib/core/network/dio_client.dart))
 
-All HTTP goes through `DioClient.get/post/put/delete/patch/postMultipart`. Interceptors (read top-to-bottom):
-1. **Auth:** attaches `Authorization: Bearer <accessToken>` from `AuthSession.accessToken` if present.
-2. **Idempotency:** auto-attaches a hand-rolled RFC-4122-v4 `Idempotency-Key` header (`_uuid()`) to every POST/PUT/DELETE **except** paths under `/api/auth/*`. This makes retries safe — do not strip it.
-3. **401 refresh:** on a 401 (unless already refreshing or no refresh token), calls `/api/auth/refresh`, stores new tokens, and transparently retries the original request. On refresh failure it clears the session and routes to `/` (phone entry).
+All backend HTTP goes through `DioClient.get/post/put/delete/patch/postMultipart`. Interceptors, in order:
+1. **Auth:** attaches `Authorization: Bearer <accessToken>` from `AuthSession`, unless the request set its own `Authorization` header (the refresh call sends `null` to strip it).
+2. **Idempotency:** adds a fresh `Idempotency-Key` (`uuidV4()`) to every POST/PUT/DELETE **except** `/api/auth/*`. This makes retries safe — do not strip it.
+3. **401 refresh:** concurrent 401s all join one in-flight `DioClient.refreshAccessToken()`, then the original request is retried. The backend **rotates refresh tokens on use**, so anything needing a refresh (including `RideSocketService`) must go through `refreshAccessToken()` — never call `/api/auth/refresh` directly. Only a failed refresh (or a 401 from `/api/auth/*`) forces logout: stop location streaming, disconnect the socket, clear the session, `go(RouteNames.phone)`. A 401/403 that persists after a good refresh is an ordinary error and keeps the session.
 4. **Logging** (debug only): full request/response bodies.
 
-Errors are normalized by `_handleDioError`: it parses the API error envelope `{error:{code,message,details}}` ([api_error_model.dart](lib/core/errors/api_error_model.dart)) and returns the `message` string. **401/403 with an API message also clear the session and force re-login.** Repositories therefore `throw` (string) on failure; Cubits catch and map to a failure state.
+**Errors:** every helper throws [`ApiException`](lib/core/errors/api_exception.dart) — `message` (already localised by the backend; show as-is), `code` (from the `{error:{code,message,details}}` envelope), `statusCode`, `retryAfter`. `toString()` returns the message, so `catch (e)` → `e.toString()` renders text. To branch, use `e is ApiException && e.isConflict` or `e.hasCode(RideErrorCodes.x)` — never match message text. Error-code constants sit beside the path constants (`RideErrorCodes`, `PassengerRideErrorCodes`, `WalletErrorCodes` in `core/constants/*_api_constants.dart`).
+
+**Third-party hosts never go through `DioClient`** (it would send them the JWT). `RoutingRepository` keeps its own bare `Dio` for road routes from the public OSRM demo server (`RoutingApiConstants`) — no SLA, to be replaced by a backend endpoint before release.
 
 ### Realtime — raw WebSocket, NOT STOMP ([ride_socket_service.dart](lib/core/network/ride_socket_service.dart))
 
-> ⚠️ The transport is a **plain WebSocket** (`IOWebSocketChannel`). There is no STOMP, no SockJS, no topic subscriptions. Do **not** add a STOMP client library. Open one socket per role (`/ws/passenger`, `/ws/driver`); the JWT goes in the `Authorization` header of the upgrade request, and `/ws/driver` additionally requires `activeRole == DRIVER`.
+> ⚠️ The transport is a **plain WebSocket** (`IOWebSocketChannel`). There is no STOMP, no SockJS, no topic subscriptions. Do **not** add a STOMP client library. One socket per role (`/ws/passenger`, `/ws/driver`); the JWT goes in the `Authorization` header of the upgrade request, and `/ws/driver` additionally requires `activeRole == DRIVER`.
 
 `RideSocketService` owns the connection lifecycle only:
-- `connect(ActiveRole)`, `disconnect()`, `send(envelope)`, and auto-reconnect with exponential backoff (`1→2→4→8→16s`, in `WebSocketConstants.backoffSteps`).
+- `connect(ActiveRole)`, `disconnect()`, `send(envelope)`, and auto-reconnect with exponential backoff (`1→2→4→8→16s`, `WebSocketConstants.backoffSteps`). Connecting for the other role tears down the current socket first.
 - Interprets close codes `1000`/`4001`/`4002`/`4003`/`4004` ([web_socket_constants.dart](lib/core/constants/web_socket_constants.dart)).
-- **Token refresh without dropping the socket:** intercepts `system.token_expiring` frames, REST-refreshes the token, and sends `system.auth_refresh` upstream. If the window is missed (close `4001`), it refreshes then reconnects fresh.
+- **Token refresh without dropping the socket:** intercepts `system.token_expiring`, refreshes via `DioClient.refreshAccessToken()`, and sends `system.auth_refresh` upstream. If the window is missed (close `4001`), it refreshes then reconnects fresh.
 
-It exposes two streams that feature code consumes:
-- `statusStream` → `RideSocketStatus {disconnected, connecting, connected, reconnecting, failed}`. Mirrored to UI by `WebSocketConnectionCubit`.
-- `frameStream` → raw envelope JSON strings (unparsed by design). Feature Cubits subscribe here, decode with `RideSocketEvent.tryParse` ([ride_socket_event.dart](lib/features/ride/driver/data/models/ride_socket_event.dart)), and switch on the typed event. Example: [available_rides_cubit.dart](lib/features/ride/driver/presentation/cubit/available_rides_cubit/available_rides_cubit.dart).
+Who opens it: the **driver** socket by `DriverAvailabilityCubit` on go-online (with `DriverLocationStreamer.start()`), closed on go-offline; the **passenger** socket by `RideRequestCubit`, `WaitingOffersCubit` and `PassengerActiveRideCubit`. Logout and the driver→passenger role switch call `DriverLocationStreamer.stopAndDisconnect()`.
 
-`DriverLocationStreamer` ([driver_location_streamer.dart](lib/core/network/driver_location_streamer.dart)) streams GPS upstream as `driver.location` envelopes on a timer while armed (armed by `DriverAvailabilityCubit` on go-online); it pauses/resumes with the socket's status automatically.
+It exposes two streams:
+- `statusStream` → `RideSocketStatus {disconnected, connecting, connected, reconnecting, failed}`, mirrored to UI by `WebSocketConnectionCubit`.
+- `frameStream` → raw envelope JSON strings (unparsed by design). Cubits subscribe, decode with `RideSocketEvent.tryParse`, and switch on the sealed event type. The single parser lives in [ride_socket_event.dart](lib/features/ride/driver/data/models/ride_socket_event.dart) despite the `driver/` path — it covers passenger, driver, `wallet.*` and `system.*` events. Subscribers: `AvailableRidesCubit`, `DriverActiveRideCubit`, `WaitingOffersCubit`, `PassengerActiveRideCubit`, `WalletCubit`.
+
+`DriverLocationStreamer` ([driver_location_streamer.dart](lib/core/network/driver_location_streamer.dart)) sends the driver's GPS every 15s while armed: as a `driver.location` WS envelope when the driver socket is up, otherwise via REST `POST /api/driver/location`, plus an immediate send on reconnect.
 
 ### Auth & session — `AuthSession` ([auth_session.dart](lib/core/session/auth_session.dart))
 
-Static singleton holding access/refresh tokens plus flags (`isNewUser`, `waitingKycStatus`, `hasDriverProfile`, `lastRole`), all persisted to `flutter_secure_storage` via `SecureStorageHelper`. `setTokens` is the single entry point that updates both memory and storage. The JWT payload (claims include `activeRole`, `kycVerified`, `hasDriverProfile`) is decoded by `JwtDecoder` + `TokenPayload` ([token_payload.dart](lib/core/models/token_payload.dart)).
+Static singleton holding access/refresh tokens plus flags (`isNewUser`, `waitingKycStatus`, `hasDriverProfile`, `lastRole`), persisted to `flutter_secure_storage`. Its setters (`setTokens`, `setAccessToken`, …) update memory and storage together — use them rather than `SecureStorageHelper` directly. JWT claims (`activeRole`, `kycVerified`, `hasDriverProfile`, …) are decoded by `JwtDecoder` + `TokenPayload` ([token_payload.dart](lib/core/models/token_payload.dart)), which also defines `ActiveRole`. `switchRole` (in `AuthRepository` / `DriverRepository`, called from the home drawers) swaps in an access token for the other `activeRole`.
 
-### Maps
+### Push notifications — FCM + REST inbox, never the socket
 
-Google Maps via **google_maps_flutter** (`LatLng` comes from this package). The API key lives in [AndroidManifest.xml](android/app/src/main/AndroidManifest.xml) (`com.google.android.geo.API_KEY`) and [AppDelegate.swift](ios/Runner/AppDelegate.swift) (`GMSServices.provideAPIKey`). Custom markers are painted to bitmaps by [map_marker_factory.dart](lib/core/utils/map_marker_factory.dart). Place search / reverse geocoding in `LocationPickerCubit` still uses Nominatim (to be replaced by a backend API). Location permission/positioning via **geolocator**. The same permission flow is reused by `LocationPickerCubit` and `DriverLocationStreamer`.
+> ⚠️ Notifications use **FCM push** and the **REST inbox** (`/api/me/notifications`) only. Do not handle the `notification.created` WS frame (the backend handoff [Untitled.md](Untitled.md) still lists it), do not add a notification type to `RideSocketEventType`, and do not import `RideSocketService` from notification code.
 
-## Backend contract — `swagger/` is authoritative
+- [`PushNotificationService`](lib/core/push/push_notification_service.dart) owns FCM + `flutter_local_notifications`: `init()` before `runApp`, `handleLaunchTap()` after it, `registerDevice()` on every logged-in app start and after every login (the server clears the stored token on login and logout). None of them throw — push must never block startup. In the foreground only pushes carrying a `notificationId` (inbox items) are shown and emit `inboxChanges`; trip-progress and offer pushes are skipped because the ride screens already show them.
+- **Tap routing:** [`resolveNotificationDestination`](lib/core/push/notification_destination.dart) is a pure, unit-tested function mapping `eventKey` + `data` + role to a route and `go`-vs-`push`; `NotificationNavigator` applies it via `AppRouter.router` and ignores targets in the other role's shell. It implements the tap routing table in [NOTIFICATION_PROGRESS.md](NOTIFICATION_PROGRESS.md) — change both together.
+- `NotificationsCubit` is shell-scoped in both shells (the bell's badge and the inbox share one unread count) and refetches on `inboxChanges` and app resume.
+- The Android channel id `rapidoo_alerts` must match `default_notification_channel_id` in [AndroidManifest.xml](android/app/src/main/AndroidManifest.xml).
+- **iOS has no FCM token until a paid Apple Developer account exists.** That is expected — `registerDevice()` skips with a debug log. Keep the iOS push config; don't try to fix it.
+- Firebase config (`lib/firebase_options.dart`, `google-services.json`, `GoogleService-Info.plist`) is FlutterFire-generated for project `rapido-1956d`.
 
-The `swagger/` directory holds the integration runbook and field-level specs. When touching anything ride-related, read these first — they encode invariants Swagger can't:
-- **[epic-03-ride.md](swagger/epic-03-ride.md)** — the canonical end-to-end runbook (protocol, state machines, timing windows, error codes, checklist).
+### Driver wallet (`features/wallet/driver`)
+
+The driver's prepaid platform commission — not fare payment (rides are paid in cash). Amounts are whole-DZD ints, and a negative balance is valid (driver debt). `WalletCubit` lives in the driver shell and applies `wallet.*` events from the driver socket. Below the server's `minOnlineBalanceDzd`, go-online and bidding fail with `403 INSUFFICIENT_WALLET_BALANCE` (`WalletErrorCodes.insufficientBalance`), which the UI turns into a top-up prompt.
+
+### Maps & places
+
+Google Maps via **google_maps_flutter** (`LatLng` comes from this package). The API key lives in [AndroidManifest.xml](android/app/src/main/AndroidManifest.xml) (`com.google.android.geo.API_KEY`) and [AppDelegate.swift](ios/Runner/AppDelegate.swift) (`GMSServices.provideAPIKey`). Custom markers are painted to bitmaps by [map_marker_factory.dart](lib/core/utils/map_marker_factory.dart); spherical geometry for markers, camera framing and route snapping is in [map_geo.dart](lib/core/utils/map_geo.dart). Place search, resolve and reverse geocoding go through the backend (`PlacesRepository` → `/api/passenger/places/*`). Active-ride polylines come from the shared `RideRouteCubit` + `RoutingRepository` (OSRM, see above). Turn-by-turn navigation hands off to Google Maps ([external_navigation.dart](lib/core/utils/external_navigation.dart)). Location permission/positioning via **geolocator**, with the same permission flow in `LocationPickerCubit` and `DriverLocationStreamer`.
+
+## Backend contract & project docs
+
+`swagger/` is authoritative. Read these before touching anything ride-related — they encode invariants the OpenAPI specs can't:
+- **[epic-03-ride.md](swagger/epic-03-ride.md)** — the canonical end-to-end ride runbook (protocol, state machines, timing windows, error codes). `integration/epic-03-ride.md` is an identical copy.
 - **[passenger-flow.md](swagger/passenger-flow.md)** / **[driver-flow.md](swagger/driver-flow.md)** — step-by-step flows.
-- **[DRIVER_REGISTRATION.md](DRIVER_REGISTRATION.md)** — the multi-step driver onboarding flow (single `DriverRegistrationCubit` + `IndexedStack`, Algerian plate format `NNNNN-NNN-NN`, mock repository methods).
+- `swagger/{account,passenger,driver,websocket}.json` — OpenAPI specs per surface.
+- **[integration/epic-04-wallet.md](integration/epic-04-wallet.md)** — the wallet runbook.
+- [DRIVER_REGISTRATION.md](DRIVER_REGISTRATION.md) — the multi-step driver onboarding flow (`IndexedStack`, Algerian plate format `NNNNN-NNN-NN`).
+- [ADMIN_CONFIG.md](ADMIN_CONFIG.md) — which values operators can change server-side (so the app must not hardcode them).
+
+Progress trackers:
+- `progress/{account,passenger,driver}-progress.md` — spec-vs-implementation status per surface.
+- Root `WALLET_PROGRESS.md` / `NOTIFICATION_PROGRESS.md` — phased per-feature plans with `[x]`/`[ ]` checkboxes. When working on one of these features, follow its tracker and tick items as they land.
 
 Invariants that shape client code:
-- **REST is truth, WS is hints.** On every (re)connect, refetch `GET /rides/active` and reconcile the UI, then apply live events. Cubits do this in their `statusStream` listener (see `_onStatus` → `loadAvailableRides`).
-- **409s mean "your view is stale"** — refetch and re-render; don't surface them as hard errors.
+- **REST is truth, WS is hints.** On every (re)connect, refetch the REST state (`GET /rides/active`, the wallet, …) and reconcile the UI, then apply live events. Cubits do this in their `statusStream` listener.
+- **409s mean "your view is stale"** — refetch and re-render; don't surface them as errors.
 - **Dedupe by id:** offers by `offerId`, broadcasts/requests by `rideRequestId`, rides by `rideId`. The server re-broadcasts the same `rideRequestId` ~every 10s — upsert, don't append.
 - **Drive UI from server `state`** (`ride.state_changed`), not optimistic local guesses; **count down to server fields** (`expiresAt`, `arrivalWaitDeadline`) rather than hardcoded durations — the defaults are server-configurable.
 - **Passenger renders the driver marker only between `ACCEPTED` and terminal state** (`COMPLETED`/`CANCELLED`).
+- **Server text arrives localised** (fr/ar): error messages and notification titles/bodies are displayed as received, never translated in the app.
 
 ## Patterns to follow
 
-- New screen: declare its path in [route_names.dart](lib/core/router/route_names.dart), add a `GoRoute`/`ShellRoute` entry with a `BlocProvider` in [app_router.dart](lib/core/router/app_router.dart), and create the Cubit + immutable state under the feature's `presentation/cubit/`.
-- New API surface: add path constants under `core/constants/*_api_constants.dart`, a `const` repository method calling `DioClient`, and `fromJson`/`toJson` models under the feature's `data/models/`.
+- New screen: declare its path in [route_names.dart](lib/core/router/route_names.dart), add a `GoRoute` (inside the right shell) with a `BlocProvider` in [app_router.dart](lib/core/router/app_router.dart), and create the Cubit + immutable state under the feature's `presentation/cubit/`.
+- New API surface: add path (and error-code) constants under `core/constants/*_api_constants.dart`, a `const` repository method calling `DioClient`, and `fromJson`/`toJson` models under the feature's `data/models/`.
 - New WS event: add the wire type to `RideSocketEventType`, a sealed subclass of `RideSocketEvent`, and a parse branch in `tryParse`; consume it in whichever Cubit subscribes to `frameStream`.
-- Many repositories are still **mocks** with `Future.delayed` (notably driver registration/KYC per the docs above) — wire them to Dio when the backend is ready rather than assuming they hit the network.
+- Tests: plain `flutter_test` unit tests in a flat `test/` folder, with no mocking library. Fake a repository by subclassing it and overriding methods (`class _FakeRoutingRepository extends RoutingRepository`). The static singletons can't be injected, so keep logic you want to test in pure functions (like `resolveNotificationDestination`) or in Cubits that take repositories.
