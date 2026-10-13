@@ -12,7 +12,7 @@ class TopBar extends StatelessWidget {
     this.trailingIcon = Icons.notifications_none_rounded,
     this.onLeadingTap,
     this.onTrailingTap,
-    this.showTrailingBadge = false,
+    this.trailingBadgeCount = 0,
   });
 
   final String title;
@@ -22,8 +22,8 @@ class TopBar extends StatelessWidget {
   final VoidCallback? onLeadingTap;
   final VoidCallback? onTrailingTap;
 
-  /// The bell's unread dot, driven by the shell's notifications count.
-  final bool showTrailingBadge;
+  /// The bell's unread count, from the shell's NotificationsCubit.
+  final int trailingBadgeCount;
 
   @override
   Widget build(BuildContext context) {
@@ -34,7 +34,8 @@ class TopBar extends StatelessWidget {
       trailingIcon: trailingIcon,
       onLeadingTap: onLeadingTap ?? () => ZoomDrawer.of(context)?.toggle(),
       onTrailingTap: onTrailingTap,
-      showTrailingBadge: showTrailingBadge,
+      showTrailingBadge: false,
+      trailingBadgeCount: trailingBadgeCount,
     );
   }
 }

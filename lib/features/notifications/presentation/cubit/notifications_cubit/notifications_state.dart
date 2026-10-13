@@ -26,7 +26,7 @@ final class NotificationsState extends Equatable {
   final int totalPages;
 
   /// The server's count for the whole inbox, not only the loaded pages. It
-  /// drives the bell's dot.
+  /// drives the bell's badge.
   final int unreadCount;
   final String errorMessage;
 

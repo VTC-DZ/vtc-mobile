@@ -14,6 +14,7 @@ class AppTopBar extends StatelessWidget {
     this.onLeadingTap,
     this.onTrailingTap,
     this.showTrailingBadge = true,
+    this.trailingBadgeCount = 0,
   });
 
   final String title;
@@ -23,8 +24,12 @@ class AppTopBar extends StatelessWidget {
   final VoidCallback? onLeadingTap;
   final VoidCallback? onTrailingTap;
 
-  /// The small primary dot on the trailing button, e.g. the bell's unread dot.
+  /// The small primary dot on the trailing button.
   final bool showTrailingBadge;
+
+  /// A number on the trailing button, e.g. the bell's unread count; replaces
+  /// the dot while above zero.
+  final int trailingBadgeCount;
 
   @override
   Widget build(BuildContext context) {
@@ -99,6 +104,7 @@ class AppTopBar extends StatelessWidget {
                 icon: trailingIcon!,
                 onTap: onTrailingTap,
                 showBadge: showTrailingBadge,
+                badgeCount: trailingBadgeCount,
               ),
             ],
           ],
@@ -113,11 +119,13 @@ class _TopBarButton extends StatelessWidget {
     required this.icon,
     this.onTap,
     this.showBadge = false,
+    this.badgeCount = 0,
   });
 
   final IconData icon;
   final VoidCallback? onTap;
   final bool showBadge;
+  final int badgeCount;
 
   @override
   Widget build(BuildContext context) {
@@ -137,13 +145,22 @@ class _TopBarButton extends StatelessWidget {
         ),
         child: Stack(
           alignment: Alignment.center,
+          clipBehavior: Clip.none,
           children: [
             Icon(
               icon,
               size: 21.w,
               color: AppColors.text(context),
             ),
-            if (showBadge)
+            // On the button's corner rather than the icon, so even "+10"
+            // leaves the bell visible.
+            if (badgeCount > 0)
+              Positioned(
+                top: -5.w,
+                right: -5.w,
+                child: _CountBadge(count: badgeCount),
+              )
+            else if (showBadge)
               Positioned(
                 top: 11.h,
                 right: 11.w,
@@ -161,6 +178,45 @@ class _TopBarButton extends StatelessWidget {
                 ),
               ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// The count badge's text: the exact number up to 10, then "+10".
+String badgeCountLabel(int count) => count > 10 ? '+10' : '$count';
+
+/// A primary pill: a circle for one digit, wider for "10" and "+10". Ringed in
+/// the bar's colour, which it overlaps, the way the dot is ringed in the
+/// button's.
+class _CountBadge extends StatelessWidget {
+  const _CountBadge({required this.count});
+
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      constraints: BoxConstraints(minWidth: 18.w),
+      height: 18.w,
+      padding: EdgeInsets.symmetric(horizontal: 4.w),
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: AppColors.primary,
+        borderRadius: BorderRadius.circular(9.w),
+        border: Border.all(
+          color: AppColors.surface(context),
+          width: 1.5.w,
+        ),
+      ),
+      child: Text(
+        badgeCountLabel(count),
+        style: AppTextStyles.labelSmall(context).copyWith(
+          color: AppColors.white,
+          fontSize: 10.sp,
+          fontWeight: FontWeight.w700,
+          height: 1,
         ),
       ),
     );

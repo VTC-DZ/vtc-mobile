@@ -143,7 +143,8 @@ A phone change does **not** clear it. So the app registers:
    - The user is logged in **and** onboarding is done, meaning [`AuthSession.resolveInitialRoute()`](lib/core/session/auth_session.dart#L144) returns a home route.
    - The destination belongs to the role the UI is in (`AuthSession.lastRole`). Never navigate into the other role's shell: its API calls would 403 with the wrong token.
    - Pushing the path that is already on top is skipped.
-6. **Badge.** Reuse the existing 7 px dot on the bell, now driven by `unreadCount > 0`. There is no number bubble.
+6. **Badge.** The bell shows the unread count on a primary pill at the button's top-right corner: `1` to `10`, then `+10` (`badgeCountLabel` in [app_top_bar.dart](lib/shared/widgets/app_top_bar.dart)). At 0 it is hidden.
+   - *Changed on 2026-10-13 at the user's request.* Before, the bell reused the existing 7 px dot, driven by `unreadCount > 0`, with no number. Other trailing buttons still use the dot.
 7. **Android channel.** Use `rapidoo_alerts` with importance high so notifications appear as heads-up banners. It is created at startup and set as the FCM default channel in the manifest.
 
 ### Tap routing table
@@ -365,8 +366,9 @@ Beyond the list below:
 - [x] [notification_time_formatter.dart](lib/features/notifications/utils/notification_time_formatter.dart): returns "Just now", "N min ago", "N h ago" or "Yesterday", otherwise `formatRideDate` from [date_formatter.dart](lib/features/ride/shared/utils/date_formatter.dart). The project has no `intl`.
 - [x] Bell wiring
   - [x] [app_top_bar.dart](lib/shared/widgets/app_top_bar.dart): add `showTrailingBadge` (default `true`, so every other trailing button keeps today's dot) and use it instead of the hard-coded `showBadge: true`.
-  - [x] [shared/widgets/top_bar.dart](lib/shared/widgets/top_bar.dart): add `showTrailingBadge` (default `false`) and pass it through. Only the three bell screens use this widget. The other screens import the duplicate in `features/home/passenger/.../top_bar.dart`, which stays untouched.
-  - [x] [passenger_home_view.dart:95](lib/features/home/passenger/presentation/views/passenger_home_view.dart#L95), [driver_home_view.dart:40](lib/features/home/driver/presentation/views/driver_home_view.dart#L40) and [available_rides_view.dart:34](lib/features/ride/driver/presentation/views/available_rides_view.dart#L34): wrap `TopBar` in `BlocSelector<NotificationsCubit, NotificationsState, bool>` (`hasUnread`), with `onTrailingTap: () => context.push(RouteNames.passengerNotifications / driverNotifications)`.
+  - [x] [app_top_bar.dart](lib/shared/widgets/app_top_bar.dart): add `trailingBadgeCount` (default `0`). Above zero it replaces the dot with a count pill on the button's top-right corner, labelled by `badgeCountLabel`. Added on 2026-10-13 (decision 6).
+  - [x] [shared/widgets/top_bar.dart](lib/shared/widgets/top_bar.dart): take `trailingBadgeCount` (default `0`) and pass it through with `showTrailingBadge: false`. Only the three bell screens use this widget. The other screens import the duplicate in `features/home/passenger/.../top_bar.dart`, which stays untouched.
+  - [x] [passenger_home_view.dart:97](lib/features/home/passenger/presentation/views/passenger_home_view.dart#L97), [driver_home_view.dart:42](lib/features/home/driver/presentation/views/driver_home_view.dart#L42) and [available_rides_view.dart:38](lib/features/ride/driver/presentation/views/available_rides_view.dart#L38): wrap `TopBar` in `BlocSelector<NotificationsCubit, NotificationsState, int>` (`unreadCount`), with `onTrailingTap: () => context.push(RouteNames.passengerNotifications / driverNotifications)`.
 
 ## Phase 6: Auth hooks and app start
 
@@ -385,6 +387,7 @@ Use the flat `test/` layout of the existing tests (e.g. [date_formatter_test.dar
 - [x] [app_notification_test.dart](test/app_notification_test.dart): full parse, non-string `data` values, a missing `data`, and a `null` `readAt`. Written in Phase 1; it also covers `copyWith` and a `PageResponse` row without an `id`.
 - [x] [notifications_cubit_test.dart](test/notifications_cubit_test.dart): load, optimistic `markRead` / `markAllRead` and their reloads on failure, `loadMore` dedupe and dropping stale pages, silent vs non-silent failures, `inboxChanges` refreshes, and no emit after `close`. Added in Phase 4; it wasn't in the original list.
 - [x] [notification_time_formatter_test.dart](test/notification_time_formatter_test.dart): each bucket, plus the fallback date. Written in Phase 5; it also covers a clock ahead of the phone, midnight and month boundaries, and UTC input.
+- [x] [badge_count_label_test.dart](test/badge_count_label_test.dart): the exact count up to 10, then `+10`. Added on 2026-10-13 with the count badge.
 - [ ] [CLAUDE.md](CLAUDE.md): add a short "Push notifications" subsection covering the `PushNotificationService` singleton, the no-WS rule and the token lifecycle. Also fix the stale "test/ is currently empty" note.
 
 ## Phase 8: Manual prerequisites (outside the code)
@@ -403,12 +406,12 @@ Use the flat `test/` layout of the existing tests (e.g. [date_formatter_test.dar
   - [ ] Send a test message from the Firebase console to that token with data `{eventKey: wallet.topup_approved, notificationId: <id>}`.
     - [ ] Background: a heads-up appears with the custom icon and color, and a tap opens top-up history.
     - [ ] Terminated: a tap cold-starts the app straight into top-up history.
-    - [ ] Foreground: a local banner shows, and the bell dot appears.
-  - [ ] A transient key (no `notificationId`) sent while in the foreground: a banner shows, the bell dot doesn't change, and the debug log shows `[Push] foreground push: <eventKey>`.
+    - [ ] Foreground: a local banner shows, and the bell's count goes up.
+  - [ ] A transient key (no `notificationId`) sent while in the foreground: a banner shows, the bell's count doesn't change, and the debug log shows `[Push] foreground push: <eventKey>`.
 - [ ] **Real events**
   - [ ] Complete a ride: both roles get a push, and the badge and inbox update. The driver's tap opens the ride detail and the passenger's opens ride history.
   - [ ] Approve a top-up from the admin dashboard: the push arrives, and the item appears in the driver inbox.
-  - [ ] Inbox: pagination, pull-to-refresh, tap → marked read and the dot clears, mark-all-read → count 0.
+  - [ ] Inbox: pagination, pull-to-refresh, tap → marked read and the bell's count drops by one, mark-all-read → count 0 and the badge hides.
   - [ ] Switch role: the other role's unread count loads.
   - [ ] Logout: the request body contains `pushToken`, and no further pushes arrive.
 - [ ] **iOS physical device:** repeat the background, terminated and foreground cases. **Deferred** until the Apple Developer account and APNs key exist. Until then, only check that the iOS app runs normally with no FCM token: no crash, no error toast, and the inbox still works over REST.

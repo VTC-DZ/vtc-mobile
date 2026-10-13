@@ -39,12 +39,12 @@ class DriverHomeView extends StatelessWidget {
             body: SafeArea(
               child: Column(
                 children: [
-                  BlocSelector<NotificationsCubit, NotificationsState, bool>(
-                    selector: (inbox) => inbox.hasUnread,
-                    builder: (context, hasUnread) => TopBar(
+                  BlocSelector<NotificationsCubit, NotificationsState, int>(
+                    selector: (inbox) => inbox.unreadCount,
+                    builder: (context, unreadCount) => TopBar(
                       title: 'Driver Mode',
                       subtitle: 'Ready to drive',
-                      showTrailingBadge: hasUnread,
+                      trailingBadgeCount: unreadCount,
                       onTrailingTap: () =>
                           context.push(RouteNames.driverNotifications),
                     ),

@@ -146,7 +146,7 @@ final class AppRouter {
                       ..getProfile()
                       ..checkActiveRide(),
                   ),
-                  // Shell-scoped so the bell's unread dot survives navigation;
+                  // Shell-scoped so the bell's badge survives navigation;
                   // a role switch or logout disposes it with the shell.
                   BlocProvider<NotificationsCubit>(
                     create: (_) =>
@@ -293,7 +293,7 @@ final class AppRouter {
               },
             ),
             // Reads the shell's NotificationsCubit, so the inbox and the
-            // bell's dot share one unread count.
+            // bell's badge share one unread count.
             GoRoute(
               path: RouteNames.passengerNotifications,
               builder: (context, state) => const NotificationsView(),
@@ -362,7 +362,7 @@ final class AppRouter {
             BlocProvider<WalletCubit>(
               create: (_) => WalletCubit(const WalletRepository())..load(),
             ),
-            // Shell-scoped so the bell's unread dot survives navigation; a
+            // Shell-scoped so the bell's badge survives navigation; a
             // role switch or logout disposes it with the shell.
             BlocProvider<NotificationsCubit>(
               create: (_) => NotificationsCubit(const NotificationRepository())
@@ -495,7 +495,7 @@ final class AppRouter {
             },
           ),
           // Reads the shell's NotificationsCubit, so the inbox and the bell's
-          // dot share one unread count.
+          // badge share one unread count.
           GoRoute(
             path: RouteNames.driverNotifications,
             builder: (context, state) => const NotificationsView(),

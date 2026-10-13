@@ -94,10 +94,10 @@ class PassengerHomeView extends StatelessWidget {
               }
               return Column(
                 children: [
-                  BlocSelector<NotificationsCubit, NotificationsState, bool>(
-                    selector: (inbox) => inbox.hasUnread,
-                    builder: (context, hasUnread) => TopBar(
-                      showTrailingBadge: hasUnread,
+                  BlocSelector<NotificationsCubit, NotificationsState, int>(
+                    selector: (inbox) => inbox.unreadCount,
+                    builder: (context, unreadCount) => TopBar(
+                      trailingBadgeCount: unreadCount,
                       onTrailingTap: () =>
                           context.push(RouteNames.passengerNotifications),
                     ),
