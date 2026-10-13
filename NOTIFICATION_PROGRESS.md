@@ -133,10 +133,11 @@ A phone change does **not** clear it. So the app registers:
    - `firebase_messaging: ^16.6.0` pairs with the resolved `firebase_core` 4.15.0.
    - `flutter_local_notifications: ^22.3.0` needs Flutter ≥ 3.38.1; 3.38.9 is installed. **Its API takes named params:** `initialize(settings: …)`, `show(id: …)`, `cancel(id: …)`.
 2. **No WebSocket.** Nothing subscribes to `notification.created`. A foreground FCM message (`onMessage`) that carries a `notificationId` is the live "inbox changed" signal.
-3. **Foreground display policy.**
-   - A push **with** a `notificationId` (an inbox item) shows a local heads-up notification and signals "inbox changed", which refreshes the badge.
-   - A push **without** one (trip progress, offers, broadcasts) is **not shown** in the foreground, because the ride screens the user is on already show those events.
-   - On iOS, call `setForegroundNotificationPresentationOptions(alert: false, badge: false, sound: false)` so iOS doesn't auto-present every push. The local notification presents the inbox ones.
+3. **Foreground display policy.** The foreground mirrors the background.
+   - **Every** push with a `notification` block shows a local heads-up notification: inbox items, trip progress, offers and broadcasts alike.
+   - A push **with** a `notificationId` (an inbox item) also signals "inbox changed", which refreshes the badge.
+   - *Changed on 2026-10-13 at the user's request.* Before, a push without a `notificationId` was not shown in the foreground. Repeats stay bounded: a driver gets one `ride.broadcasted` per ride request (`RebroadcastService` emits only to drivers new to the cohort), and `offer.created` banners replace one another per ride request (see the local id in Phase 2).
+   - On iOS, call `setForegroundNotificationPresentationOptions(alert: false, badge: false, sound: false)` so iOS doesn't auto-present every push. The local notification presents them; letting iOS present too would show each push twice.
 4. **Background and terminated.** The OS shows the FCM notification, so there is no `onBackgroundMessage` handler and no background isolate.
 5. **Tap handling.** A tap marks the item read (when it has a `notificationId`), then navigates per the table below, but only under these conditions:
    - The user is logged in **and** onboarding is done, meaning [`AuthSession.resolveInitialRoute()`](lib/core/session/auth_session.dart#L144) returns a home route.
@@ -246,8 +247,9 @@ Also added in this phase:
   - [x] Create the Android channel `AndroidNotificationChannel('rapidoo_alerts', …, importance: Importance.high)`. Its user-visible name is "Alerts".
   - [x] Call `FirebaseMessaging.instance.setForegroundNotificationPresentationOptions(alert: false, badge: false, sound: false)`. The plugin makes this a no-op on Android.
   - [x] **`onMessage`**, the foreground policy:
-    - [x] If `data['notificationId']` is present, emit on `inboxChanges`. If the message also has a `notification` block, `show()` a local notification (title and body from it, payload `jsonEncode(data)`).
-    - [x] Otherwise, ignore the message.
+    - [x] If `data['notificationId']` is present, emit on `inboxChanges`.
+    - [x] If the message has a `notification` block, `show()` a local notification (title and body from it, payload `jsonEncode(data)`), with or without a `notificationId`.
+    - [x] Debug-log every foreground push (`[Push] foreground push: <eventKey or messageId>`).
   - [x] **`onMessageOpenedApp`**: background → foreground via a tap → `NotificationNavigator.openFromPush(data)`.
   - [x] **Local notification tap** (`onDidReceiveNotificationResponse`): decode the payload → `openFromPush`.
   - [x] **`onTokenRefresh`**: cache the new token; if `AuthSession.isLoggedIn`, re-register it.
@@ -271,7 +273,7 @@ Also added in this phase:
 - [x] **`currentToken()`**: returns the cached `_token`, otherwise `getToken()` with a 3 s timeout; `null` on failure.
 - [x] **`inboxChanges`**: a broadcast `Stream<void>`, the socket-free stand-in for `notification.created`. **`notifyInboxChanged()`** emits on it.
 - [x] **`clearDisplayed()`**: `cancelAll()`, used on logout.
-- [x] Local notification id = `notificationId.hashCode & 0x7fffffff`, so a re-push of the same item replaces it instead of stacking.
+- [x] Local notification id = `key.hashCode & 0x7fffffff`, so a re-push of the same subject replaces its banner instead of stacking. `key` is the `notificationId`; otherwise `offer:<rideRequestId>` for `offer.created`, matching the server's collapse key; otherwise `messageId`. Not `RemoteMessage.collapseKey`: Android can report the package name there when the server sets none, which would merge every banner.
 
 ## Phase 3: Tap routing (`lib/core/push/notification_destination.dart`)
 
@@ -371,9 +373,9 @@ Beyond the list below:
 - [ ] [auth_repository.dart](lib/features/auth/data/repo/auth_repository.dart)
   - [ ] `verifyOtp`: after `AuthSession.setTokens(...)`, call `unawaited(PushNotificationService.registerDevice())`. The server cleared the token during this login, so registering now is the right order.
   - [ ] `logout`: body `{'pushToken': token}` when `currentToken()` returns one, otherwise `{}` as today. After `AuthSession.clearSession()`, call `PushNotificationService.clearDisplayed()`.
-- [ ] [main.dart](lib/main.dart)
-  - [ ] After `DioClient.init()`: `await PushNotificationService.init()`.
-  - [ ] After `runApp(...)`: `PushNotificationService.handleLaunchTap()`, and `unawaited(PushNotificationService.registerDevice())` when `AuthSession.isLoggedIn`.
+- [x] [main.dart](lib/main.dart)
+  - [x] After `DioClient.init()`: `await PushNotificationService.init()`.
+  - [x] After `runApp(...)`: `PushNotificationService.handleLaunchTap()`, and `unawaited(PushNotificationService.registerDevice())` when `AuthSession.isLoggedIn`.
 
 ## Phase 7: Tests and docs
 
@@ -402,7 +404,7 @@ Use the flat `test/` layout of the existing tests (e.g. [date_formatter_test.dar
     - [ ] Background: a heads-up appears with the custom icon and color, and a tap opens top-up history.
     - [ ] Terminated: a tap cold-starts the app straight into top-up history.
     - [ ] Foreground: a local banner shows, and the bell dot appears.
-  - [ ] A transient key (no `notificationId`) sent while in the foreground: nothing is shown.
+  - [ ] A transient key (no `notificationId`) sent while in the foreground: a banner shows, the bell dot doesn't change, and the debug log shows `[Push] foreground push: <eventKey>`.
 - [ ] **Real events**
   - [ ] Complete a ride: both roles get a push, and the badge and inbox update. The driver's tap opens the ride detail and the passenger's opens ride history.
   - [ ] Approve a top-up from the admin dashboard: the push arrives, and the item appears in the driver inbox.

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -7,6 +9,7 @@ import 'package:rapidoo/firebase_options.dart';
 
 import 'core/constants/app_constants.dart';
 import 'core/network/dio_client.dart';
+import 'core/push/push_notification_service.dart';
 import 'core/router/app_router.dart';
 import 'core/session/auth_session.dart';
 import 'core/storage/secure_storage_helper.dart';
@@ -22,7 +25,12 @@ Future<void> main() async {
   // SecureStorageHelper.removeAllSecureStorage();
   await AuthSession.loadSession();
   DioClient.init();
+  await PushNotificationService.init();
   runApp(const MyApp());
+  unawaited(PushNotificationService.handleLaunchTap());
+  if (AuthSession.isLoggedIn) {
+    unawaited(PushNotificationService.registerDevice());
+  }
 }
 
 class MyApp extends StatelessWidget {

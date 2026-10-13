@@ -109,6 +109,7 @@ final class PushNotificationService {
       );
       _messaging.onTokenRefresh.listen((token) {
         _token = token;
+        _log('FCM token refreshed: $token');
         if (AuthSession.isLoggedIn) unawaited(_send(token));
       });
     } catch (e) {
@@ -204,22 +205,19 @@ final class PushNotificationService {
     }
   }
 
-  /// Only a push that announces an inbox item is shown in the foreground.
-  /// Trip progress, offers and broadcasts are skipped, because the ride
-  /// screens the user is on already show them.
+  /// The foreground mirrors the background: every push with a title and body
+  /// is shown as a heads-up banner. One that announces an inbox item also
+  /// refreshes the badge.
   static Future<void> _onForegroundMessage(RemoteMessage message) async {
     final data = asStringMap(message.data);
-    final notificationId = data['notificationId'];
-    if (notificationId == null) return;
+    _log('foreground push: ${data['eventKey'] ?? message.messageId}');
+    if (data['notificationId'] != null) notifyInboxChanged();
 
-    notifyInboxChanged();
     final notification = message.notification;
     if (notification == null) return;
     try {
       await _local.show(
-        // Stable per item, so a re-push replaces the banner instead of
-        // stacking a second one.
-        id: notificationId.hashCode & 0x7fffffff,
+        id: _localId(message, data),
         title: notification.title,
         body: notification.body,
         notificationDetails: _details,
@@ -228,6 +226,20 @@ final class PushNotificationService {
     } catch (e) {
       _log('show failed: $e');
     }
+  }
+
+  /// Stable per subject, so a re-push replaces its banner instead of stacking
+  /// a second one: the inbox item, or for offers the ride request, as the
+  /// server's `offer:<rideRequestId>` collapse key does in the background.
+  /// Not [RemoteMessage.collapseKey]: Android can report the package name
+  /// there when the server sets none, which would merge every banner.
+  static int _localId(RemoteMessage message, Map<String, String> data) {
+    final rideRequestId = data['rideRequestId'];
+    final key = data['notificationId'] ??
+        (data['eventKey'] == 'offer.created' && rideRequestId != null
+            ? 'offer:$rideRequestId'
+            : message.messageId);
+    return (key ?? '').hashCode & 0x7fffffff;
   }
 
   static Future<Map<String, String>?> _launchTapData() async {
