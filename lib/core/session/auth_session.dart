@@ -53,7 +53,7 @@ final class AuthSession {
     );
   }
 
-  /// Saves tokens, decodes the JWT payload, and persists the role.
+  /// Saves the access and refresh tokens in memory and in secure storage.
   static Future<void> setTokens({
     required String accessToken,
     required String refreshToken,

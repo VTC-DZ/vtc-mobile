@@ -7,8 +7,8 @@ import 'models/road_route.dart';
 /// Fetches road routes for the active-ride maps.
 ///
 /// Deliberately does **not** go through `DioClient`: that client attaches our
-/// JWT to every request (which must never reach a third-party host) and treats
-/// 401/403 as a forced logout. The routing provider gets its own bare [Dio].
+/// JWT to every request, and the JWT must never reach a third-party host. The
+/// routing provider gets its own bare [Dio].
 class RoutingRepository {
   const RoutingRepository();
 
