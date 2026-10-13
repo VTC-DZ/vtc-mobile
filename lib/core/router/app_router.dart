@@ -27,6 +27,7 @@ import '../../features/home/passenger/presentation/cubit/passenger_home_cubit.da
 import '../../features/home/passenger/presentation/views/passenger_home_view.dart';
 import '../../features/notifications/data/notification_repository.dart';
 import '../../features/notifications/presentation/cubit/notifications_cubit/notifications_cubit.dart';
+import '../../features/notifications/presentation/views/notifications_view.dart';
 import '../../features/profile/shared/cubit/email_edit_cubit.dart';
 import '../../features/profile/shared/cubit/phone_edit_cubit.dart';
 import '../../features/profile/passenger/presentation/cubit/passenger_profile_edit_cubit.dart';
@@ -291,6 +292,12 @@ final class AppRouter {
                 );
               },
             ),
+            // Reads the shell's NotificationsCubit, so the inbox and the
+            // bell's dot share one unread count.
+            GoRoute(
+              path: RouteNames.passengerNotifications,
+              builder: (context, state) => const NotificationsView(),
+            ),
             ShellRoute(
               builder: (context, state, child) => BlocProvider(
                 create: (_) =>
@@ -486,6 +493,12 @@ final class AppRouter {
                 child: const DriverRideDetailView(),
               );
             },
+          ),
+          // Reads the shell's NotificationsCubit, so the inbox and the bell's
+          // dot share one unread count.
+          GoRoute(
+            path: RouteNames.driverNotifications,
+            builder: (context, state) => const NotificationsView(),
           ),
         ],
       ),

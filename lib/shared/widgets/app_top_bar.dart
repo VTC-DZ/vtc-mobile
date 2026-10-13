@@ -13,6 +13,7 @@ class AppTopBar extends StatelessWidget {
     this.trailingIcon,
     this.onLeadingTap,
     this.onTrailingTap,
+    this.showTrailingBadge = true,
   });
 
   final String title;
@@ -21,6 +22,9 @@ class AppTopBar extends StatelessWidget {
   final IconData? trailingIcon;
   final VoidCallback? onLeadingTap;
   final VoidCallback? onTrailingTap;
+
+  /// The small primary dot on the trailing button, e.g. the bell's unread dot.
+  final bool showTrailingBadge;
 
   @override
   Widget build(BuildContext context) {
@@ -94,7 +98,7 @@ class AppTopBar extends StatelessWidget {
               _TopBarButton(
                 icon: trailingIcon!,
                 onTap: onTrailingTap,
-                showBadge: true,
+                showBadge: showTrailingBadge,
               ),
             ],
           ],

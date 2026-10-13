@@ -8,6 +8,8 @@ import 'package:rapidoo/features/ride/passenger/data/models/passenger_ride_model
 import '../../../../../core/router/route_names.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../shared/widgets/top_bar.dart';
+import '../../../../notifications/presentation/cubit/notifications_cubit/notifications_cubit.dart';
+import '../../../../notifications/presentation/cubit/notifications_cubit/notifications_state.dart';
 import '../cubit/passenger_home_cubit.dart';
 import '../cubit/passenger_home_state.dart';
 import 'widgets/home_bottom_panel.dart';
@@ -90,10 +92,17 @@ class PassengerHomeView extends StatelessWidget {
               if (state.activeRideStatus == ActiveRideStatus.loading) {
                 return const Center(child: CircularProgressIndicator());
               }
-              return const Column(
+              return Column(
                 children: [
-                  TopBar(),
-                  HomeBottomPanel(),
+                  BlocSelector<NotificationsCubit, NotificationsState, bool>(
+                    selector: (inbox) => inbox.hasUnread,
+                    builder: (context, hasUnread) => TopBar(
+                      showTrailingBadge: hasUnread,
+                      onTrailingTap: () =>
+                          context.push(RouteNames.passengerNotifications),
+                    ),
+                  ),
+                  const HomeBottomPanel(),
                 ],
               );
             },

@@ -1,6 +1,6 @@
 # Notifications (Push + Inbox): Implementation Progress
 
-**Status:** 🟡 In progress. Phases 0 to 4 are done. The iOS push token is expected to be missing until there is an Apple Developer account.
+**Status:** 🟡 In progress. Phases 0 to 5 are done. The iOS push token is expected to be missing until there is an Apple Developer account.
 
 **Spec:**
 - [Untitled.md](Untitled.md), the backend handoff of Oct 10, 2026.
@@ -339,25 +339,32 @@ Design notes:
 
 ## Phase 5: UI
 
+Verified: `flutter analyze` reports nothing in these files, and `flutter test` passes, including the formatter test pulled forward from Phase 7.
+
+Beyond the list below:
+- **Retry on a failed first load.** The failure state has a Retry button (the same `TextButton` as the ride detail's `_DetailUnavailable`). Resume and inbox pushes refresh only the count until a list has loaded, so without it a failed first load would stay failed.
+- **The fallback date is the local date.** The server sends `createdAt` in UTC (`…Z`). `formatRideDate` prints a timestamp's own calendar day, so it gets the local time; otherwise an item from 00:00–01:00 in Algeria would show the previous day's date.
+- **Visible ripple.** The tile is `Material` + `InkWell`, so the tap ripple shows over its tint. The ride-history cards (an `InkWell` around a coloured `Container`) hide theirs.
+
 - [x] [route_names.dart](lib/core/router/route_names.dart): add `passengerNotifications = '/passenger-notifications'` and `driverNotifications = '/driver-notifications'`. Added in Phase 3, because the resolver needs them.
-- [ ] [app_router.dart](lib/core/router/app_router.dart): add one `GoRoute` per shell, both building `const NotificationsView()`. The cubit comes from the shell.
-- [ ] `lib/features/notifications/presentation/views/notifications_view.dart`
-  - [ ] `initState` calls `context.read<NotificationsCubit>().load()`.
-  - [ ] Header: `AppTopBar(title: 'Notifications', leadingIcon: back, onLeadingTap: context.pop)`. The trailing `Icons.done_all_rounded` (mark all read) appears only when `hasUnread`, with no badge.
-  - [ ] The list follows [passenger_ride_history_view.dart](lib/features/ride/passenger/presentation/views/passenger_ride_history_view.dart):
+- [x] [app_router.dart](lib/core/router/app_router.dart): add one `GoRoute` per shell, both building `const NotificationsView()`. The cubit comes from the shell.
+- [x] [notifications_view.dart](lib/features/notifications/presentation/views/notifications_view.dart)
+  - [x] `initState` calls `context.read<NotificationsCubit>().load()`.
+  - [x] Header: `AppTopBar(title: 'Notifications', leadingIcon: back, onLeadingTap: context.pop)`. The trailing `Icons.done_all_rounded` (mark all read) appears only when `hasUnread`, with no badge.
+  - [x] The list follows [passenger_ride_history_view.dart](lib/features/ride/passenger/presentation/views/passenger_ride_history_view.dart):
     - `RefreshIndicator` and `ListView.builder` with a paging footer.
     - Scroll-near-end calls `loadMore()`.
     - A `BlocConsumer` toasts transient errors when items exist.
-  - [ ] States: loading spinner, failure with message, and an empty state ("No notifications yet").
-  - [ ] A tile tap calls `markRead(item.id)` (if unread), then `NotificationNavigator.open(item.eventKey, item.data)`.
-- [ ] `lib/features/notifications/presentation/views/widgets/notification_tile.dart`
-  - [ ] The icon comes from the `eventKey` prefix: `ride.` → car, `wallet.` → wallet, `kyc.` / `driver.` → verified badge, `user.` → shield, anything else → bell.
-  - [ ] Shows the title, a 2–3 line body, and a relative time. Unread tiles get bold text, a primary dot and a light tint.
-- [ ] `lib/features/notifications/utils/notification_time_formatter.dart`: returns "Just now", "N min ago", "N h ago" or "Yesterday", otherwise `formatRideDate` from [date_formatter.dart](lib/features/ride/shared/utils/date_formatter.dart). The project has no `intl`.
-- [ ] Bell wiring
-  - [ ] [app_top_bar.dart](lib/shared/widgets/app_top_bar.dart): add `showTrailingBadge` (default `true`, so every other trailing button keeps today's dot) and use it instead of the hard-coded `showBadge: true`.
-  - [ ] [shared/widgets/top_bar.dart](lib/shared/widgets/top_bar.dart): add `showTrailingBadge` (default `false`) and pass it through. Only the three bell screens use this widget. The other screens import the duplicate in `features/home/passenger/.../top_bar.dart`, which stays untouched.
-  - [ ] [passenger_home_view.dart:95](lib/features/home/passenger/presentation/views/passenger_home_view.dart#L95), [driver_home_view.dart:40](lib/features/home/driver/presentation/views/driver_home_view.dart#L40) and [available_rides_view.dart:34](lib/features/ride/driver/presentation/views/available_rides_view.dart#L34): wrap `TopBar` in `BlocSelector<NotificationsCubit, NotificationsState, bool>` (`hasUnread`), with `onTrailingTap: () => context.push(RouteNames.passengerNotifications / driverNotifications)`.
+  - [x] States: loading spinner, failure with message (plus Retry), and an empty state ("No notifications yet").
+  - [x] A tile tap calls `markRead(item.id)` (if unread), then `NotificationNavigator.open(item.eventKey, item.data)`.
+- [x] [notification_tile.dart](lib/features/notifications/presentation/views/widgets/notification_tile.dart)
+  - [x] The icon comes from the `eventKey` prefix: `ride.` → car, `wallet.` → wallet, `kyc.` / `driver.` → verified badge, `user.` → shield, anything else → bell.
+  - [x] Shows the title, a 2–3 line body, and a relative time. Unread tiles get bold text, a primary dot and a light tint.
+- [x] [notification_time_formatter.dart](lib/features/notifications/utils/notification_time_formatter.dart): returns "Just now", "N min ago", "N h ago" or "Yesterday", otherwise `formatRideDate` from [date_formatter.dart](lib/features/ride/shared/utils/date_formatter.dart). The project has no `intl`.
+- [x] Bell wiring
+  - [x] [app_top_bar.dart](lib/shared/widgets/app_top_bar.dart): add `showTrailingBadge` (default `true`, so every other trailing button keeps today's dot) and use it instead of the hard-coded `showBadge: true`.
+  - [x] [shared/widgets/top_bar.dart](lib/shared/widgets/top_bar.dart): add `showTrailingBadge` (default `false`) and pass it through. Only the three bell screens use this widget. The other screens import the duplicate in `features/home/passenger/.../top_bar.dart`, which stays untouched.
+  - [x] [passenger_home_view.dart:95](lib/features/home/passenger/presentation/views/passenger_home_view.dart#L95), [driver_home_view.dart:40](lib/features/home/driver/presentation/views/driver_home_view.dart#L40) and [available_rides_view.dart:34](lib/features/ride/driver/presentation/views/available_rides_view.dart#L34): wrap `TopBar` in `BlocSelector<NotificationsCubit, NotificationsState, bool>` (`hasUnread`), with `onTrailingTap: () => context.push(RouteNames.passengerNotifications / driverNotifications)`.
 
 ## Phase 6: Auth hooks and app start
 
@@ -375,7 +382,7 @@ Use the flat `test/` layout of the existing tests (e.g. [date_formatter_test.dar
 - [x] [notification_destination_test.dart](test/notification_destination_test.dart): every table row for both roles, cross-role targets → `null`, and unknown keys with and without a `notificationId`. Written in Phase 3; it also covers the `rideId` fallback and the `unknown` role.
 - [x] [app_notification_test.dart](test/app_notification_test.dart): full parse, non-string `data` values, a missing `data`, and a `null` `readAt`. Written in Phase 1; it also covers `copyWith` and a `PageResponse` row without an `id`.
 - [x] [notifications_cubit_test.dart](test/notifications_cubit_test.dart): load, optimistic `markRead` / `markAllRead` and their reloads on failure, `loadMore` dedupe and dropping stale pages, silent vs non-silent failures, `inboxChanges` refreshes, and no emit after `close`. Added in Phase 4; it wasn't in the original list.
-- [ ] `test/notification_time_formatter_test.dart`: each bucket, plus the fallback date.
+- [x] [notification_time_formatter_test.dart](test/notification_time_formatter_test.dart): each bucket, plus the fallback date. Written in Phase 5; it also covers a clock ahead of the phone, midnight and month boundaries, and UTC input.
 - [ ] [CLAUDE.md](CLAUDE.md): add a short "Push notifications" subsection covering the `PushNotificationService` singleton, the no-WS rule and the token lifecycle. Also fix the stale "test/ is currently empty" note.
 
 ## Phase 8: Manual prerequisites (outside the code)
@@ -388,7 +395,7 @@ Use the flat `test/` layout of the existing tests (e.g. [date_formatter_test.dar
 
 - [ ] `flutter analyze` is clean.
 - [ ] `flutter test` passes, new and existing tests.
-- [ ] No socket in notification code: `grep -rnE "notification\.created|RideSocketService|frameStream|statusStream" lib/core/push lib/features/notifications` finds nothing.
+- [ ] No socket in notification code: `grep -rnE "notification\.created\b|RideSocketService|frameStream|statusStream" lib/core/push lib/features/notifications` finds nothing. The `\b` matters: without it the model field `notification.createdAt` matches.
 - [ ] **Android emulator** (Google Play image)
   - [ ] Log in: the permission prompt appears, and the debug log shows `POST /api/me/push-token` → `200` and the FCM token.
   - [ ] Send a test message from the Firebase console to that token with data `{eventKey: wallet.topup_approved, notificationId: <id>}`.

@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../../../core/router/route_names.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_text_styles.dart';
 import '../../../../../shared/widgets/top_bar.dart';
+import '../../../../notifications/presentation/cubit/notifications_cubit/notifications_cubit.dart';
+import '../../../../notifications/presentation/cubit/notifications_cubit/notifications_state.dart';
 import '../../data/models/driver_ride_models.dart';
 import '../cubit/available_rides_cubit/available_rides_cubit.dart';
 import '../cubit/available_rides_cubit/available_rides_state.dart';
@@ -31,7 +35,15 @@ class _AvailableRidesViewState extends State<AvailableRidesView> {
       body: SafeArea(
         child: Column(
           children: [
-            const TopBar(title: 'Available Rides'),
+            BlocSelector<NotificationsCubit, NotificationsState, bool>(
+              selector: (inbox) => inbox.hasUnread,
+              builder: (context, hasUnread) => TopBar(
+                title: 'Available Rides',
+                showTrailingBadge: hasUnread,
+                onTrailingTap: () =>
+                    context.push(RouteNames.driverNotifications),
+              ),
+            ),
             Expanded(
               // Bid feedback (success, wallet gate, failures) and the
               // offer-accepted navigation are owned by DriverHomeShell's

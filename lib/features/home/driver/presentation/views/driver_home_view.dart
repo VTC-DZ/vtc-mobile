@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import '../../../../../core/router/route_names.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../shared/widgets/top_bar.dart';
+import '../../../../notifications/presentation/cubit/notifications_cubit/notifications_cubit.dart';
+import '../../../../notifications/presentation/cubit/notifications_cubit/notifications_state.dart';
 import '../cubit/driver_home_cubit.dart';
 import '../cubit/driver_home_state.dart';
 
@@ -34,12 +36,18 @@ class DriverHomeView extends StatelessWidget {
           }
           return Scaffold(
             backgroundColor: AppColors.background(context),
-            body: const SafeArea(
+            body: SafeArea(
               child: Column(
                 children: [
-                  TopBar(
-                    title: 'Driver Mode',
-                    subtitle: 'Ready to drive',
+                  BlocSelector<NotificationsCubit, NotificationsState, bool>(
+                    selector: (inbox) => inbox.hasUnread,
+                    builder: (context, hasUnread) => TopBar(
+                      title: 'Driver Mode',
+                      subtitle: 'Ready to drive',
+                      showTrailingBadge: hasUnread,
+                      onTrailingTap: () =>
+                          context.push(RouteNames.driverNotifications),
+                    ),
                   ),
                 ],
               ),
