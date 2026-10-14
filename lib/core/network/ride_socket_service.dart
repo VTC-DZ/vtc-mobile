@@ -282,7 +282,9 @@ final class RideSocketService {
     try {
       final newToken = await _doRestRefresh();
       if (newToken == null) {
-        _forceRelogin();
+        // A no-op if the session ended (the teardown disconnected the socket);
+        // after a network failure, retries on the backoff schedule.
+        _scheduleReconnect();
         return;
       }
       _log('token refreshed after 4001 close — reconnecting');
@@ -298,18 +300,21 @@ final class RideSocketService {
   /// separate `/api/auth/refresh` here would race it, and since the backend
   /// rotates refresh tokens on use, the loser of that race would fail with a
   /// 401 on the refresh endpoint itself and force a logout even though the
-  /// other call already renewed the session. Returns `null` and forces
-  /// re-login on any failure (expired refresh token, network error, etc.).
+  /// other call already renewed the session.
+  ///
+  /// Returns `null` when the refresh fails. If the server rejected the session,
+  /// [DioClient] has already ended it; any other failure (timeout, no network,
+  /// 5xx) keeps it, and the caller tries again later. Without a refresh token
+  /// there is no session to refresh, so that case still forces re-login.
   static Future<String?> _doRestRefresh() async {
     if (AuthSession.refreshToken == null) {
-      _forceRelogin();
+      await _forceRelogin();
       return null;
     }
     try {
       return await DioClient.refreshAccessToken();
     } catch (e) {
-      _log('token refresh failed: $e — forcing re-login');
-      _forceRelogin();
+      _log('token refresh failed: $e');
       return null;
     }
   }

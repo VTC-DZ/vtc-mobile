@@ -70,20 +70,22 @@ final class DioClient {
     _dio.interceptors.add(
       InterceptorsWrapper(
         onError: (error, handler) async {
-          final isRefreshCall =
-              error.requestOptions.path.startsWith(AuthApiConstants.base);
-
           if (error.response?.statusCode != 401 ||
               AuthSession.refreshToken == null) {
             return handler.next(error);
           }
 
-          // A 401 on the refresh call itself (expired/invalid refresh token)
-          // must not be fed back into _refreshAccessToken(): that call is the
-          // very one populating _refreshCompleter, so recursing here would
-          // await a completer that can only be completed by this call —
-          // deadlocking every request waiting on the shared refresh.
-          if (isRefreshCall) {
+          // The server rejected the session. This is the only place a failed
+          // refresh ends it: the refresh call's 401 passes through here before
+          // refreshAccessToken() fails, so the teardown runs once however many
+          // requests joined that refresh.
+          //
+          // That 401 must not be fed back into refreshAccessToken(): the
+          // refresh call is the very one populating _refreshCompleter, so
+          // recursing here would await a completer that can only be completed
+          // by this call — deadlocking every request waiting on the shared
+          // refresh.
+          if (isSessionRejected(error)) {
             await SessionTeardown.run();
             return handler.next(error);
           }
@@ -96,9 +98,10 @@ final class DioClient {
           try {
             newAccessToken = await refreshAccessToken();
           } catch (_) {
-            // Only a failed refresh means auth is genuinely revoked — tear the
-            // session down and re-login.
-            await SessionTeardown.run();
+            // A rejected refresh has already ended the session, on its own
+            // pass through this handler. A timeout, no network or a 5xx keeps
+            // the session: pass the original error on, and the next request
+            // tries the refresh again.
             return handler.next(error);
           }
 
@@ -169,6 +172,15 @@ final class DioClient {
 
     return completer.future;
   }
+
+  /// Whether [error] means the server rejected the session, so it must end:
+  /// a 401 from `/api/auth/*` — from the refresh call, `session_invalid`.
+  /// A timeout, no network or a 5xx never does; a 401 from any other endpoint
+  /// only means the access token expired, which a refresh fixes.
+  @visibleForTesting
+  static bool isSessionRejected(DioException error) =>
+      error.response?.statusCode == 401 &&
+      error.requestOptions.path.startsWith(AuthApiConstants.base);
 
   static Future<Response> get({
     required String path,
@@ -312,9 +324,10 @@ final class DioClient {
     final apiError = ApiErrorModel.tryParse(data);
     if (apiError != null && apiError.message.isNotEmpty) {
       // Auth-revocation logout is owned solely by the 401 onError interceptor
-      // (which only tears down when the refresh itself fails). Do not log out
-      // here — a persistent 401/403 after a healthy refresh is surfaced as a
-      // normal error, not a reason to clear the session.
+      // (which only tears down when the server rejects the refresh with a
+      // 401). Do not log out here — a persistent 401/403 after a healthy
+      // refresh is surfaced as a normal error, not a reason to clear the
+      // session.
       return ApiException(
         message: apiError.message,
         code: apiError.code,

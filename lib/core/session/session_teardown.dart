@@ -9,8 +9,8 @@ import 'auth_session.dart';
 /// socket, clears [AuthSession], removes the notifications the app is showing
 /// and returns to phone entry.
 ///
-/// Every way a session ends goes through here — logout, a failed token
-/// refresh (`DioClient`) and a revoked or unrefreshable socket
+/// Every way a session ends goes through here — logout, a token refresh the
+/// server rejects (`DioClient`) and a socket the server revokes
 /// ([RideSocketService]) — so the socket can never outlive the session it was
 /// opened for (it would keep auto-reconnecting on its backoff schedule).
 final class SessionTeardown {
