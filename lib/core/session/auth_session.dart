@@ -1,6 +1,5 @@
 import '../constants/cache_keys.dart';
-
-import '../router/route_names.dart';
+import '../models/token_payload.dart';
 import '../storage/secure_storage_helper.dart';
 
 final class AuthSession {
@@ -19,10 +18,8 @@ final class AuthSession {
   static bool get isNewUser => _isNewUser ?? false;
   static bool get waitingKycStatus => _waitingKycStatus ?? false;
   static bool get hasDriverProfile => _hasDriverProfile ?? false;
-  static String? get lastRole => _lastRole;
-
-  static const String roleDriver = 'DRIVER';
-  static const String rolePassenger = 'PASSENGER';
+  /// The role whose home was last shown; [ActiveRole.unknown] before any.
+  static ActiveRole get lastRole => ActiveRole.fromWire(_lastRole);
 
   /// Loads persisted session from secure storage. Call once at startup.
   static Future<void> loadSession() async {
@@ -98,18 +95,11 @@ final class AuthSession {
     );
   }
 
-  static Future<void> setLastRole(String role) async {
-    _lastRole = role;
+  static Future<void> setLastRole(ActiveRole role) async {
+    _lastRole = role.wireValue;
     await SecureStorageHelper.write(
       key: CacheKeys.secureStorageKeys.lastRoleKey,
-      value: role,
-    );
-  }
-
-  static Future<void> clearIsNewUser() async {
-    _isNewUser = false;
-    await SecureStorageHelper.remove(
-      key: CacheKeys.secureStorageKeys.isNewUserKey,
+      value: role.wireValue,
     );
   }
 
@@ -139,16 +129,5 @@ final class AuthSession {
     await SecureStorageHelper.remove(
       key: CacheKeys.secureStorageKeys.lastRoleKey,
     );
-  }
-
-  static String resolveInitialRoute() {
-    if (!isLoggedIn) return RouteNames.phone;
-    // A submitted or approved driver application means onboarding is done, even
-    // if the isNewUser flag was never cleared (sessions from older builds).
-    if (isNewUser && !waitingKycStatus && !hasDriverProfile) {
-      return RouteNames.modeSelection;
-    }
-    if (_lastRole == roleDriver) return RouteNames.driverHome;
-    return RouteNames.passengerHome;
   }
 }

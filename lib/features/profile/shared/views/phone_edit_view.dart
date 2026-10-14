@@ -12,10 +12,11 @@ import '../../../../../shared/widgets/app_scaffold.dart';
 import '../../../../../shared/widgets/app_text_field.dart';
 import '../../../../../shared/widgets/primary_button.dart';
 import '../../../../../core/widgets/app_toast.dart';
-import '../../../../../features/auth/presentation/views/widgets/otp/change_number_bar_widget.dart';
-import '../../../../../features/auth/presentation/views/widgets/otp/otp_blocked_banner_widget.dart';
-import '../../../../../features/auth/presentation/views/widgets/otp/otp_error_row_widget.dart';
-import '../../../../../features/auth/presentation/views/widgets/profile/profile_field_label_widget.dart';
+import '../../../../shared/widgets/otp/change_number_bar_widget.dart';
+import '../../../../shared/widgets/otp/otp_blocked_banner_widget.dart';
+import '../../../../shared/widgets/otp/otp_error_row_widget.dart';
+import '../../../../shared/widgets/otp/otp_resend_row_widget.dart';
+import '../../../../shared/widgets/form/profile_field_label_widget.dart';
 import '../cubit/phone_edit_cubit.dart';
 import '../cubit/phone_edit_state.dart';
 
@@ -274,7 +275,12 @@ class _OtpVerificationSectionState extends State<_OtpVerificationSection> {
                     onPressed: cubit.confirmPhoneChange,
                   ),
                 SizedBox(height: 28.h),
-                if (!isBlocked) _ResendRow(state: state, onResend: _onResend),
+                if (!isBlocked)
+                  OtpResendRowWidget(
+                    secondsRemaining: state.secondsRemaining,
+                    resendCount: state.resendCount,
+                    onResend: _onResend,
+                  ),
                 SizedBox(height: 16.h),
                 ChangeNumberBarWidget(onTap: cubit.goBackToPhoneEntry),
                 SizedBox(height: 24.h),
@@ -290,70 +296,6 @@ class _OtpVerificationSectionState extends State<_OtpVerificationSection> {
     _otpController.clear();
     setState(() => _isComplete = false);
     widget.cubit.resendOtp();
-  }
-}
-
-class _ResendRow extends StatelessWidget {
-  const _ResendRow({required this.state, required this.onResend});
-
-  final PhoneEditState state;
-  final VoidCallback onResend;
-
-  @override
-  Widget build(BuildContext context) {
-    final waiting = state.secondsRemaining > 0;
-    final exhausted = state.resendCount >= AppConstants.otpMaxResendCount;
-
-    return Column(
-      children: [
-        if (waiting)
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.timer_outlined,
-                  size: 15.sp, color: AppColors.textSecondary(context)),
-              SizedBox(width: 6.w),
-              Text(
-                'Resend code in ${_timerLabel()}',
-                style: AppTextStyles.bodySmall(context),
-              ),
-            ],
-          ),
-        if (!waiting && !exhausted)
-          GestureDetector(
-            onTap: onResend,
-            child: Text(
-              'Resend Code',
-              style: AppTextStyles.labelMedium(context).copyWith(
-                color: AppColors.primary,
-                decoration: TextDecoration.underline,
-                decorationColor: AppColors.primary,
-              ),
-            ),
-          ),
-        if (!waiting && exhausted)
-          Text(
-            'Maximum resend attempts reached',
-            style: AppTextStyles.bodySmall(context).copyWith(
-              color: AppColors.error,
-            ),
-          ),
-        if (state.resendCount > 0 && !exhausted)
-          Padding(
-            padding: EdgeInsets.only(top: 6.h),
-            child: Text(
-              '${AppConstants.otpMaxResendCount - state.resendCount} resend${AppConstants.otpMaxResendCount - state.resendCount == 1 ? '' : 's'} remaining',
-              style: AppTextStyles.labelSmall(context),
-            ),
-          ),
-      ],
-    );
-  }
-
-  String _timerLabel() {
-    final m = state.secondsRemaining ~/ 60;
-    final s = state.secondsRemaining % 60;
-    return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
   }
 }
 

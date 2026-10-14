@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_zoom_drawer/flutter_zoom_drawer.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../../../core/models/token_payload.dart';
 import '../../../../../../core/router/route_names.dart';
 import '../../../../../../core/session/auth_session.dart';
 import '../../../../../../core/theme/app_colors.dart';
@@ -12,8 +13,8 @@ import '../../../../../../core/widgets/app_toast.dart';
 import '../../../../../../shared/widgets/dashed_divider.dart';
 import '../../../../../../shared/widgets/drawer_item.dart';
 import '../../../../../../shared/widgets/drawer_menu_item_data.dart';
-import '../../../../../auth/data/models/kyc_status.dart';
-import '../../../../../auth/data/repo/auth_repository.dart';
+import '../../../../../profile/shared/data/models/kyc_status.dart';
+import '../../../../../auth/data/auth_repository.dart';
 import '../../cubit/passenger_home_cubit.dart';
 import '../../cubit/passenger_home_state.dart';
 
@@ -118,7 +119,7 @@ class HomeDrawer extends StatelessWidget {
     ZoomDrawer.of(context)?.close();
     final profile = context.read<PassengerHomeCubit>().state.profile;
     if (profile?.driverKycStatus == KycStatus.approved) {
-      _performSwitch(context, targetRole: 'DRIVER');
+      _performSwitch(context, targetRole: ActiveRole.driver);
     } else {
       await AuthSession.setWaitingKycStatus(true);
       context.go(RouteNames.driverStatusReview);
@@ -127,11 +128,11 @@ class HomeDrawer extends StatelessWidget {
 
   Future<void> _performSwitch(
     BuildContext context, {
-    required String targetRole,
+    required ActiveRole targetRole,
   }) async {
     try {
       await const AuthRepository().switchRole(targetRole);
-      final destination = targetRole == 'DRIVER'
+      final destination = targetRole == ActiveRole.driver
           ? RouteNames.driverHome
           : RouteNames.passengerHome;
       context.go(destination);

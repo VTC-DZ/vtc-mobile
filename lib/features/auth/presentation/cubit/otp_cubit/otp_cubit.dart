@@ -1,12 +1,13 @@
 import 'dart:async';
-import 'package:rapidoo/core/errors/api_exception.dart';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../../core/errors/api_exception.dart';
 import '../../../../../core/constants/app_constants.dart';
-import '../../../../../core/session/auth_session.dart';
-import '../../../data/repo/auth_repository.dart';
+import '../../../../../core/constants/auth_api_constants.dart';
+import '../../../data/auth_repository.dart';
 import 'otp_state.dart';
+import '../../../../../core/constants/app_strings.dart';
 
 final class OtpCubit extends Cubit<OtpState> {
   OtpCubit(this._repository, {required String phoneNumber})
@@ -33,30 +34,26 @@ final class OtpCubit extends Cubit<OtpState> {
       final tokens = await _repository.verifyOtp(state.phoneNumber, state.otpValue);
       _failedAttempts = 0;
 
-      if (tokens.hasDriverProfile) {
-        await AuthSession.setHasDriverProfile(true);
-      }
-
       emit(state.copyWith(
         status: OtpStatus.success,
         isNewUser: tokens.isNewUser,
         hasDriverProfile: tokens.hasDriverProfile,
       ));
     } catch (e) {
-      _failedAttempts++;
-      if (_failedAttempts >= AppConstants.otpMaxFailedAttempts) {
-        _startBlockTimer();
-        emit(state.copyWith(
-          status: OtpStatus.blocked,
-          blockSecondsRemaining: AppConstants.otpBlockDurationSecs,
-          errorMessage: '',
-        ));
-      } else {
-        emit(state.copyWith(
-          status: OtpStatus.failure,
-          errorMessage: e is ApiException ? e.message : 'Incorrect code, try again',
-        ));
+      if (e is ApiException && e.hasCode(AuthErrorCodes.otpLocked)) {
+        _block(e.retryAfter);
+        return;
       }
+      if (_isWrongCode(e)) _failedAttempts++;
+      if (_failedAttempts >= AppConstants.otpMaxFailedAttempts) {
+        _block(null);
+        return;
+      }
+      emit(state.copyWith(
+        status: OtpStatus.failure,
+        errorMessage:
+            ApiException.messageOf(e, fallback: AppStrings.otpIncorrect),
+      ));
     }
   }
 
@@ -76,12 +73,37 @@ final class OtpCubit extends Cubit<OtpState> {
       ));
       _startResendTimer();
     } catch (e) {
+      if (e is ApiException && e.hasCode(AuthErrorCodes.otpLocked)) {
+        _block(e.retryAfter);
+        return;
+      }
       emit(state.copyWith(
         status: OtpStatus.failure,
         errorMessage:
-            e is ApiException ? e.message : 'Could not resend OTP. Please try again.',
+            ApiException.messageOf(e, fallback: AppStrings.otpResendFailed),
       ));
     }
+  }
+
+  /// Only a code the server rejected counts toward its lock — not a timeout,
+  /// a server error or an expired code (`400 otp_invalid`).
+  static bool _isWrongCode(Object e) =>
+      e is ApiException &&
+      e.statusCode == 401 &&
+      e.hasCode(AuthErrorCodes.otpInvalid);
+
+  /// Locks the screen as the server locks the phone. The server answers the
+  /// third wrong code with a plain `401` and sends no lock time, so the
+  /// countdown is [AppConstants.otpBlockDurationSecs] unless [retryAfter]
+  /// says otherwise.
+  void _block(Duration? retryAfter) {
+    _startBlockTimer();
+    emit(state.copyWith(
+      status: OtpStatus.blocked,
+      blockSecondsRemaining:
+          retryAfter?.inSeconds ?? AppConstants.otpBlockDurationSecs,
+      errorMessage: '',
+    ));
   }
 
   void _startResendTimer() {

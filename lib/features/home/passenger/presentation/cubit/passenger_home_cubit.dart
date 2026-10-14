@@ -2,10 +2,11 @@ import 'dart:async';
 import 'package:rapidoo/core/errors/api_exception.dart';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:rapidoo/core/models/token_payload.dart';
 import 'package:rapidoo/core/session/auth_session.dart';
-import 'package:rapidoo/features/auth/data/models/passenger_profile_model.dart';
+import 'package:rapidoo/features/profile/shared/data/models/passenger_profile_model.dart';
 
-import '../../../../../features/auth/data/repo/profile_repository.dart';
+import '../../../../profile/shared/data/profile_repository.dart';
 import '../../../../../features/ride/passenger/data/passenger_ride_repository.dart';
 import 'passenger_home_state.dart';
 
@@ -14,7 +15,7 @@ class PassengerHomeCubit extends Cubit<PassengerHomeState> {
     this._repository, [
     this._rideRepository = const PassengerRideRepository(),
   ]) : super(const PassengerHomeState()) {
-    unawaited(AuthSession.setLastRole(AuthSession.rolePassenger));
+    unawaited(AuthSession.setLastRole(ActiveRole.passenger));
   }
 
   final ProfileRepository _repository;

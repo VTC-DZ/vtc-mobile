@@ -2,20 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
-import 'package:rapidoo/shared/widgets/primary_button.dart';
 
+import '../../../../../shared/widgets/primary_button.dart';
 import '../../../../../core/router/route_names.dart';
-import '../../../../../core/session/auth_session.dart';
 import '../../../../../core/theme/app_text_styles.dart';
 import '../../../../../shared/widgets/app_scaffold.dart';
 import '../../cubit/passenger_profile_cubit/passenger_profile_cubit.dart';
 import '../../cubit/passenger_profile_cubit/passenger_profile_state.dart';
 import '../widgets/profile/passenger/passenger_profile_form_section.dart';
+import '../../../../../core/constants/app_strings.dart';
 
 /// Step 5 — Passenger Profile Setup.
 ///
-/// Collects Full Name (required, validated), Gender (required, toggle),
-/// and Email (optional). On success navigates to the Passenger Home screen.
+/// Collects full name, gender and date of birth, all required. On success
+/// navigates to the Passenger Home screen.
 class PassengerProfileView extends StatefulWidget {
   const PassengerProfileView({super.key});
 
@@ -38,13 +38,7 @@ class _PassengerProfileViewState extends State<PassengerProfileView> {
         listenWhen: (previous, current) =>
             previous.status != current.status &&
             current.status == ProfileStatus.success,
-        listener: (context, state) async {
-          if (state.status == ProfileStatus.success) {
-            await AuthSession.setIsNewUser(false);
-            if (!context.mounted) return;
-            context.go(RouteNames.passengerHome);
-          }
-        },
+        listener: (context, state) => context.go(RouteNames.passengerHome),
         child: AppScaffold(
           body: SingleChildScrollView(
             child: Padding(
@@ -54,12 +48,12 @@ class _PassengerProfileViewState extends State<PassengerProfileView> {
                 children: [
                   SizedBox(height: 32.h),
                   Text(
-                    'Complete your\nprofile',
+                    AppStrings.profileSetupTitle,
                     style: AppTextStyles.displayMedium(context),
                   ),
                   SizedBox(height: 8.h),
                   Text(
-                    'Just a few quick details to get you started',
+                    AppStrings.profileSetupSubtitle,
                     style: AppTextStyles.bodyMedium(context),
                   ),
                   SizedBox(height: 40.h),
@@ -78,12 +72,10 @@ class _PassengerProfileViewState extends State<PassengerProfileView> {
                 final isLoading = state.status == ProfileStatus.loading;
 
                 return PrimaryButton(
-                  label: 'Continue',
+                  label: AppStrings.continueLabel,
                   isEnabled: state.canSubmit,
                   isLoading: isLoading,
-                  onPressed: () => context.read<PassengerProfileCubit>().submit(
-                        fullName: _nameController.text,
-                      ),
+                  onPressed: context.read<PassengerProfileCubit>().submit,
                 );
               },
             ),

@@ -3,7 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../auth/presentation/views/widgets/profile/profile_field_label_widget.dart';
+import '../../../../../shared/widgets/form/profile_field_label_widget.dart';
 import '../../../../../core/router/route_names.dart';
 import '../../../passenger/presentation/views/widgets/profile_phone_edit_row_widget.dart';
 import '../../../passenger/presentation/views/widgets/profile_edit_shimmer_widget.dart';

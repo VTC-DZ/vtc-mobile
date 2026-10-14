@@ -1,5 +1,3 @@
-// lib/features/auth/presentation/views/phone_entry_view.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -12,6 +10,7 @@ import '../../../../shared/widgets/app_scaffold.dart';
 import '../cubit/phone_cubit/phone_cubit.dart';
 import '../cubit/phone_cubit/phone_state.dart';
 import 'widgets/entry/phone_form_section.dart';
+import '../../../../core/constants/app_strings.dart';
 
 class PhoneEntryView extends StatelessWidget {
   const PhoneEntryView({super.key});
@@ -22,7 +21,7 @@ class PhoneEntryView extends StatelessWidget {
       listener: (BuildContext context, PhoneState state) {
         switch (state.status) {
           case PhoneStatus.success:
-            context.go(RouteNames.otp, extra: state.phoneNumber);
+            context.go(RouteNames.otp, extra: state.phoneE164);
           case PhoneStatus.failure:
           case PhoneStatus.initial:
           case PhoneStatus.loading:
@@ -36,20 +35,20 @@ class PhoneEntryView extends StatelessWidget {
             children: [
               SizedBox(height: 80.h),
               Text(
-                'Enter your phone number',
+                AppStrings.phoneTitle,
                 style: AppTextStyles.displayMedium(context),
                 textAlign: TextAlign.center,
               ),
               SizedBox(height: 8.h),
               Text(
-                "We'll send you a verification code",
+                AppStrings.phoneSubtitle,
                 style: AppTextStyles.bodyMedium(context),
                 textAlign: TextAlign.center,
               ),
               const Spacer(),
               const PhoneFormSection(),
               Text(
-                'By continuing you agree to our Terms & Privacy',
+                AppStrings.phoneTerms,
                 style: AppTextStyles.labelSmall(context),
                 textAlign: TextAlign.center,
               ),

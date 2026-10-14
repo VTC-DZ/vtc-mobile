@@ -372,9 +372,9 @@ Beyond the list below:
 
 ## Phase 6: Auth hooks and app start
 
-- [ ] [auth_repository.dart](lib/features/auth/data/repo/auth_repository.dart)
-  - [ ] `verifyOtp`: after `AuthSession.setTokens(...)`, call `unawaited(PushNotificationService.registerDevice())`. The server cleared the token during this login, so registering now is the right order.
-  - [ ] `logout`: body `{'pushToken': token}` when `currentToken()` returns one, otherwise `{}` as today. After `AuthSession.clearSession()`, call `PushNotificationService.clearDisplayed()`.
+- [x] [auth_repository.dart](lib/features/auth/data/auth_repository.dart) (done in auth Phase 7, items E1 and E2)
+  - [x] `verifyOtp`: after the session writes, call `unawaited(PushNotificationService.registerDevice())`. The server cleared the token during this login (`UserAuthServiceImpl` in the backend), so registering now is the right order.
+  - [x] `logout`: body `{'pushToken': token}` when `currentToken()` returns one, otherwise `{}`. Without a token the backend clears whichever token is stored, even another device's. `PushNotificationService.clearDisplayed()` runs in `SessionTeardown.run()` right after `AuthSession.clearSession()`. Every session end (logout, failed refresh, revoked socket) goes through [session_teardown.dart](lib/core/session/session_teardown.dart).
 - [x] [main.dart](lib/main.dart)
   - [x] After `DioClient.init()`: `await PushNotificationService.init()`.
   - [x] After `runApp(...)`: `PushNotificationService.handleLaunchTap()`, and `unawaited(PushNotificationService.registerDevice())` when `AuthSession.isLoggedIn`.

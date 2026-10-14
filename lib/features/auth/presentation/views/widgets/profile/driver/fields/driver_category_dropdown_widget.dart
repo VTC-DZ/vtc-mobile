@@ -1,10 +1,9 @@
-// lib/features/auth/presentation/views/widgets/profile/driver/fields/driver_category_dropdown_widget.dart
-
 import 'package:flutter/material.dart';
 
 import '../../../../../../../../shared/widgets/bottomsheets/app_option_sheet.dart';
 import '../../../../../../../../shared/widgets/app_text_field.dart';
-import '../../../../../cubit/driver_profile_cubit/driver_profile_state.dart';
+import '../../../../../../../ride/shared/models/shared_ride_models.dart';
+import '../../../../../../../../core/constants/app_strings.dart';
 
 class DriverCategoryDropdownWidget extends StatefulWidget {
   const DriverCategoryDropdownWidget({
@@ -27,19 +26,6 @@ class _DriverCategoryDropdownWidgetState
     extends State<DriverCategoryDropdownWidget> {
   late final TextEditingController _controller;
 
-  static const _options = VehicleCategory.values;
-  static const _labels = {
-    VehicleCategory.car: 'Car',
-    VehicleCategory.motorcycle: 'Motorcycle',
-    VehicleCategory.van: 'Van',
-  };
-
-  static const _icons = {
-    VehicleCategory.car: Icons.directions_car_rounded,
-    VehicleCategory.motorcycle: Icons.two_wheeler_rounded,
-    VehicleCategory.van: Icons.airport_shuttle_rounded,
-  };
-
   @override
   void initState() {
     super.initState();
@@ -60,21 +46,18 @@ class _DriverCategoryDropdownWidgetState
     super.dispose();
   }
 
-  String _getText() {
-    if (widget.selectedCategory == null) return '';
-    return _labels[widget.selectedCategory!] ?? '';
-  }
+  String _getText() => widget.selectedCategory?.label ?? '';
 
   void _openSheet() async {
     final selected = await showAppOptionSheet<VehicleCategory>(
       context: context,
-      title: 'Select Vehicle Type',
+      title: AppStrings.selectVehicleType,
       options: [
-        for (final cat in _options)
+        for (final category in VehicleCategory.values)
           AppSheetOption(
-            icon: _icons[cat]!,
-            label: _labels[cat]!,
-            value: cat,
+            icon: category.icon,
+            label: category.label,
+            value: category,
           ),
       ],
     );
@@ -88,7 +71,7 @@ class _DriverCategoryDropdownWidgetState
       readOnly: true,
       onTap: widget.enabled ? _openSheet : null,
       enabled: widget.enabled,
-      hintText: 'Select type',
+      hintText: AppStrings.selectType,
       prefixIcon: const Icon(Icons.directions_car_outlined),
       suffixIcon: const Icon(Icons.expand_more_rounded),
     );

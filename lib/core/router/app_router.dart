@@ -3,10 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../features/auth/data/models/passenger_profile_model.dart';
-import '../../features/auth/data/repo/auth_repository.dart';
-import '../../features/auth/data/repo/driver_repository.dart';
-import '../../features/auth/data/repo/profile_repository.dart';
+import '../../features/profile/shared/data/models/passenger_profile_model.dart';
+import '../../features/auth/data/auth_repository.dart';
+import '../../features/auth/data/kyc_repository.dart';
+import '../../features/profile/shared/data/profile_repository.dart';
 import '../../features/auth/presentation/cubit/otp_cubit/otp_cubit.dart';
 import '../../features/auth/presentation/cubit/passenger_profile_cubit/passenger_profile_cubit.dart';
 import '../../features/auth/presentation/cubit/phone_cubit/phone_cubit.dart';
@@ -14,11 +14,10 @@ import '../../features/auth/presentation/views/mode_selection_view.dart';
 import '../../features/auth/presentation/views/otp_verification_view.dart';
 import '../../features/auth/presentation/views/passenger/passenger_profile_view.dart';
 import '../../features/auth/presentation/views/phone_entry_view.dart';
-import '../../features/auth/presentation/cubit/driver_profile_cubit/driver_profile_cubit.dart';
+import '../../features/auth/presentation/cubit/driver_registration_cubit/driver_registration_cubit.dart';
 import '../../features/auth/presentation/cubit/kyc_status_cubit/kyc_status_cubit.dart';
 import '../../features/auth/presentation/views/driver/driver_status_review_view.dart';
 import '../../features/auth/presentation/views/driver/driver_registration_view.dart';
-import '../../features/auth/presentation/views/driver/driver_rejection_view.dart';
 import '../../features/home/driver/presentation/views/driver_home_view.dart';
 import '../../features/home/driver/presentation/cubit/driver_home_cubit.dart';
 import '../../features/home/driver/presentation/views/driver_home_shell.dart';
@@ -78,6 +77,7 @@ import '../../features/wallet/driver/presentation/cubit/wallet_cubit/wallet_cubi
 import '../../features/wallet/driver/presentation/views/driver_wallet_view.dart';
 import '../../features/wallet/driver/presentation/views/top_up_form_view.dart';
 import '../../features/wallet/driver/presentation/views/top_up_history_view.dart';
+import 'initial_route.dart';
 import '../session/auth_session.dart';
 import 'route_names.dart';
 
@@ -86,10 +86,10 @@ final class AppRouter {
 
   static const _authRepository = AuthRepository();
   static const _profileRepository = ProfileRepository();
-  static const _driverRepository = DriverRepository();
+  static const _kycRepository = KycRepository();
 
   static final GoRouter router = GoRouter(
-    initialLocation: AuthSession.resolveInitialRoute(),
+    initialLocation: initialRouteForSession(),
     debugLogDiagnostics: kDebugMode,
     errorBuilder: (context, state) => const Scaffold(
       body: Center(child: Text('Page not found')),
@@ -111,15 +111,6 @@ final class AppRouter {
           return BlocProvider<OtpCubit>(
             create: (_) => OtpCubit(_authRepository, phoneNumber: phone),
             child: const OtpVerificationView(),
-          );
-        },
-      ),
-      GoRoute(
-        path: RouteNames.home,
-        builder: (BuildContext context, GoRouterState state) {
-          // Generic home placeholder — replaced per user type in Story 7+.
-          return const Scaffold(
-            body: Center(child: Text('Home — Story 7+')),
           );
         },
       ),
@@ -327,10 +318,16 @@ final class AppRouter {
       GoRoute(
         path: RouteNames.driverProfile,
         builder: (BuildContext context, GoRouterState state) {
-          return BlocProvider<DriverProfileCubit>(
-            create: (_) => DriverProfileCubit(
-              _driverRepository,
-              passengerProfile: state.extra as PassengerProfileModel?,
+          final profile = state.extra as PassengerProfileModel?;
+          return BlocProvider<DriverRegistrationCubit>(
+            create: (_) => DriverRegistrationCubit(
+              _kycRepository,
+              _profileRepository,
+              passengerProfile: profile,
+              // Only a first application saves step 1 to the account; the
+              // profile is fresher than the session when there is one.
+              savesAccount:
+                  !(profile?.hasDriverProfile ?? AuthSession.hasDriverProfile),
             ),
             child: const DriverRegistrationView(),
           );
@@ -340,7 +337,7 @@ final class AppRouter {
         builder: (context, state, child) => MultiBlocProvider(
           providers: [
             BlocProvider(
-              create: (_) => DriverHomeCubit(_driverRepository)
+              create: (_) => DriverHomeCubit(_profileRepository)
                 ..getProfile()
                 ..checkActiveRide(),
             ),
@@ -506,16 +503,9 @@ final class AppRouter {
         path: RouteNames.driverStatusReview,
         builder: (BuildContext context, GoRouterState state) {
           return BlocProvider<KycStatusCubit>(
-            create: (_) => KycStatusCubit(_driverRepository),
+            create: (_) => KycStatusCubit(_kycRepository, _profileRepository),
             child: const DriverStatusReviewView(),
           );
-        },
-      ),
-      GoRoute(
-        path: RouteNames.driverRejection,
-        builder: (BuildContext context, GoRouterState state) {
-          final reason = state.extra is String ? state.extra as String : '';
-          return DriverRejectionView(rejectionReason: reason);
         },
       ),
     ],

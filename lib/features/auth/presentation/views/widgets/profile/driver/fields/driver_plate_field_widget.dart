@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
+import '../../../../../../../../core/utils/algerian_plate.dart';
 import 'driver_text_field_widget.dart';
+import '../../../../../../../../core/constants/app_strings.dart';
 
 class DriverPlateFieldWidget extends StatelessWidget {
   const DriverPlateFieldWidget({
@@ -21,7 +22,7 @@ class DriverPlateFieldWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return DriverTextFieldWidget(
       controller: controller,
-      hintText: 'e.g. 12345-123-12',
+      hintText: AppStrings.hintPlate,
       icon: Icons.pin_outlined,
       onChanged: onChanged,
       error: error,
@@ -30,31 +31,6 @@ class DriverPlateFieldWidget extends StatelessWidget {
       textInputAction: TextInputAction.done,
       textCapitalization: TextCapitalization.none,
       inputFormatters: [AlgerianPlateFormatter()],
-    );
-  }
-}
-
-/// Formats input as NNNNN-NNN-NN, inserting hyphens automatically.
-/// Only digits are accepted; the formatter limits to 10 digits total.
-class AlgerianPlateFormatter extends TextInputFormatter {
-  @override
-  TextEditingValue formatEditUpdate(
-    TextEditingValue oldValue,
-    TextEditingValue newValue,
-  ) {
-    final digits = newValue.text.replaceAll(RegExp(r'\D'), '');
-    final capped = digits.length > 10 ? digits.substring(0, 10) : digits;
-
-    final buffer = StringBuffer();
-    for (int i = 0; i < capped.length; i++) {
-      if (i == 5 || i == 8) buffer.write('-');
-      buffer.write(capped[i]);
-    }
-
-    final formatted = buffer.toString();
-    return TextEditingValue(
-      text: formatted,
-      selection: TextSelection.collapsed(offset: formatted.length),
     );
   }
 }

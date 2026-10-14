@@ -1,13 +1,13 @@
 import 'dart:io';
 
 import 'package:dio/dio.dart';
-import 'package:http_parser/http_parser.dart';
 import 'package:path/path.dart' as p;
 
 import '../../../../core/constants/wallet_api_constants.dart';
 import '../../../../core/models/page_response.dart';
 import '../../../../core/network/dio_client.dart';
 import '../../../../core/utils/image_compressor.dart';
+import '../../../../core/utils/upload_file.dart';
 import 'models/wallet_models.dart';
 
 final class WalletRepository {
@@ -70,7 +70,7 @@ final class WalletRepository {
     required String receiptPath,
   }) async {
     final uploadPath =
-        _isPdf(receiptPath) ? receiptPath : await ImageCompressor.compress(receiptPath);
+        isPdfPath(receiptPath) ? receiptPath : await ImageCompressor.compress(receiptPath);
 
     final formData = FormData()
       ..fields.addAll([
@@ -82,7 +82,7 @@ final class WalletRepository {
         await MultipartFile.fromFile(
           uploadPath,
           filename: p.basename(uploadPath),
-          contentType: _contentTypeFor(uploadPath),
+          contentType: uploadContentType(uploadPath),
         ),
       ));
 
@@ -100,15 +100,6 @@ final class WalletRepository {
       data: <String, dynamic>{},
     );
   }
-
-  static bool _isPdf(String path) => p.extension(path).toLowerCase() == '.pdf';
-
-  static MediaType _contentTypeFor(String path) =>
-      switch (p.extension(path).toLowerCase()) {
-        '.pdf' => MediaType('application', 'pdf'),
-        '.png' => MediaType('image', 'png'),
-        _ => MediaType('image', 'jpeg'),
-      };
 }
 
 /// Guard rails the server enforces too, checked client-side so the driver gets
@@ -117,10 +108,9 @@ abstract final class TopUpReceiptRules {
   TopUpReceiptRules._();
 
   static const int maxSizeBytes = 5 * 1024 * 1024;
-  static const List<String> allowedExtensions = ['jpg', 'jpeg', 'png', 'pdf'];
+  static const List<String> allowedExtensions = uploadFileExtensions;
 
-  static bool isAllowed(String path) => allowedExtensions
-      .contains(p.extension(path).toLowerCase().replaceFirst('.', ''));
+  static bool isAllowed(String path) => hasUploadFileExtension(path);
 
   static Future<bool> isWithinSizeLimit(String path) async =>
       await File(path).length() <= maxSizeBytes;

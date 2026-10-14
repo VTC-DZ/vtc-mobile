@@ -1,6 +1,25 @@
 import '../utils/jwt_decoder.dart';
 
-enum ActiveRole { passenger, driver, unknown }
+/// The role a JWT is issued for (its `activeRole` claim), and the value
+/// `POST /api/auth/switch-role` takes.
+enum ActiveRole {
+  passenger('PASSENGER'),
+  driver('DRIVER'),
+  unknown('');
+
+  const ActiveRole(this.wireValue);
+
+  /// The backend's spelling, e.g. `DRIVER`.
+  final String wireValue;
+
+  /// Parses [value] case-insensitively; anything unrecognised is [unknown].
+  static ActiveRole fromWire(String? value) =>
+      switch (value?.toUpperCase()) {
+        'PASSENGER' => ActiveRole.passenger,
+        'DRIVER' => ActiveRole.driver,
+        _ => ActiveRole.unknown,
+      };
+}
 
 class TokenPayload {
   const TokenPayload({
@@ -43,22 +62,13 @@ class TokenPayload {
       exp: json['exp'] as int? ?? 0,
       iat: json['iat'] as int? ?? 0,
       jti: json['jti'] as String? ?? '',
-      activeRole: _parseActiveRole(json['activeRole'] as String?),
+      activeRole: ActiveRole.fromWire(json['activeRole'] as String?),
     );
   }
 
   factory TokenPayload.fromToken(String token) {
     final decoded = JwtDecoder.decode(token);
     return TokenPayload.fromJson(decoded);
-  }
-
-  static ActiveRole _parseActiveRole(String? value) {
-    if (value == null) return ActiveRole.unknown;
-    return switch (value.toUpperCase()) {
-      'PASSENGER' => ActiveRole.passenger,
-      'DRIVER' => ActiveRole.driver,
-      _ => ActiveRole.unknown,
-    };
   }
 
   @override

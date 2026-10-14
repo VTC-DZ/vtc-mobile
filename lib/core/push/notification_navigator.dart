@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import '../../features/notifications/data/notification_repository.dart';
 import '../models/token_payload.dart';
 import '../router/app_router.dart';
+import '../router/initial_route.dart';
 import '../router/route_names.dart';
 import '../session/auth_session.dart';
 import 'notification_destination.dart';
@@ -33,7 +34,7 @@ final class NotificationNavigator {
   static void open(String eventKey, Map<String, String> data) {
     // Only a home route means logged in with onboarding done, and it names
     // the role whose shell the UI is in (it follows AuthSession.lastRole).
-    final role = switch (AuthSession.resolveInitialRoute()) {
+    final role = switch (initialRouteForSession()) {
       RouteNames.passengerHome => ActiveRole.passenger,
       RouteNames.driverHome => ActiveRole.driver,
       _ => null,

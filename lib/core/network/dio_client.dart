@@ -7,12 +7,10 @@ import '../constants/api_constants.dart';
 import '../constants/auth_api_constants.dart';
 import '../errors/api_error_model.dart';
 import '../errors/api_exception.dart';
-import '../router/app_router.dart';
-import '../router/route_names.dart';
 import '../session/auth_session.dart';
+import '../session/session_teardown.dart';
 import '../utils/uuid.dart';
-import '../../features/auth/data/models/auth_tokens_model.dart';
-import 'driver_location_streamer.dart';
+import '../models/auth_tokens_model.dart';
 import 'ride_socket_service.dart';
 
 final class DioClient {
@@ -20,18 +18,6 @@ final class DioClient {
 
   static late Dio _dio;
   static Completer<String>? _refreshCompleter;
-
-  /// Full teardown for auth revocation detected over REST (401/403 with no
-  /// valid refresh, or refresh itself failing): stop location streaming and
-  /// the ride socket before clearing the session, mirroring
-  /// [AuthRepository.logout] — otherwise the socket keeps running with a
-  /// cleared session and auto-reconnects on its own backoff schedule.
-  static Future<void> _forceLogout() async {
-    DriverLocationStreamer.stop();
-    await RideSocketService.disconnect();
-    await AuthSession.clearSession();
-    AppRouter.router.go(RouteNames.phone);
-  }
 
   static void init() {
     _dio = Dio(
@@ -98,7 +84,7 @@ final class DioClient {
           // await a completer that can only be completed by this call —
           // deadlocking every request waiting on the shared refresh.
           if (isRefreshCall) {
-            await _forceLogout();
+            await SessionTeardown.run();
             return handler.next(error);
           }
 
@@ -112,7 +98,7 @@ final class DioClient {
           } catch (_) {
             // Only a failed refresh means auth is genuinely revoked — tear the
             // session down and re-login.
-            await _forceLogout();
+            await SessionTeardown.run();
             return handler.next(error);
           }
 

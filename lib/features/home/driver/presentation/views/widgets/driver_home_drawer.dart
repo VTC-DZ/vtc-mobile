@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_zoom_drawer/flutter_zoom_drawer.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../../../core/models/token_payload.dart';
 import '../../../../../../core/router/route_names.dart';
 import '../../../../../../core/theme/app_colors.dart';
 import '../../../../../../core/theme/app_text_styles.dart';
@@ -11,8 +12,7 @@ import '../../../../../../core/widgets/app_toast.dart';
 import '../../../../../../shared/widgets/dashed_divider.dart';
 import '../../../../../../shared/widgets/drawer_item.dart';
 import '../../../../../../shared/widgets/drawer_menu_item_data.dart';
-import '../../../../../auth/data/repo/auth_repository.dart';
-import '../../../../../auth/data/repo/driver_repository.dart';
+import '../../../../../auth/data/auth_repository.dart';
 import '../../../../../ride/driver/presentation/cubit/driver_availability_cubit/driver_availability_cubit.dart';
 import '../../../../../ride/driver/presentation/cubit/driver_availability_cubit/driver_availability_state.dart';
 import '../../cubit/driver_home_cubit.dart';
@@ -101,16 +101,16 @@ class DriverHomeDrawer extends StatelessWidget {
 
   void _onSwitchRoleTap(BuildContext context) {
     ZoomDrawer.of(context)?.close();
-    _performSwitch(context, targetRole: 'PASSENGER');
+    _performSwitch(context, targetRole: ActiveRole.passenger);
   }
 
   Future<void> _performSwitch(
     BuildContext context, {
-    required String targetRole,
+    required ActiveRole targetRole,
   }) async {
     try {
-      await const DriverRepository().switchRole(targetRole);
-      final destination = targetRole == 'DRIVER'
+      await const AuthRepository().switchRole(targetRole);
+      final destination = targetRole == ActiveRole.driver
           ? RouteNames.driverHome
           : RouteNames.passengerHome;
       context.go(destination);

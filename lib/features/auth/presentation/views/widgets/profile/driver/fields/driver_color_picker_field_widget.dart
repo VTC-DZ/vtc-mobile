@@ -1,5 +1,3 @@
-// lib/features/auth/presentation/views/widgets/profile/driver/fields/driver_color_picker_field_widget.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
@@ -7,7 +5,8 @@ import '../../../../../../../../core/theme/app_colors.dart';
 import '../../../../../../../../core/theme/app_text_styles.dart';
 import '../../../../../../../../shared/widgets/bottomsheets/app_bottom_sheet.dart';
 import '../../../../../../../../shared/widgets/app_text_field.dart';
-import '../../../../../../domain/models/vehicle_color_option.dart';
+import 'vehicle_color_option.dart';
+import '../../../../../../../../core/constants/app_strings.dart';
 
 /// Tappable field that opens a bottom sheet with a grid of color swatches.
 /// The selected color's [name] is emitted via [onChanged] (a String, matching
@@ -18,7 +17,7 @@ class DriverColorPickerFieldWidget extends StatefulWidget {
     required this.selectedColor,
     required this.onChanged,
     required this.enabled,
-    this.hintText = 'Select color',
+    this.hintText = AppStrings.selectColor,
   });
 
   final String? selectedColor;
@@ -58,7 +57,7 @@ class _DriverColorPickerFieldWidgetState
   void _openSheet() {
     showAppBottomSheet<void>(
       context: context,
-      title: 'Select Color',
+      title: AppStrings.selectColorTitle,
       child: GridView.builder(
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),

@@ -7,15 +7,19 @@ abstract final class ImageCompressor {
   static const int _maxWidth = 1280;
   static const int _quality = 70;
 
+  /// Re-encodes the photo at [sourcePath] smaller and without EXIF data, and
+  /// returns the new file's path, or [sourcePath] if that fails. A PNG stays
+  /// PNG; anything else (JPEG, HEIC, WebP…) becomes a `.jpg`, so uploads are
+  /// always a type the backend accepts and the file name matches its bytes.
   static Future<String> compress(String sourcePath) async {
-    final dir = Directory.systemTemp;
-    final targetPath =
-        '${dir.path}/compressed_${DateTime.now().millisecondsSinceEpoch}${p.extension(sourcePath)}';
+    final isPng = p.extension(sourcePath).toLowerCase() == '.png';
+    final targetPath = '${Directory.systemTemp.path}/compressed_'
+        '${DateTime.now().millisecondsSinceEpoch}${isPng ? '.png' : '.jpg'}';
 
     final result = await FlutterImageCompress.compressAndGetFile(
       sourcePath,
       targetPath,
-      format: _formatFromPath(sourcePath),
+      format: isPng ? CompressFormat.png : CompressFormat.jpeg,
       minWidth: _maxWidth,
       quality: _quality,
       keepExif: false,
@@ -25,14 +29,5 @@ abstract final class ImageCompressor {
       return result.path;
     }
     return sourcePath;
-  }
-
-  static CompressFormat _formatFromPath(String path) {
-    final ext = p.extension(path).toLowerCase();
-    return switch (ext) {
-      '.png' => CompressFormat.png,
-      '.webp' => CompressFormat.webp,
-      _ => CompressFormat.jpeg,
-    };
   }
 }

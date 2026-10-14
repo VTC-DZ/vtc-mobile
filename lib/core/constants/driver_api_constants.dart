@@ -3,9 +3,6 @@ abstract final class DriverApiConstants {
 
   static const String _base = '/api/driver';
 
-  // Registration
-  static const String registration = '$_base/registration';
-
   // KYC
   static const String kycSubmit = '$_base/kyc/submit';
   static const String kycStatus = '$_base/kyc/status';
@@ -20,4 +17,12 @@ abstract final class DriverApiConstants {
   // Profile
   static const String profile = '$_base/profile';
   static const String serviceTypes = '$_base/profile/service-types';
+}
+
+/// Error codes from `/api/driver/kyc/*`.
+abstract final class KycErrorCodes {
+  KycErrorCodes._();
+
+  /// `409` — an application is already waiting for review.
+  static const String submissionAlreadyPending = 'submission_already_pending';
 }

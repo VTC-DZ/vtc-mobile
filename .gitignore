@@ -45,3 +45,6 @@ app.*.map.json
 /android/app/release
 
 /note.txt
+
+# Local working docs (feature audits and progress); not versioned
+/docs/

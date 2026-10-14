@@ -28,8 +28,8 @@ Last checked: 2026-09-29
 
 | Status | Endpoint | Implementation |
 |--------|----------|----------------|
-| ✅ | `POST /api/driver/kyc/submit` (multipart) | `driver_repository.dart:18` → registration wizard step 3 |
-| ✅ | `GET /api/driver/kyc/status` | `driver_repository.dart:91` → KycStatusCubit |
+| ✅ | `POST /api/driver/kyc/submit` (multipart) | `auth/data/kyc_repository.dart:23` (`KycSubmission`) → registration wizard step 3. Photos or PDFs, each with a declared content type; upload progress; `409 submission_already_pending` counts as submitted |
+| ✅ | `GET /api/driver/kyc/status` | `auth/data/kyc_repository.dart:48` → KycStatusCubit; an approval clears `waitingKycStatus`. Rejected or revoked also loads `/api/me/profile` for `requiresRekyc` and the pre-fill |
 
 ### Availability — ✅ 2/2
 
@@ -113,7 +113,7 @@ Last checked: 2026-09-29
 
 ## Dead code (in app, not in spec)
 
-- ❌ `POST /api/driver/registration` — constant at `driver_api_constants.dart:7`, never referenced; onboarding goes through KYC submit.
+- ❌ `POST /api/driver/registration` — not used; onboarding goes through KYC submit (the unused constant was removed in the auth cleanup).
 
 ## Feature gaps (not in spec either)
 

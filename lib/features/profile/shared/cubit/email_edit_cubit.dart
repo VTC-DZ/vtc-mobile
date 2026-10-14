@@ -3,7 +3,7 @@ import 'package:rapidoo/core/errors/api_exception.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/utils/validators.dart';
-import '../../../../features/auth/data/repo/profile_repository.dart';
+import '../data/profile_repository.dart';
 import 'email_edit_state.dart';
 
 class EmailEditCubit extends Cubit<EmailEditState> {

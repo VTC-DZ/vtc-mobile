@@ -3,15 +3,17 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:pinput/pinput.dart';
 
+import '../../../../../../core/constants/app_constants.dart';
+import '../../../../../../core/constants/app_strings.dart';
 import '../../../../../../core/theme/app_colors.dart';
 import '../../../../../../core/theme/app_text_styles.dart';
 import '../../../../../../shared/widgets/primary_button.dart';
 import '../../../cubit/otp_cubit/otp_cubit.dart';
 import '../../../cubit/otp_cubit/otp_state.dart';
-import 'change_number_bar_widget.dart';
-import 'otp_blocked_banner_widget.dart';
-import 'otp_error_row_widget.dart';
-import 'otp_resend_row_widget.dart';
+import '../../../../../../shared/widgets/otp/change_number_bar_widget.dart';
+import '../../../../../../shared/widgets/otp/otp_blocked_banner_widget.dart';
+import '../../../../../../shared/widgets/otp/otp_error_row_widget.dart';
+import '../../../../../../shared/widgets/otp/otp_resend_row_widget.dart';
 
 class OtpVerificationFormSection extends StatefulWidget {
   const OtpVerificationFormSection({super.key, required this.onChangeNumber});
@@ -25,11 +27,7 @@ class OtpVerificationFormSection extends StatefulWidget {
 
 class _OtpVerificationFormSectionState
     extends State<OtpVerificationFormSection> {
-  static const int _digitCount = 6;
-
   late final TextEditingController _controller;
-
-  bool _isComplete = false;
 
   @override
   void initState() {
@@ -43,16 +41,13 @@ class _OtpVerificationFormSectionState
     super.dispose();
   }
 
+  /// Keeps the field in step with the cubit, e.g. when a resend clears it.
   void _syncValue(String value) {
     if (_controller.text != value) {
       _controller.value = TextEditingValue(
         text: value,
         selection: TextSelection.collapsed(offset: value.length),
       );
-    }
-    final isComplete = value.length == _digitCount;
-    if (isComplete != _isComplete) {
-      setState(() => _isComplete = isComplete);
     }
   }
 
@@ -85,6 +80,7 @@ class _OtpVerificationFormSectionState
       child: BlocBuilder<OtpCubit, OtpState>(
         buildWhen: (previous, current) =>
             previous.status != current.status ||
+            previous.isComplete != current.isComplete ||
             previous.errorMessage != current.errorMessage ||
             previous.secondsRemaining != current.secondsRemaining ||
             previous.resendCount != current.resendCount ||
@@ -108,7 +104,7 @@ class _OtpVerificationFormSectionState
             children: [
               Pinput(
                 controller: _controller,
-                length: _digitCount,
+                length: AppConstants.otpLength,
                 autofocus: true,
                 enabled: !isLoading,
                 forceErrorState: hasWrongCode,
@@ -146,10 +142,7 @@ class _OtpVerificationFormSectionState
                     ),
                   ),
                 ),
-                onChanged: (value) {
-                  cubit.otpChanged(value);
-                  setState(() => _isComplete = value.length == _digitCount);
-                },
+                onChanged: cubit.otpChanged,
               ),
               AnimatedSize(
                 duration: const Duration(milliseconds: 160),
@@ -163,18 +156,20 @@ class _OtpVerificationFormSectionState
               ),
               SizedBox(height: 36.h),
               PrimaryButton(
-                label: 'Verify',
-                isEnabled: _isComplete && !isLoading,
+                label: AppStrings.verify,
+                isEnabled: state.isComplete && !isLoading,
                 isLoading: isLoading,
                 onPressed: cubit.verifyOtp,
               ),
               SizedBox(height: 28.h),
               OtpResendRowWidget(
-                state: state,
+                secondsRemaining: state.secondsRemaining,
+                resendCount: state.resendCount,
                 onResend: () {
                   _controller.clear();
-                  setState(() => _isComplete = false);
-                  cubit.resendOtp();
+                  cubit
+                    ..otpChanged('')
+                    ..resendOtp();
                 },
               ),
               SizedBox(height: 16.h),

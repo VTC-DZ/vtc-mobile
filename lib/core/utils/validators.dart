@@ -7,8 +7,9 @@ import '../constants/validation_patterns.dart';
 abstract final class Validators {
   Validators._();
 
+  /// Words of letters from any script, joined by single spaces, `'` or `-`.
   static final _namePattern =
-      RegExp(r"^[a-zA-ZÀ-ÿ]+([ '-][a-zA-ZÀ-ÿ]+)*$");
+      RegExp(r"^\p{L}+([ '-]\p{L}+)*$", unicode: true);
   static final _emailPattern =
       RegExp(r'^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$');
 
@@ -20,9 +21,10 @@ abstract final class Validators {
   }
 
   /// Returns an error message string, or empty string if valid.
-  /// Empty [value] is treated as an error (field is required).
-  static String name(String value) {
-    if (value.isEmpty) return 'Full name is required';
+  /// Empty [value] is treated as an error (field is required); [field] names
+  /// the field in that message.
+  static String name(String value, {String field = 'Full name'}) {
+    if (value.isEmpty) return '$field is required';
     if (value.length < 2) return 'Name must be at least 2 characters';
     if (!_namePattern.hasMatch(value)) return 'Name must contain letters only';
     return '';
@@ -54,7 +56,7 @@ abstract final class Validators {
     return '';
   }
 
-  /// Validates vehicle text fields (make, model, color). Min 2 chars.
+  /// Validates vehicle text fields (model, color). Min 2 chars.
   static String vehicleText(String value, String fieldName) {
     if (value.trim().isEmpty) return '$fieldName is required';
     if (value.trim().length < 2) return '$fieldName must be at least 2 characters';

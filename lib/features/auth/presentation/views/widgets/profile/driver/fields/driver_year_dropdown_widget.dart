@@ -1,5 +1,3 @@
-// lib/features/auth/presentation/views/widgets/profile/driver/fields/driver_year_dropdown_widget.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
@@ -8,6 +6,7 @@ import '../../../../../../../../core/theme/app_colors.dart';
 import '../../../../../../../../core/theme/app_text_styles.dart';
 import '../../../../../../../../shared/widgets/bottomsheets/app_bottom_sheet.dart';
 import '../../../../../../../../shared/widgets/app_text_field.dart';
+import '../../../../../../../../core/constants/app_strings.dart';
 
 /// Tappable field that opens a beautiful bottom sheet with a scrollable year list
 /// (current year down to [AppConstants.vehicleYearFirst]).
@@ -65,7 +64,7 @@ class _DriverYearDropdownWidgetState extends State<DriverYearDropdownWidget> {
 
     showAppBottomSheet<void>(
       context: context,
-      title: 'Select Year',
+      title: AppStrings.selectYearTitle,
       child: SizedBox(
         height: MediaQuery.of(context).size.height / 3,
         child: ListView.builder(
@@ -120,7 +119,7 @@ class _DriverYearDropdownWidgetState extends State<DriverYearDropdownWidget> {
       readOnly: true,
       onTap: widget.enabled ? _openSheet : null,
       enabled: widget.enabled,
-      hintText: 'Select year',
+      hintText: AppStrings.selectYear,
       prefixIcon: const Icon(Icons.calendar_month_outlined),
       suffixIcon: const Icon(Icons.expand_more_rounded),
     );

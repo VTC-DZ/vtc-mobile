@@ -1,7 +1,7 @@
 import 'package:equatable/equatable.dart';
 import 'package:rapidoo/features/ride/passenger/data/models/passenger_ride_models.dart';
 
-import '../../../../../features/auth/data/models/passenger_profile_model.dart';
+import '../../../../profile/shared/data/models/passenger_profile_model.dart';
 
 enum PassengerHomeStatus { initial, loading, success, failure }
 

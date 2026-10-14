@@ -1,6 +1,6 @@
-// lib/features/auth/presentation/cubit/phone_state.dart
-
 import 'package:equatable/equatable.dart';
+
+import '../../../../../core/utils/phone_formatter.dart';
 
 /// Status lifecycle for the phone-entry screen.
 enum PhoneStatus {
@@ -23,6 +23,11 @@ final class PhoneState extends Equatable {
 
   /// Raw local number as the user typed it (e.g. "0661234567").
   final String phoneNumber;
+
+  /// [phoneNumber] in E.164 (e.g. "+213661234567") — the format every OTP
+  /// call sends.
+  String get phoneE164 =>
+      phoneNumber.isEmpty ? '' : PhoneFormatter.toE164(phoneNumber);
 
   /// True when [phoneNumber] matches the Algerian mobile regex.
   final bool isValid;

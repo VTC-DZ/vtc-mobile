@@ -2,10 +2,11 @@ import 'dart:async';
 import 'package:rapidoo/core/errors/api_exception.dart';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:rapidoo/core/models/token_payload.dart';
 
 import '../../../../../core/session/auth_session.dart';
-import '../../../../../features/auth/data/models/driver_profile_model.dart';
-import '../../../../../features/auth/data/repo/driver_repository.dart';
+import '../../../../profile/shared/data/models/driver_profile_model.dart';
+import '../../../../profile/shared/data/profile_repository.dart';
 import '../../../../../features/ride/driver/data/driver_ride_repository.dart';
 import '../../../../../features/ride/driver/data/models/driver_ride_models.dart';
 import 'driver_home_state.dart';
@@ -15,10 +16,10 @@ class DriverHomeCubit extends Cubit<DriverHomeState> {
     this._repository, [
     this._rideRepository = const DriverRideRepository(),
   ]) : super(const DriverHomeState()) {
-    unawaited(AuthSession.setLastRole(AuthSession.roleDriver));
+    unawaited(AuthSession.setLastRole(ActiveRole.driver));
   }
 
-  final DriverRepository _repository;
+  final ProfileRepository _repository;
   final DriverRideRepository _rideRepository;
 
   Future<void> getProfile() async {

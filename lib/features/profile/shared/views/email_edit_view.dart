@@ -4,9 +4,9 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../../core/widgets/app_toast.dart';
-import '../../../../../features/auth/presentation/views/widgets/profile/passenger/profile_email_field_widget.dart';
-import '../../../../../features/auth/presentation/views/widgets/profile/passenger/profile_error_banner_widget.dart';
-import '../../../../../features/auth/presentation/views/widgets/profile/profile_field_label_widget.dart';
+import 'widgets/profile_email_field_widget.dart';
+import '../../../../shared/widgets/form/profile_error_banner_widget.dart';
+import '../../../../shared/widgets/form/profile_field_label_widget.dart';
 import '../../../../../shared/widgets/app_scaffold.dart';
 import '../../../../../shared/widgets/primary_button.dart';
 import '../cubit/email_edit_cubit.dart';

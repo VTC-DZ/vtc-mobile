@@ -1,4 +1,6 @@
-// lib/features/driver/data/models/driver_document.dart
+import 'package:equatable/equatable.dart';
+
+import '../../../../core/utils/upload_file.dart';
 
 enum UploadStatus { idle, uploading, uploaded, error }
 
@@ -10,7 +12,9 @@ enum DriverDocumentType {
   vehicleRegistration,
 }
 
-final class DriverDocument {
+/// A document picked on this device — a photo or a PDF; nothing is uploaded
+/// until the application is submitted.
+final class DriverDocument extends Equatable {
   const DriverDocument({
     this.filePath,
     this.fileName,
@@ -25,6 +29,8 @@ final class DriverDocument {
 
   bool get isUploaded => status == UploadStatus.uploaded;
 
+  bool get isPdf => filePath != null && isPdfPath(filePath!);
+
   DriverDocument copyWith({
     String? filePath,
     String? fileName,
@@ -38,4 +44,7 @@ final class DriverDocument {
       errorMessage: errorMessage ?? this.errorMessage,
     );
   }
+
+  @override
+  List<Object?> get props => [filePath, fileName, status, errorMessage];
 }

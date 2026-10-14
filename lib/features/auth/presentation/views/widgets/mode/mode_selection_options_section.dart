@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
-import 'package:rapidoo/features/auth/presentation/views/widgets/mode/mode_card_widget.dart';
 
 import '../../../../../../core/router/route_names.dart';
 import '../../../../../../shared/widgets/primary_button.dart';
+import 'mode_card_widget.dart';
+import '../../../../../../core/constants/app_strings.dart';
 
 enum UserMode { passenger, driver }
 
@@ -34,23 +35,23 @@ class _ModeSelectionOptionsSectionState
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         ModeCard(
-          title: 'Passenger',
-          description: 'Book rides and travel comfortably',
+          title: AppStrings.modePassenger,
+          description: AppStrings.modePassengerBody,
           icon: Icons.person_outline_rounded,
           isSelected: _selectedMode == UserMode.passenger,
           onTap: () => setState(() => _selectedMode = UserMode.passenger),
         ),
         SizedBox(height: 20.h),
         ModeCard(
-          title: 'Driver',
-          description: 'Drive, earn, and be your own boss',
+          title: AppStrings.modeDriver,
+          description: AppStrings.modeDriverBody,
           icon: Icons.directions_car_outlined,
           isSelected: _selectedMode == UserMode.driver,
           onTap: () => setState(() => _selectedMode = UserMode.driver),
         ),
         SizedBox(height: 24.h),
         PrimaryButton(
-          label: 'Continue',
+          label: AppStrings.continueLabel,
           isEnabled: _selectedMode != null,
           onPressed: _handleContinue,
         ),

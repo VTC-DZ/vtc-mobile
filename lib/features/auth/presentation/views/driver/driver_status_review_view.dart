@@ -6,7 +6,6 @@ import 'package:lottie/lottie.dart';
 
 import '../../../../../core/constants/app_strings.dart';
 import '../../../../../core/router/route_names.dart';
-import '../../../../../core/session/auth_session.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_text_styles.dart';
 import '../../../../../shared/widgets/app_scaffold.dart';
@@ -28,10 +27,7 @@ class DriverStatusReviewView extends StatelessWidget {
             child: BlocConsumer<KycStatusCubit, KycStatusState>(
               listenWhen: (previous, current) =>
                   !previous.isApproved && current.isApproved,
-              listener: (context, state) async {
-                await AuthSession.setWaitingKycStatus(false);
-                context.go(RouteNames.driverHome);
-              },
+              listener: (context, state) => context.go(RouteNames.driverHome),
               builder: (context, state) {
                 return switch (state.status) {
                   KycStatusViewStatus.initial ||
@@ -55,8 +51,36 @@ class DriverStatusReviewView extends StatelessWidget {
   Widget _buildContent(BuildContext context, KycStatusState state) {
     if (state.isApproved) return const _LoadingContent();
     if (state.isPending || state.isNone) return const _PendingContent();
+
+    // A re-submission starts from the account, which pre-fills step 1; the
+    // wizard skips saving it, since a driver profile now exists.
+    void resubmit() =>
+        context.go(RouteNames.driverProfile, extra: state.profile);
+
     if (state.isRejected) {
-      return _RejectedContent(note: state.kycResult?.resubmissionNote);
+      return _ClosedContent(
+        title: AppStrings.rejectionTitle,
+        reason: state.kycResult?.resubmissionNote,
+        actionLabel: AppStrings.resubmitDocuments,
+        onAction: resubmit,
+      );
+    }
+    if (state.isRevoked) {
+      // The note belongs to an earlier submission, not to the revocation,
+      // and the server exposes no revocation reason, so none is shown.
+      return state.canResubmit
+          ? _ClosedContent(
+              title: AppStrings.revokedTitle,
+              message: AppStrings.revokedResubmitBody,
+              actionLabel: AppStrings.resubmitDocuments,
+              onAction: resubmit,
+            )
+          : _ClosedContent(
+              title: AppStrings.revokedTitle,
+              message: AppStrings.revokedNoResubmitBody,
+              actionLabel: AppStrings.goToHome,
+              onAction: () => context.go(RouteNames.passengerHome),
+            );
     }
     return const _PendingContent();
   }
@@ -140,10 +164,26 @@ class _PendingContent extends StatelessWidget {
   }
 }
 
-class _RejectedContent extends StatelessWidget {
-  const _RejectedContent({this.note});
+/// A rejected or revoked application: what happened, and the next step.
+class _ClosedContent extends StatelessWidget {
+  const _ClosedContent({
+    required this.title,
+    this.reason,
+    this.message,
+    required this.actionLabel,
+    required this.onAction,
+  });
 
-  final String? note;
+  final String title;
+
+  /// The reviewer's note, shown in the "Reason:" box when there is no
+  /// [message].
+  final String? reason;
+
+  /// Plain text under the title, in place of the "Reason:" box.
+  final String? message;
+  final String actionLabel;
+  final VoidCallback onAction;
 
   @override
   Widget build(BuildContext context) {
@@ -158,38 +198,52 @@ class _RejectedContent extends StatelessWidget {
         ),
         SizedBox(height: 24.h),
         Text(
-          AppStrings.rejectionTitle,
+          title,
           style: AppTextStyles.displayMedium(context),
           textAlign: TextAlign.center,
         ),
         SizedBox(height: 20.h),
-        Text(
-          'Reason:',
-          style: AppTextStyles.labelMedium(context)
-              .copyWith(fontWeight: FontWeight.w600),
-        ),
-        SizedBox(height: 8.h),
-        Container(
-          padding: EdgeInsets.all(16.w),
-          decoration: BoxDecoration(
-            color: AppColors.error.withValues(alpha: 0.08),
-            borderRadius: BorderRadius.circular(12.r),
-            border: Border.all(
-              color: AppColors.error.withValues(alpha: 0.3),
+        if (message != null)
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16.w),
+            child: Text(
+              message!,
+              style: AppTextStyles.bodyLarge(context).copyWith(
+                color: AppColors.textSecondary(context),
+                height: 1.5,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          )
+        else ...[
+          Text(
+            AppStrings.rejectionReasonLabel,
+            style: AppTextStyles.labelMedium(context)
+                .copyWith(fontWeight: FontWeight.w600),
+          ),
+          SizedBox(height: 8.h),
+          Container(
+            padding: EdgeInsets.all(16.w),
+            decoration: BoxDecoration(
+              color: AppColors.error.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(12.r),
+              border: Border.all(
+                color: AppColors.error.withValues(alpha: 0.3),
+              ),
+            ),
+            child: Text(
+              (reason != null && reason!.isNotEmpty)
+                  ? reason!
+                  : AppStrings.rejectionDefaultReason,
+              style: AppTextStyles.bodyMedium(context),
             ),
           ),
-          child: Text(
-            (note != null && note!.isNotEmpty)
-                ? note!
-                : 'Your application did not meet our requirements.',
-            style: AppTextStyles.bodyMedium(context),
-          ),
-        ),
+        ],
         const Spacer(flex: 3),
         PrimaryButton(
-          label: AppStrings.resubmitDocuments,
+          label: actionLabel,
           isEnabled: true,
-          onPressed: () => context.go(RouteNames.driverProfile),
+          onPressed: onAction,
         ),
       ],
     );

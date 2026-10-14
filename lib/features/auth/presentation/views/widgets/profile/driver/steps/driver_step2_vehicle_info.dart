@@ -7,16 +7,18 @@ import '../../../../../../../../core/constants/app_strings.dart';
 import '../../../../../../../../core/widgets/image_source_bottom_sheet.dart';
 
 import '../../../../../../data/models/driver_document.dart';
-import '../../profile_field_label_widget.dart';
-import '../../../../../cubit/driver_profile_cubit/driver_profile_cubit.dart';
-import '../../../../../cubit/driver_profile_cubit/driver_profile_state.dart';
+import '../../../../../../../../shared/widgets/form/profile_field_label_widget.dart';
+import '../../../../../cubit/driver_registration_cubit/driver_registration_cubit.dart';
+import '../../../../../cubit/driver_registration_cubit/driver_registration_state.dart';
 import '../fields/driver_category_dropdown_widget.dart';
 import '../fields/driver_color_picker_field_widget.dart';
+import '../fields/document_source_sheet.dart';
 import '../fields/driver_document_single_card_widget.dart';
-import '../fields/driver_date_picker_field_widget.dart';
+import '../../../../../../../../shared/widgets/form/app_date_picker_field_widget.dart';
 import '../fields/driver_plate_field_widget.dart';
 import '../fields/driver_text_field_widget.dart';
 import '../fields/driver_year_dropdown_widget.dart';
+import '../../../../../../../../core/constants/validation_patterns.dart';
 
 class DriverStep2VehicleInfo extends StatefulWidget {
   const DriverStep2VehicleInfo({super.key});
@@ -26,13 +28,11 @@ class DriverStep2VehicleInfo extends StatefulWidget {
 }
 
 class _DriverStep2VehicleInfoState extends State<DriverStep2VehicleInfo> {
-  late final TextEditingController _makeController = TextEditingController();
   late final TextEditingController _modelController = TextEditingController();
   late final TextEditingController _plateController = TextEditingController();
 
   @override
   void dispose() {
-    _makeController.dispose();
     _modelController.dispose();
     _plateController.dispose();
     super.dispose();
@@ -40,10 +40,10 @@ class _DriverStep2VehicleInfoState extends State<DriverStep2VehicleInfo> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<DriverProfileCubit, DriverProfileState>(
+    return BlocBuilder<DriverRegistrationCubit, DriverRegistrationState>(
       buildWhen: (prev, curr) => prev.vehicleInfo != curr.vehicleInfo,
       builder: (context, state) {
-        final cubit = context.read<DriverProfileCubit>();
+        final cubit = context.read<DriverRegistrationCubit>();
         final vehicle = state.vehicleInfo;
         final isSubmitting = state.status == DriverRegistrationStatus.loading;
 
@@ -54,7 +54,7 @@ class _DriverStep2VehicleInfoState extends State<DriverStep2VehicleInfo> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               // ── Vehicle Category ──────────────────────────────────────────────
-              const ProfileFieldLabelWidget(label: 'Vehicle Type'),
+              const ProfileFieldLabelWidget(label: AppStrings.fieldVehicleType),
               SizedBox(height: 8.h),
               DriverCategoryDropdownWidget(
                 selectedCategory: vehicle.vehicleCategory,
@@ -64,36 +64,19 @@ class _DriverStep2VehicleInfoState extends State<DriverStep2VehicleInfo> {
 
               SizedBox(height: 24.h),
 
-              // ── Car Make ───────────────────────────────────────────────────────
-              const ProfileFieldLabelWidget(label: AppStrings.fieldCarMake),
-              SizedBox(height: 8.h),
-              DriverTextFieldWidget(
-                controller: _makeController,
-                hintText: 'e.g. Toyota',
-                icon: Icons.directions_car_outlined,
-                onChanged: cubit.vehicleMakeChanged,
-                error: vehicle.vehicleMakeError,
-                enabled: !isSubmitting,
-                inputFormatters: [
-                  FilteringTextInputFormatter.allow(RegExp(r"[a-zA-ZÀ-ÿ '\-]")),
-                ],
-              ),
-
-              SizedBox(height: 24.h),
-
               // ── Model ──────────────────────────────────────────────────────────
               const ProfileFieldLabelWidget(label: AppStrings.fieldCarModel),
               SizedBox(height: 8.h),
               DriverTextFieldWidget(
                 controller: _modelController,
-                hintText: 'e.g. Corolla',
+                hintText: AppStrings.hintCarModel,
                 icon: Icons.drive_eta_outlined,
                 onChanged: cubit.vehicleModelChanged,
                 error: vehicle.vehicleModelError,
                 enabled: !isSubmitting,
                 inputFormatters: [
                   FilteringTextInputFormatter.allow(
-                      RegExp(r"[a-zA-ZÀ-ÿ0-9 '\-]")),
+                      ValidationPatterns.vehicleModelInputChars),
                 ],
               ),
 
@@ -135,10 +118,10 @@ class _DriverStep2VehicleInfoState extends State<DriverStep2VehicleInfo> {
 
               SizedBox(height: 24.h),
               // ── Insurance Expiry ───────────────────────────────────────────────
-              const ProfileFieldLabelWidget(label: 'Insurance Expiry'),
+              const ProfileFieldLabelWidget(label: AppStrings.fieldInsuranceExpiry),
               SizedBox(height: 8.h),
-              DriverDatePickerFieldWidget(
-                hintText: 'Expiry date',
+              AppDatePickerFieldWidget(
+                hintText: AppStrings.hintExpiryDate,
                 prefixIcon: const Icon(Icons.calendar_month_outlined),
                 selectedDate: vehicle.insuranceExpiry,
                 onDateSelected: cubit.insuranceExpiryChanged,
@@ -152,8 +135,7 @@ class _DriverStep2VehicleInfoState extends State<DriverStep2VehicleInfo> {
                   label: AppStrings.fieldVehiclePhoto),
               SizedBox(height: 8.h),
               DriverDocumentSingleCardWidget(
-                label: AppStrings.fieldVehiclePhoto,
-                badgeLabel: 'PHOTO',
+                badgeLabel: AppStrings.docBadgePhoto,
                 document: DriverDocument(
                   status: vehicle.vehiclePhotoPath != null
                       ? UploadStatus.uploaded
@@ -170,14 +152,13 @@ class _DriverStep2VehicleInfoState extends State<DriverStep2VehicleInfo> {
               SizedBox(height: 24.h),
 
               // ── Insurance Document ─────────────────────────────────────────────
-              const ProfileFieldLabelWidget(label: 'Insurance'),
+              const ProfileFieldLabelWidget(label: AppStrings.fieldInsurance),
               SizedBox(height: 8.h),
               DriverDocumentSingleCardWidget(
-                label: 'Insurance',
-                badgeLabel: 'INS',
+                badgeLabel: AppStrings.docBadgeInsurance,
                 document: vehicle.insuranceDocument,
                 onTap: () async {
-                  final source = await showImageSourceSheet(context);
+                  final source = await showDocumentSourceSheet(context);
                   if (source != null) cubit.pickInsuranceDocument(source);
                 },
                 enabled: !isSubmitting,

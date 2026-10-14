@@ -6,14 +6,12 @@ abstract final class RouteNames {
 
   static const String phone = '/';
   static const String otp = '/otp';
-  static const String home = '/home';
   static const String modeSelection = '/mode-selection';
   static const String passengerProfile = '/passenger-profile';
   static const String passengerHome = '/passenger-home';
   static const String driverProfile = '/driver-profile';
   static const String driverStatusReview = '/driver-status-review';
   static const String driverHome = '/driver-home';
-  static const String driverRejection = '/driver-rejection';
   static const String driverProfileEdit = '/driver-profile-edit';
   static const String passengerProfileEdit = '/passenger-profile-edit';
   static const String passengerEmailEdit = '/passenger-email-edit';

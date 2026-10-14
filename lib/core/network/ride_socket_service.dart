@@ -6,9 +6,8 @@ import 'package:web_socket_channel/io.dart';
 
 import '../constants/web_socket_constants.dart';
 import '../models/token_payload.dart';
-import '../router/app_router.dart';
-import '../router/route_names.dart';
 import '../session/auth_session.dart';
+import '../session/session_teardown.dart';
 import 'dio_client.dart';
 import 'driver_location_streamer.dart';
 import 'ws_url.dart';
@@ -317,10 +316,7 @@ final class RideSocketService {
 
   static Future<void> _forceRelogin() async {
     _log('auth revoked — clearing session and forcing re-login');
-    DriverLocationStreamer.stop();
-    await disconnect();
-    await AuthSession.clearSession();
-    AppRouter.router.go(RouteNames.phone);
+    await SessionTeardown.run();
   }
 
   static void _emit(RideSocketStatus status) {

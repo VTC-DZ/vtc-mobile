@@ -8,6 +8,7 @@ import '../../../../../../shared/widgets/app_text_field.dart';
 import '../../../../../../shared/widgets/primary_button.dart';
 import '../../../cubit/phone_cubit/phone_cubit.dart';
 import '../../../cubit/phone_cubit/phone_state.dart';
+import '../../../../../../core/constants/app_strings.dart';
 
 class PhoneFormSection extends StatefulWidget {
   const PhoneFormSection({super.key});
@@ -45,7 +46,7 @@ class _PhoneFormSectionState extends State<PhoneFormSection> {
             ),
             SizedBox(height: 24.h),
             PrimaryButton(
-              label: 'Continue',
+              label: AppStrings.continueLabel,
               isEnabled: state.isValid,
               isLoading: state.status == PhoneStatus.loading,
               onPressed: context.read<PhoneCubit>().sendOtp,

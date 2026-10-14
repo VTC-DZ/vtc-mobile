@@ -5,6 +5,7 @@ import '../../../../../core/constants/app_constants.dart';
 enum OtpStatus { initial, loading, success, failure, blocked }
 
 final class OtpState extends Equatable {
+  /// E.164 (e.g. "+213661234567"), as handed over by the phone-entry screen.
   final String phoneNumber;
   final OtpStatus status;
   final String otpValue;
@@ -27,7 +28,7 @@ final class OtpState extends Equatable {
     this.hasDriverProfile = false,
   });
 
-  bool get isComplete => otpValue.length == 6;
+  bool get isComplete => otpValue.length == AppConstants.otpLength;
   bool get canResend =>
       secondsRemaining == 0 &&
       resendCount < AppConstants.otpMaxResendCount &&

@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../../../../core/theme/app_colors.dart';
 import '../../../../../../../core/theme/app_text_styles.dart';
 import '../../../../../../../core/widgets/app_toast.dart';
+import '../../../../../../../core/constants/app_strings.dart';
 
 class ProfileStepProgressBarWidget extends StatelessWidget {
   const ProfileStepProgressBarWidget({
@@ -46,7 +47,7 @@ class ProfileStepProgressBarWidget extends StatelessWidget {
               ? () => onStepTap(stepIndex)
               : isFutureBlocked
                   ? () => AppToast.warning(
-                        'Please complete step ${stepIndex - 1} first.',
+                        AppStrings.completeStepFirst(stepIndex - 1),
                       )
                   : null,
         );

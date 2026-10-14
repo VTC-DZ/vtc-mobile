@@ -1,4 +1,4 @@
-import '../../../auth/data/models/driver_profile_model.dart';
+import '../../shared/data/models/driver_profile_model.dart';
 import '../../../../core/constants/driver_api_constants.dart';
 import '../../../../core/network/dio_client.dart';
 import 'models/driver_profile_models.dart';

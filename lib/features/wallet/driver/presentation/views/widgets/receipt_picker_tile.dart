@@ -2,10 +2,10 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:path/path.dart' as p;
 
 import '../../../../../../core/theme/app_colors.dart';
 import '../../../../../../core/theme/app_text_styles.dart';
+import '../../../../../../core/utils/upload_file.dart';
 
 /// Attach-a-receipt tile: empty prompt before a pick, thumbnail + name after.
 ///
@@ -28,7 +28,6 @@ class ReceiptPickerTile extends StatelessWidget {
   final String error;
 
   bool get _hasReceipt => path.isNotEmpty;
-  bool get _isPdf => p.extension(path).toLowerCase() == '.pdf';
 
   @override
   Widget build(BuildContext context) {
@@ -50,7 +49,7 @@ class ReceiptPickerTile extends StatelessWidget {
             ),
             child: Row(
               children: [
-                _Thumbnail(path: path, isPdf: _isPdf, hasReceipt: _hasReceipt),
+                _Thumbnail(path: path, isPdf: isPdfPath(path), hasReceipt: _hasReceipt),
                 SizedBox(width: 12.w),
                 Expanded(
                   child: Column(

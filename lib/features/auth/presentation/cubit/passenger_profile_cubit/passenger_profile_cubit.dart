@@ -1,10 +1,11 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:rapidoo/core/errors/api_exception.dart';
 
+import '../../../../../core/errors/api_exception.dart';
 import '../../../../../core/utils/validators.dart';
-import '../../../data/models/gender.dart';
-import '../../../data/repo/profile_repository.dart';
+import '../../../../../core/models/gender.dart';
+import '../../../../profile/shared/data/profile_repository.dart';
 import 'passenger_profile_state.dart';
+import '../../../../../core/constants/app_strings.dart';
 
 final class PassengerProfileCubit extends Cubit<PassengerProfileState> {
   PassengerProfileCubit(this._repository)
@@ -13,7 +14,10 @@ final class PassengerProfileCubit extends Cubit<PassengerProfileState> {
   final ProfileRepository _repository;
 
   void nameChanged(String value) {
-    emit(state.copyWith(nameError: Validators.name(value.trim())));
+    emit(state.copyWith(
+      fullName: value,
+      nameError: Validators.name(value.trim()),
+    ));
   }
 
   void genderChanged(Gender gender) {
@@ -24,18 +28,14 @@ final class PassengerProfileCubit extends Cubit<PassengerProfileState> {
     emit(state.copyWith(dateOfBirth: date));
   }
 
-  void emailChanged(String value) {
-    emit(state.copyWith(emailError: Validators.email(value.trim())));
-  }
-
-  Future<void> submit({required String fullName}) async {
+  Future<void> submit() async {
     if (!state.canSubmit) return;
 
     emit(state.copyWith(status: ProfileStatus.loading, errorMessage: ''));
 
     try {
       await _repository.saveProfile(
-        fullName: fullName.trim(),
+        fullName: state.fullName.trim(),
         gender: state.gender!,
         dateOfBirth: state.dateOfBirth!,
       );
@@ -44,7 +44,7 @@ final class PassengerProfileCubit extends Cubit<PassengerProfileState> {
       emit(state.copyWith(
         status: ProfileStatus.failure,
         errorMessage:
-            e is ApiException ? e.message : 'Something went wrong. Please try again.',
+            ApiException.messageOf(e, fallback: AppStrings.genericError),
       ));
     }
   }

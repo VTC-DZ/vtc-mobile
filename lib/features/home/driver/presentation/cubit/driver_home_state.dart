@@ -1,6 +1,6 @@
 import 'package:equatable/equatable.dart';
 
-import '../../../../../features/auth/data/models/driver_profile_model.dart';
+import '../../../../profile/shared/data/models/driver_profile_model.dart';
 
 enum DriverHomeStatus { initial, loading, success, failure }
 

@@ -32,6 +32,11 @@ final class ApiException implements Exception {
 
   bool hasCode(String value) => code == value;
 
+  /// The text to show for any caught [error]: an [ApiException]'s message
+  /// (already localised by the backend), otherwise [fallback].
+  static String messageOf(Object error, {required String fallback}) =>
+      error is ApiException ? error.message : fallback;
+
   @override
   String toString() => message;
 }

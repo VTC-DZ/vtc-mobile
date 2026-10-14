@@ -5,17 +5,17 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../../../../../../../../core/theme/app_colors.dart';
 import '../../../../../../../../core/theme/app_text_styles.dart';
-import '../../../../../../../../core/widgets/image_source_bottom_sheet.dart';
 import '../../../../../../data/models/driver_document.dart';
-import 'package:go_router/go_router.dart';
-import '../../../../../../../../core/router/route_names.dart';
-import '../../../../../cubit/driver_profile_cubit/driver_profile_cubit.dart';
-import '../../../../../cubit/driver_profile_cubit/driver_profile_state.dart';
+import '../../../../../cubit/driver_registration_cubit/driver_registration_cubit.dart';
+import '../../../../../cubit/driver_registration_cubit/driver_registration_state.dart';
 import '../fields/driver_document_flip_card_widget.dart';
+import '../fields/document_source_sheet.dart';
 import '../fields/driver_document_single_card_widget.dart';
-import '../fields/driver_date_picker_field_widget.dart';
+import '../../../../../../../../shared/widgets/form/app_date_picker_field_widget.dart';
 import '../fields/driver_text_field_widget.dart';
-import '../../profile_field_label_widget.dart';
+import '../../../../../../../../shared/widgets/form/profile_field_label_widget.dart';
+import '../../../../../../../../core/constants/app_strings.dart';
+import '../../../../../../../../core/constants/validation_patterns.dart';
 
 class DriverStep3Documents extends StatefulWidget {
   const DriverStep3Documents({super.key});
@@ -35,23 +35,16 @@ class _DriverStep3DocumentsState extends State<DriverStep3Documents> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocConsumer<DriverProfileCubit, DriverProfileState>(
-      listener: (context, state) async {
-        if (state.status == DriverRegistrationStatus.success) {
-          if (context.mounted) {
-            context.go(RouteNames.driverStatusReview);
-          }
-        }
-      },
+    return BlocBuilder<DriverRegistrationCubit, DriverRegistrationState>(
       buildWhen: (prev, curr) =>
           prev.documents != curr.documents || prev.status != curr.status,
       builder: (context, state) {
-        final cubit = context.read<DriverProfileCubit>();
+        final cubit = context.read<DriverRegistrationCubit>();
         final docs = state.documents;
         final isSubmitting = state.status == DriverRegistrationStatus.loading;
 
         Future<void> pick(DriverDocumentType type) async {
-          final source = await showImageSourceSheet(context);
+          final source = await showDocumentSourceSheet(context);
           if (source != null) cubit.pickDocument(type, source);
         }
 
@@ -66,26 +59,27 @@ class _DriverStep3DocumentsState extends State<DriverStep3Documents> {
               SizedBox(height: 24.h),
 
               // ── License Details ─────────────────────────────────────────────
-              const ProfileFieldLabelWidget(label: 'License Number'),
+              const ProfileFieldLabelWidget(label: AppStrings.fieldLicenseNumber),
               SizedBox(height: 8.h),
               DriverTextFieldWidget(
                 controller: _licenseNumberController,
-                hintText: 'e.g. 123456789',
+                hintText: AppStrings.hintLicenseNumber,
                 icon: Icons.credit_card_outlined,
                 onChanged: cubit.licenseNumberChanged,
                 error: docs.licenseNumberError,
                 enabled: !isSubmitting,
                 inputFormatters: [
-                  FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9]')),
+                  FilteringTextInputFormatter.allow(
+                      ValidationPatterns.licenseNumberInputChars),
                 ],
               ),
 
               SizedBox(height: 20.h),
 
-              const ProfileFieldLabelWidget(label: 'License Expiry'),
+              const ProfileFieldLabelWidget(label: AppStrings.fieldLicenseExpiry),
               SizedBox(height: 8.h),
-              DriverDatePickerFieldWidget(
-                hintText: 'Expiry date',
+              AppDatePickerFieldWidget(
+                hintText: AppStrings.hintExpiryDate,
                 prefixIcon: const Icon(Icons.calendar_month_outlined),
                 selectedDate: docs.licenseExpiry,
                 onDateSelected: cubit.licenseExpiryChanged,
@@ -97,7 +91,7 @@ class _DriverStep3DocumentsState extends State<DriverStep3Documents> {
 
               // ── License Photos ──────────────────────────────────────────────
               DriverDocumentFlipCardWidget(
-                label: "License Photos",
+                label: AppStrings.fieldLicensePhotos,
                 frontDocument: docs.licenseFront,
                 backDocument: docs.licenseBack,
                 onFrontTap: () => pick(DriverDocumentType.licenseFront),
@@ -110,7 +104,7 @@ class _DriverStep3DocumentsState extends State<DriverStep3Documents> {
 
               // ── National ID ─────────────────────────────────────────────────
               DriverDocumentFlipCardWidget(
-                label: 'National ID',
+                label: AppStrings.fieldNationalId,
                 frontDocument: docs.nationalIdFront,
                 backDocument: docs.nationalIdBack,
                 onFrontTap: () => pick(DriverDocumentType.nationalIdFront),
@@ -122,11 +116,10 @@ class _DriverStep3DocumentsState extends State<DriverStep3Documents> {
               SizedBox(height: 20.h),
 
               // ── Vehicle Registration ────────────────────────────────────────
-              const _SectionLabel(text: 'Vehicle Registration'),
+              const _SectionLabel(text: AppStrings.docVehicleRegistration),
               SizedBox(height: 8.h),
               DriverDocumentSingleCardWidget(
-                label: 'Vehicle Registration',
-                badgeLabel: 'REG',
+                badgeLabel: AppStrings.docBadgeRegistration,
                 document: docs.vehicleRegistration,
                 onTap: () => pick(DriverDocumentType.vehicleRegistration),
                 enabled: !isSubmitting,
@@ -157,7 +150,7 @@ class _InfoHint extends StatelessWidget {
               color: AppColors.primary, size: 15.w),
           SizedBox(width: 8.w),
           Text(
-            'JPG, PNG or PDF • Max 5 MB per file',
+            AppStrings.documentRequirements,
             style: AppTextStyles.labelSmall(context)
                 .copyWith(color: AppColors.primary),
           ),

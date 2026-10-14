@@ -7,7 +7,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/utils/phone_formatter.dart';
 import '../../../../core/utils/validators.dart';
-import '../../../../features/auth/data/repo/profile_repository.dart';
+import '../data/profile_repository.dart';
 import 'phone_edit_state.dart';
 
 class PhoneEditCubit extends Cubit<PhoneEditState> {

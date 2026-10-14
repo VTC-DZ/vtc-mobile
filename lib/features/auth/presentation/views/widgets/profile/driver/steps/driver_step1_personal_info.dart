@@ -3,13 +3,13 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../../../../../../../../core/constants/app_strings.dart';
-import '../../../../../../data/models/gender.dart';
-import '../../profile_field_label_widget.dart';
-import '../../profile_gender_toggle_widget.dart';
-import '../../profile_name_field_widget.dart';
-import '../../../../../cubit/driver_profile_cubit/driver_profile_cubit.dart';
-import '../../../../../cubit/driver_profile_cubit/driver_profile_state.dart';
-import '../fields/driver_date_picker_field_widget.dart';
+import '../../../../../../../../core/models/gender.dart';
+import '../../../../../../../../shared/widgets/form/profile_field_label_widget.dart';
+import '../../../../../../../../shared/widgets/form/profile_gender_toggle_widget.dart';
+import '../../../../../../../../shared/widgets/form/profile_name_field_widget.dart';
+import '../../../../../cubit/driver_registration_cubit/driver_registration_cubit.dart';
+import '../../../../../cubit/driver_registration_cubit/driver_registration_state.dart';
+import '../../../../../../../../shared/widgets/form/app_date_picker_field_widget.dart';
 
 class DriverStep1PersonalInfo extends StatefulWidget {
   const DriverStep1PersonalInfo({super.key});
@@ -26,7 +26,7 @@ class _DriverStep1PersonalInfoState extends State<DriverStep1PersonalInfo> {
   @override
   void initState() {
     super.initState();
-    final info = context.read<DriverProfileCubit>().state.personalInfo;
+    final info = context.read<DriverRegistrationCubit>().state.personalInfo;
     if (info.firstName.isNotEmpty) _firstNameController.text = info.firstName;
     if (info.lastName.isNotEmpty) _lastNameController.text = info.lastName;
   }
@@ -40,10 +40,10 @@ class _DriverStep1PersonalInfoState extends State<DriverStep1PersonalInfo> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<DriverProfileCubit, DriverProfileState>(
+    return BlocBuilder<DriverRegistrationCubit, DriverRegistrationState>(
       buildWhen: (prev, curr) => prev.personalInfo != curr.personalInfo,
       builder: (context, state) {
-        final cubit = context.read<DriverProfileCubit>();
+        final cubit = context.read<DriverRegistrationCubit>();
         final info = state.personalInfo;
         final isSubmitting = state.status == DriverRegistrationStatus.loading;
 
@@ -73,7 +73,7 @@ class _DriverStep1PersonalInfoState extends State<DriverStep1PersonalInfo> {
               SizedBox(height: 24.h),
               const ProfileFieldLabelWidget(label: AppStrings.fieldDateOfBirth),
               SizedBox(height: 8.h),
-              DriverDatePickerFieldWidget(
+              AppDatePickerFieldWidget(
                 selectedDate: info.dateOfBirth,
                 onDateSelected: cubit.dateOfBirthSelected,
                 enabled: !isSubmitting,

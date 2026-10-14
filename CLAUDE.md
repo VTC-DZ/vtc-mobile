@@ -26,11 +26,11 @@ Backend target is `ApiConstants.baseUrl` in [api_constants.dart](lib/core/consta
 
 ### Feature-sliced layout (`lib/`)
 
-- **`core/`** — cross-cutting infrastructure: `network/` (DioClient, RideSocketService, DriverLocationStreamer), `push/` (PushNotificationService + notification tap routing), `session/` (AuthSession), `router/` (go_router config + RouteNames), `presentation/` (WebSocketConnectionCubit), `storage/` (SecureStorageHelper), `constants/` (per-surface API path + error-code constants, app strings, validation patterns), `errors/` (ApiException), `theme/`, `utils/` (map geometry/markers, validators, jwt_decoder, uuid), `widgets/` (AppToast, dialogs).
-- **`features/`** — vertical slices mirroring the passenger/driver split: `auth`, `home/{passenger,driver}`, `ride/{passenger,driver,shared}`, `profile/{passenger,driver,shared}`, `wallet/driver`, `notifications`, `saved_places`. Inside a slice: `data/` (repositories + models) and `presentation/` (`cubit/` + `views/` + `views/widgets/`).
-- **`shared/widgets/`** — cross-feature reusable widgets (app bars, bottom sheets, buttons, text fields).
+- **`core/`** — cross-cutting infrastructure: `network/` (DioClient, RideSocketService, DriverLocationStreamer), `push/` (PushNotificationService + notification tap routing), `session/` (AuthSession, SessionTeardown), `router/` (go_router config, RouteNames, the start-route resolver), `presentation/` (WebSocketConnectionCubit), `storage/` (SecureStorageHelper), `constants/` (per-surface API path + error-code constants, app strings, validation patterns), `errors/` (ApiException), `models/` (TokenPayload/ActiveRole, AuthTokensModel, Gender), `theme/`, `utils/` (map geometry/markers, validators, phone/plate/date/countdown formatting, jwt_decoder, uuid), `widgets/` (AppToast, dialogs).
+- **`features/`** — vertical slices mirroring the passenger/driver split: `auth`, `home/{passenger,driver}`, `ride/{passenger,driver,shared}`, `profile/{passenger,driver,shared}`, `wallet/driver`, `notifications`, `saved_places`. Inside a slice: `data/` (repositories, data-layer services such as pickers, and `models/`) and `presentation/` (`cubit/` + `views/` + `views/widgets/`). `profile/shared/data/` owns the `/api/me` account data (`ProfileRepository`, `PassengerProfileModel`, `DriverProfileModel`, `KycStatus`) that auth, home and profile all read.
+- **`shared/widgets/`** — cross-feature reusable widgets (app bars, bottom sheets, buttons, text fields; `form/` for profile form fields, `otp/` for the OTP banners and resend row). `shared/` and `core/` never import a feature.
 
-There are two unrelated `DriverProfileCubit` classes: `features/auth/.../driver_profile_cubit` runs driver onboarding/KYC (`DriverRegistrationView`), `features/profile/driver/.../driver_profile_cubit` edits an existing driver profile. Import the right one.
+Driver onboarding/KYC runs on `DriverRegistrationCubit` (`features/auth/.../driver_registration_cubit`, screen `DriverRegistrationView`). The unrelated `DriverProfileCubit` in `features/profile/driver/` edits an existing driver profile.
 
 ### Infrastructure is static singletons (no DI container)
 
@@ -43,7 +43,7 @@ There are two unrelated `DriverProfileCubit` classes: `features/auth/.../driver_
 - **Shells:** the passenger and driver home areas are `ShellRoute`s whose builders provide Cubits that must survive navigation between sibling screens; a role switch or logout leaves the shell and disposes them.
   - passenger: `PassengerHomeCubit`, `NotificationsCubit` (plus a nested shell providing `SavedPlacesCubit`)
   - driver: `DriverHomeCubit`, `DriverAvailabilityCubit`, `WebSocketConnectionCubit`, `AvailableRidesCubit` (keeps collecting `ride.broadcast` while online), `WalletCubit` (balance gate), `NotificationsCubit`
-- **Startup route:** `AuthSession.resolveInitialRoute()` — no token → phone entry; new user who hasn't applied as a driver → mode selection; otherwise driver or passenger home by the persisted `lastRole`.
+- **Startup route:** `initialRouteForSession()` → the pure, unit-tested `resolveInitialRoute(...)` ([initial_route.dart](lib/core/router/initial_route.dart)) — no token → phone entry; new user who hasn't applied as a driver → mode selection; otherwise driver or passenger home by the persisted `lastRole`.
 - **Responsive sizing:** `flutter_screenutil` (design size in `AppConstants.designWidth/Height`). Use `.h/.w/.sp`. Fonts come from `google_fonts` (Plus Jakarta Sans + Inter) — no TTF assets.
 - **User feedback:** `AppToast.success/warning/error` ([app_toast.dart](lib/core/widgets/app_toast.dart)).
 
@@ -52,10 +52,10 @@ There are two unrelated `DriverProfileCubit` classes: `features/auth/.../driver_
 All backend HTTP goes through `DioClient.get/post/put/delete/patch/postMultipart`. Interceptors, in order:
 1. **Auth:** attaches `Authorization: Bearer <accessToken>` from `AuthSession`, unless the request set its own `Authorization` header (the refresh call sends `null` to strip it).
 2. **Idempotency:** adds a fresh `Idempotency-Key` (`uuidV4()`) to every POST/PUT/DELETE **except** `/api/auth/*`. This makes retries safe — do not strip it.
-3. **401 refresh:** concurrent 401s all join one in-flight `DioClient.refreshAccessToken()`, then the original request is retried. The backend **rotates refresh tokens on use**, so anything needing a refresh (including `RideSocketService`) must go through `refreshAccessToken()` — never call `/api/auth/refresh` directly. Only a failed refresh (or a 401 from `/api/auth/*`) forces logout: stop location streaming, disconnect the socket, clear the session, `go(RouteNames.phone)`. A 401/403 that persists after a good refresh is an ordinary error and keeps the session.
+3. **401 refresh:** concurrent 401s all join one in-flight `DioClient.refreshAccessToken()`, then the original request is retried. The backend **rotates refresh tokens on use**, so anything needing a refresh (including `RideSocketService`) must go through `refreshAccessToken()` — never call `/api/auth/refresh` directly. Only a failed refresh (or a 401 from `/api/auth/*`) forces logout, through `SessionTeardown.run()` ([session_teardown.dart](lib/core/session/session_teardown.dart)): stop location streaming, disconnect the socket, clear the session, `go(RouteNames.phone)`. Logout and the socket's forced re-login use the same teardown — never write the sequence out again. A 401/403 that persists after a good refresh is an ordinary error and keeps the session.
 4. **Logging** (debug only): full request/response bodies.
 
-**Errors:** every helper throws [`ApiException`](lib/core/errors/api_exception.dart) — `message` (already localised by the backend; show as-is), `code` (from the `{error:{code,message,details}}` envelope), `statusCode`, `retryAfter`. `toString()` returns the message, so `catch (e)` → `e.toString()` renders text. To branch, use `e is ApiException && e.isConflict` or `e.hasCode(RideErrorCodes.x)` — never match message text. Error-code constants sit beside the path constants (`RideErrorCodes`, `PassengerRideErrorCodes`, `WalletErrorCodes` in `core/constants/*_api_constants.dart`).
+**Errors:** every helper throws [`ApiException`](lib/core/errors/api_exception.dart) — `message` (already localised by the backend; show as-is), `code` (from the `{error:{code,message,details}}` envelope), `statusCode`, `retryAfter`. `toString()` returns the message, so `catch (e)` → `e.toString()` renders text. To branch, use `e is ApiException && e.isConflict` or `e.hasCode(RideErrorCodes.x)` — never match message text. Error-code constants sit beside the path constants (`AuthErrorCodes`, `KycErrorCodes`, `RideErrorCodes`, `PassengerRideErrorCodes`, `WalletErrorCodes` in `core/constants/*_api_constants.dart`). The server sends most codes in lower case, whatever its docs say.
 
 **Third-party hosts never go through `DioClient`** (it would send them the JWT). `RoutingRepository` keeps its own bare `Dio` for road routes from the public OSRM demo server (`RoutingApiConstants`) — no SLA, to be replaced by a backend endpoint before release.
 
@@ -66,9 +66,9 @@ All backend HTTP goes through `DioClient.get/post/put/delete/patch/postMultipart
 `RideSocketService` owns the connection lifecycle only:
 - `connect(ActiveRole)`, `disconnect()`, `send(envelope)`, and auto-reconnect with exponential backoff (`1→2→4→8→16s`, `WebSocketConstants.backoffSteps`). Connecting for the other role tears down the current socket first.
 - Interprets close codes `1000`/`4001`/`4002`/`4003`/`4004` ([web_socket_constants.dart](lib/core/constants/web_socket_constants.dart)).
-- **Token refresh without dropping the socket:** intercepts `system.token_expiring`, refreshes via `DioClient.refreshAccessToken()`, and sends `system.auth_refresh` upstream. If the window is missed (close `4001`), it refreshes then reconnects fresh.
+- **Token refresh without dropping the socket:** intercepts `system.token_expiring`, refreshes via `DioClient.refreshAccessToken()`, and sends `system.auth_refresh` upstream. If the window is missed (close `4001`), it refreshes then reconnects fresh. A close `4003`, or a refresh that fails, ends the session via `SessionTeardown.run()`.
 
-Who opens it: the **driver** socket by `DriverAvailabilityCubit` on go-online (with `DriverLocationStreamer.start()`), closed on go-offline; the **passenger** socket by `RideRequestCubit`, `WaitingOffersCubit` and `PassengerActiveRideCubit`. Logout and the driver→passenger role switch call `DriverLocationStreamer.stopAndDisconnect()`.
+Who opens it: the **driver** socket by `DriverAvailabilityCubit` on go-online (with `DriverLocationStreamer.start()`), closed on go-offline; the **passenger** socket by `RideRequestCubit`, `WaitingOffersCubit` and `PassengerActiveRideCubit`. Logout runs `SessionTeardown.run()`; `AuthRepository.switchRole(ActiveRole.passenger)` calls `DriverLocationStreamer.stopAndDisconnect()` before storing the passenger token.
 
 It exposes two streams:
 - `statusStream` → `RideSocketStatus {disconnected, connecting, connected, reconnecting, failed}`, mirrored to UI by `WebSocketConnectionCubit`.
@@ -78,7 +78,7 @@ It exposes two streams:
 
 ### Auth & session — `AuthSession` ([auth_session.dart](lib/core/session/auth_session.dart))
 
-Static singleton holding access/refresh tokens plus flags (`isNewUser`, `waitingKycStatus`, `hasDriverProfile`, `lastRole`), persisted to `flutter_secure_storage`. Its setters (`setTokens`, `setAccessToken`, …) update memory and storage together — use them rather than `SecureStorageHelper` directly. JWT claims (`activeRole`, `kycVerified`, `hasDriverProfile`, …) are decoded by `JwtDecoder` + `TokenPayload` ([token_payload.dart](lib/core/models/token_payload.dart)), which also defines `ActiveRole`. `switchRole` (in `AuthRepository` / `DriverRepository`, called from the home drawers) swaps in an access token for the other `activeRole`.
+Static singleton holding access/refresh tokens plus flags (`isNewUser`, `waitingKycStatus`, `hasDriverProfile`, `lastRole`), persisted to `flutter_secure_storage`. Its setters (`setTokens`, `setAccessToken`, …) update memory and storage together — use them rather than `SecureStorageHelper` directly. Repositories own these writes (e.g. `verifyOtp`, `saveProfile`, `submitKyc`, `getKycStatus`); views and cubits only read the flags, so cubits stay unit-testable. JWT claims (`activeRole`, `kycVerified`, `hasDriverProfile`, …) are decoded by `JwtDecoder` + `TokenPayload` ([token_payload.dart](lib/core/models/token_payload.dart)), which also defines `ActiveRole` (with its `wireValue`; `AuthSession.lastRole` is an `ActiveRole` stored as `'DRIVER'`/`'PASSENGER'`). `AuthRepository.switchRole(ActiveRole)`, called from the home drawers, swaps in an access token for the other `activeRole`.
 
 ### Push notifications — FCM + REST inbox, never the socket
 
@@ -101,16 +101,19 @@ Google Maps via **google_maps_flutter** (`LatLng` comes from this package). The 
 
 ## Backend contract & project docs
 
-`swagger/` is authoritative. Read these before touching anything ride-related — they encode invariants the OpenAPI specs can't:
+`swagger/` is authoritative for the app. The backend's source is at `/Users/mac/Development/Projects/VTC/vtc-backend`: when `swagger/` is silent or out of date, or a change depends on a server rule (validation, limits, error codes, stored fields), check the code there — it wins. [docs/features/README.md](docs/features/README.md#backend-source) says where to look. Read these before touching anything ride-related — they encode invariants the OpenAPI specs can't:
 - **[epic-03-ride.md](swagger/epic-03-ride.md)** — the canonical end-to-end ride runbook (protocol, state machines, timing windows, error codes). `integration/epic-03-ride.md` is an identical copy.
 - **[passenger-flow.md](swagger/passenger-flow.md)** / **[driver-flow.md](swagger/driver-flow.md)** — step-by-step flows.
 - `swagger/{account,passenger,driver,websocket}.json` — OpenAPI specs per surface.
 - **[integration/epic-04-wallet.md](integration/epic-04-wallet.md)** — the wallet runbook.
-- [DRIVER_REGISTRATION.md](DRIVER_REGISTRATION.md) — the multi-step driver onboarding flow (`IndexedStack`, Algerian plate format `NNNNN-NNN-NN`).
+- [driver-registration.md](docs/features/auth/driver-registration.md) — the multi-step driver onboarding flow (`IndexedStack`, Algerian plate format `NNNNN-NNN-NN`).
 - [ADMIN_CONFIG.md](ADMIN_CONFIG.md) — which values operators can change server-side (so the app must not hardcode them).
+
+Feature docs live in [docs/features/](docs/features/README.md): one folder per feature with `README.md` (how it works), `PROGRESS.md` (checklist) and `CLEAN_CODE.md` (audit findings and what to fix). The index there also holds the audit checklist used for every feature.
 
 Progress trackers:
 - `progress/{account,passenger,driver}-progress.md` — spec-vs-implementation status per surface.
+- `docs/features/<feature>/PROGRESS.md` — per-feature clean-code cleanup, with `[x]`/`[ ]` checkboxes. Tick items as they land.
 - Root `WALLET_PROGRESS.md` / `NOTIFICATION_PROGRESS.md` — phased per-feature plans with `[x]`/`[ ]` checkboxes. When working on one of these features, follow its tracker and tick items as they land.
 
 Invariants that shape client code:
@@ -126,4 +129,4 @@ Invariants that shape client code:
 - New screen: declare its path in [route_names.dart](lib/core/router/route_names.dart), add a `GoRoute` (inside the right shell) with a `BlocProvider` in [app_router.dart](lib/core/router/app_router.dart), and create the Cubit + immutable state under the feature's `presentation/cubit/`.
 - New API surface: add path (and error-code) constants under `core/constants/*_api_constants.dart`, a `const` repository method calling `DioClient`, and `fromJson`/`toJson` models under the feature's `data/models/`.
 - New WS event: add the wire type to `RideSocketEventType`, a sealed subclass of `RideSocketEvent`, and a parse branch in `tryParse`; consume it in whichever Cubit subscribes to `frameStream`.
-- Tests: plain `flutter_test` unit tests in a flat `test/` folder, with no mocking library. Fake a repository by subclassing it and overriding methods (`class _FakeRoutingRepository extends RoutingRepository`). The static singletons can't be injected, so keep logic you want to test in pure functions (like `resolveNotificationDestination`) or in Cubits that take repositories.
+- Tests: plain `flutter_test` unit tests in a flat `test/` folder, with no mocking library. Fake a repository by subclassing it and overriding methods (`class _FakeRoutingRepository extends RoutingRepository`); a repository or service that tests fake is a plain `class`, not `final class`, with a "Not `final`, so tests can extend it with a fake." doc line. The static singletons can't be injected, so keep logic you want to test in pure functions (like `resolveNotificationDestination`) or in Cubits that take repositories.

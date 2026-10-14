@@ -1,5 +1,3 @@
-// lib/features/auth/presentation/views/mode_selection_view.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
@@ -7,8 +5,9 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../shared/widgets/app_confirm_dialog.dart';
 import '../../../../shared/widgets/app_scaffold.dart';
 import '../../../../shared/widgets/app_slim_app_bar.dart';
-import '../../data/repo/auth_repository.dart';
+import '../../data/auth_repository.dart';
 import 'widgets/mode/mode_selection_options_section.dart';
+import '../../../../core/constants/app_strings.dart';
 
 /// Step 3 & 4 — Mode Selection
 ///
@@ -31,13 +30,13 @@ class ModeSelectionView extends StatelessWidget {
           children: [
             SizedBox(height: 60.h),
             Text(
-              'How would you like\nto use the app?',
+              AppStrings.modeTitle,
               style: AppTextStyles.displayMedium(context),
               textAlign: TextAlign.center,
             ),
             SizedBox(height: 12.h),
             Text(
-              'Choose your path to get started',
+              AppStrings.modeSubtitle,
               style: AppTextStyles.bodyMedium(context),
               textAlign: TextAlign.center,
             ),
@@ -53,9 +52,9 @@ class ModeSelectionView extends StatelessWidget {
   Future<void> _confirmLogout(BuildContext context) async {
     final confirmed = await showAppConfirmDialog(
       context: context,
-      title: 'Logout',
-      message: 'Are you sure you want to logout?',
-      confirmLabel: 'Logout',
+      title: AppStrings.logout,
+      message: AppStrings.logoutConfirm,
+      confirmLabel: AppStrings.logout,
       isDestructive: true,
     );
     if (confirmed == true) {

@@ -261,9 +261,13 @@ Negative balances are deliberately allowed — that's driver debt, not a bug. Bu
 
 **Example:** A driver photographs their licence on a 108 MP phone camera and the file is 12 MB. Rejected. This limit is currently hardcoded in the app _and_ enforced on the server — if either changes, they silently disagree.
 
+**Today (checked 2026-10-13):** the server reads it from `vtc.storage.max-file-size-bytes`, a deploy setting rather than an admin one. No endpoint exposes it to the app. Spring's multipart defaults (1 MB per file) also apply first, because the backend doesn't set `spring.servlet.multipart.*` — see the auth [backend requests](docs/features/auth/CLEAN_CODE.md#backend-requests).
+
 ### `kyc.driver-min-age-years` — 18
 
-**Example:** An applicant born in 2010 can't pick their real date of birth, because the date picker's upper bound is set 18 years back. But this is enforced **only in the UI** — there is no server check and no error code, so any client that skips the picker gets through. Should be a server rule.
+**Example:** An applicant born in 2010 can't pick their real date of birth, because the date picker's upper bound is set 18 years back.
+
+**Today (checked 2026-10-13):** the server enforces it, but hardcoded: `@AdultDate(minAge = 18)` on `KycSubmitRequest.dateOfBirth`, plus a service check, answering `VALIDATION_ERROR`. It still isn't configurable, and no endpoint exposes it. For passengers the server only asks 13+, while the app's picker asks 18+ (auth open decision O12).
 
 ### `kyc.license-expiry-warn-days` — 30
 

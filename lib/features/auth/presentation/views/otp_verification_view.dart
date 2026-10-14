@@ -1,5 +1,3 @@
-// lib/features/auth/presentation/views/otp_verification_view.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -12,6 +10,7 @@ import '../../../../shared/widgets/app_scaffold.dart';
 import '../cubit/otp_cubit/otp_cubit.dart';
 import '../cubit/otp_cubit/otp_state.dart';
 import 'widgets/otp/otp_verification_form_section.dart';
+import '../../../../core/constants/app_strings.dart';
 
 /// Step 2 — OTP Verification screen.
 ///
@@ -39,7 +38,7 @@ class OtpVerificationView extends StatelessWidget {
       },
       child: AppScaffold(
         showAppBar: true,
-        appBarTitle: 'Verification',
+        appBarTitle: AppStrings.otpAppBarTitle,
         onLeadingTap: () => context.go(RouteNames.phone),
         body: SingleChildScrollView(
           physics: const ClampingScrollPhysics(),
@@ -47,11 +46,9 @@ class OtpVerificationView extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              SizedBox(height: 40.h),
-              // const AppLogoWidget(),
-              SizedBox(height: 32.h),
+              SizedBox(height: 72.h),
               Text(
-                'Verify your number',
+                AppStrings.otpTitle,
                 style: AppTextStyles.displayMedium(context),
                 textAlign: TextAlign.center,
               ),
@@ -61,7 +58,7 @@ class OtpVerificationView extends StatelessWidget {
                 text: TextSpan(
                   style: AppTextStyles.bodyMedium(context),
                   children: [
-                    const TextSpan(text: 'Code sent to '),
+                    const TextSpan(text: AppStrings.otpCodeSentTo),
                     TextSpan(
                       text: '••••$lastFourDigits',
                       style: AppTextStyles.bodyMedium(context).copyWith(

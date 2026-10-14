@@ -4,11 +4,12 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../../../../cubit/passenger_profile_cubit/passenger_profile_cubit.dart';
 import '../../../../cubit/passenger_profile_cubit/passenger_profile_state.dart';
-import 'profile_error_banner_widget.dart';
-import '../profile_field_label_widget.dart';
-import '../profile_gender_toggle_widget.dart';
-import '../profile_name_field_widget.dart';
-import '../driver/fields/driver_date_picker_field_widget.dart';
+import '../../../../../../../shared/widgets/form/profile_error_banner_widget.dart';
+import '../../../../../../../shared/widgets/form/profile_field_label_widget.dart';
+import '../../../../../../../shared/widgets/form/profile_gender_toggle_widget.dart';
+import '../../../../../../../shared/widgets/form/profile_name_field_widget.dart';
+import '../../../../../../../shared/widgets/form/app_date_picker_field_widget.dart';
+import '../../../../../../../core/constants/app_strings.dart';
 
 class PassengerProfileFormSection extends StatelessWidget {
   const PassengerProfileFormSection({
@@ -35,7 +36,7 @@ class PassengerProfileFormSection extends StatelessWidget {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const ProfileFieldLabelWidget(label: 'Full Name'),
+            const ProfileFieldLabelWidget(label: AppStrings.fieldFullName),
             SizedBox(height: 8.h),
             ProfileNameFieldWidget(
               controller: nameController,
@@ -44,7 +45,7 @@ class PassengerProfileFormSection extends StatelessWidget {
               enabled: !isSubmitting,
             ),
             SizedBox(height: 24.h),
-            const ProfileFieldLabelWidget(label: 'Gender'),
+            const ProfileFieldLabelWidget(label: AppStrings.fieldGender),
             SizedBox(height: 8.h),
             ProfileGenderToggleWidget(
               selected: state.gender,
@@ -52,9 +53,9 @@ class PassengerProfileFormSection extends StatelessWidget {
               enabled: !isSubmitting,
             ),
             SizedBox(height: 24.h),
-            const ProfileFieldLabelWidget(label: 'Date of Birth'),
+            const ProfileFieldLabelWidget(label: AppStrings.fieldDateOfBirth),
             SizedBox(height: 8.h),
-            DriverDatePickerFieldWidget(
+            AppDatePickerFieldWidget(
               selectedDate: state.dateOfBirth,
               onDateSelected: cubit.dateOfBirthChanged,
               enabled: !isSubmitting,
