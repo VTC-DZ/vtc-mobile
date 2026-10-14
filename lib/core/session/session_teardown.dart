@@ -18,7 +18,7 @@ final class SessionTeardown {
 
   static Future<void> run() async {
     DriverLocationStreamer.stop();
-    await RideSocketService.disconnect();
+    RideSocketService.disconnect();
     await AuthSession.clearSession();
     await PushNotificationService.clearDisplayed();
     AppRouter.router.go(RouteNames.phone);

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../../../core/constants/wallet_api_constants.dart';
@@ -15,7 +17,7 @@ class DriverAvailabilityCubit extends Cubit<DriverAvailabilityState> {
 
   Future<void> seed(bool isOnline) async {
     if (isOnline) {
-      await RideSocketService.connect(ActiveRole.driver);
+      unawaited(RideSocketService.connect(ActiveRole.driver));
       DriverLocationStreamer.start();
     }
     emit(state.copyWith(isOnline: isOnline));
@@ -34,18 +36,18 @@ class DriverAvailabilityCubit extends Cubit<DriverAvailabilityState> {
           wasOnline ? await _repo.goOffline() : await _repo.goOnline();
 
       // Ride socket lifecycle: open when the driver goes online, close when they
-      // go offline. If connect() fails internally the service itself surfaces
-      // a failed/reconnecting status and keeps retrying — the server-side
-      // online flag stays as reported above either way. The location
-      // streamer is armed/disarmed in lockstep: it sends the driver's position
-      // every 15s — over WS while connected, via REST while the socket is down
-      // (see swagger/epic-03-ride.md §9/§11).
+      // go offline. The toggle doesn't wait for the handshake: if connect()
+      // fails, the service itself surfaces a failed/reconnecting status and
+      // keeps retrying — the server-side online flag stays as reported above
+      // either way. The location streamer is armed/disarmed in lockstep: it
+      // sends the driver's position every 15s — over WS while connected, via
+      // REST while the socket is down (see swagger/epic-03-ride.md §9/§11).
       if (isOnline) {
-        await RideSocketService.connect(ActiveRole.driver);
+        unawaited(RideSocketService.connect(ActiveRole.driver));
         DriverLocationStreamer.start();
       } else {
         DriverLocationStreamer.stop();
-        await RideSocketService.disconnect();
+        RideSocketService.disconnect();
       }
 
       emit(state.copyWith(

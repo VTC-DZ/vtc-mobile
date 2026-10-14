@@ -77,7 +77,9 @@ final class PassengerActiveRideCubit extends Cubit<PassengerActiveRideState> {
             errorMessage: 'No active ride found'));
         return;
       }
-      await RideSocketService.connect(ActiveRole.passenger);
+      // Not awaited: the ride is already loaded over REST, and the cubit
+      // reconciles once the socket connects.
+      unawaited(RideSocketService.connect(ActiveRole.passenger));
       emit(state.copyWith(
         status: PassengerActiveRideStatus.loaded,
         ride: ride,

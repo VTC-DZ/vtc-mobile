@@ -52,9 +52,9 @@ final class DriverLocationStreamer {
 
   /// Disarms the streamer and disconnects the driver socket together.
   /// Idempotent — safe to call even if neither was running.
-  static Future<void> stopAndDisconnect() async {
+  static void stopAndDisconnect() {
     stop();
-    await RideSocketService.disconnect();
+    RideSocketService.disconnect();
   }
 
   // The timer keeps running whatever the socket does; this only pushes a fresh

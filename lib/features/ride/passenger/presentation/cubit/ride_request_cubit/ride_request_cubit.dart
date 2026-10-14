@@ -40,8 +40,10 @@ final class RideRequestCubit extends Cubit<RideRequestState> {
     emit(state.copyWith(status: RideRequestStatus.loading, errorMessage: ''));
     try {
       final response = await _repository.createRide(request);
-      await RideSocketService.connect(ActiveRole.passenger);
-      if (kDebugMode) debugPrint('[Passenger] WS connected for ride ${response.rideRequestId}');
+      // Not awaited: the waiting screen loads its offers over REST and
+      // refetches once the socket connects.
+      unawaited(RideSocketService.connect(ActiveRole.passenger));
+      if (kDebugMode) debugPrint('[Passenger] WS connecting for ride ${response.rideRequestId}');
       emit(state.copyWith(
         status: RideRequestStatus.success,
         createRideResponse: response,

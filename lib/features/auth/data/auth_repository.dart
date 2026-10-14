@@ -55,7 +55,7 @@ class AuthRepository {
     );
     final data = response.data as Map<String, dynamic>;
     if (targetRole == ActiveRole.passenger) {
-      await DriverLocationStreamer.stopAndDisconnect();
+      DriverLocationStreamer.stopAndDisconnect();
     }
     await AuthSession.setAccessToken(data['accessToken'] as String);
   }

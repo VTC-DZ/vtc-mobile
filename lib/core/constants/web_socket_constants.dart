@@ -1,6 +1,7 @@
 /// WebSocket protocol constants — raw socket transport for the ride surfaces.
 ///
-/// See `swagger/epic-03-ride.md` §4 and `swagger/websocket.json`.
+/// See `swagger/epic-03-ride.md` §4 and `swagger/websocket.json`. The close-code
+/// meanings and the reconnect decisions are in `ride_socket_policy.dart`.
 abstract final class WebSocketConstants {
   WebSocketConstants._();
 
@@ -15,9 +16,16 @@ abstract final class WebSocketConstants {
   static const int closeAuthRevoked = 4003; // user blocked / role lost — force re-login
   static const int closeServerShutdown = 4004; // reconnect with backoff
 
-  /// Server emits a WS ping every ~30s; the client library auto-answers with a
-  /// pong. Set on the channel so the transport also keeps the link warm.
-  static const Duration pingInterval = Duration(seconds: 30);
+  /// The client's ping is what keeps the socket open: the server never pings,
+  /// and Tomcat closes a session after 60 s with no inbound frame
+  /// (`heartbeat-interval-s` × 2). A pong must come back within one interval,
+  /// so a dead link is noticed within about 20 s, under the server's 30 s
+  /// limit on how old a driver's position may be.
+  static const Duration pingInterval = Duration(seconds: 10);
+
+  /// How long a handshake may take before the attempt is given up and retried
+  /// on the backoff.
+  static const Duration connectTimeout = Duration(seconds: 10);
 
   /// Reconnect backoff ladder: 1s → 2s → 4s → 8s → 16s (cap). See runbook §4.
   static const List<Duration> backoffSteps = [
@@ -27,28 +35,12 @@ abstract final class WebSocketConstants {
     Duration(seconds: 8),
     Duration(seconds: 16),
   ];
-}
 
-/// Typed meaning for a close code, so callers switch on intent rather than ints.
-enum WebSocketCloseMeaning {
-  normal, // 1000 — intentional stop
-  tokenExpired, // 4001 — refresh + reconnect
-  rateLimited, // 4002 — backoff reconnect
-  authRevoked, // 4003 — force re-login (clear session)
-  serverShutdown, // 4004 — backoff reconnect
-  transient, // unknown / null — backoff reconnect
-}
+  /// Each backoff step is spread by up to ±20 %, so the clients a server
+  /// restart drops all at once don't all come back at once.
+  static const double backoffJitter = 0.2;
 
-/// Maps a close code to its [WebSocketCloseMeaning]. Unknown or null codes
-/// (e.g. a dropped TCP link with no close frame) are treated as [transient].
-WebSocketCloseMeaning interpretCloseCode(int? code) {
-  return switch (code) {
-    WebSocketConstants.closeNormal => WebSocketCloseMeaning.normal,
-    WebSocketConstants.closeTokenExpired => WebSocketCloseMeaning.tokenExpired,
-    WebSocketConstants.closeRateLimited => WebSocketCloseMeaning.rateLimited,
-    WebSocketConstants.closeAuthRevoked => WebSocketCloseMeaning.authRevoked,
-    WebSocketConstants.closeServerShutdown =>
-      WebSocketCloseMeaning.serverShutdown,
-    _ => WebSocketCloseMeaning.transient,
-  };
+  /// The server checks the access token only at the handshake, so a token
+  /// that expires within this margin is refreshed before connecting.
+  static const Duration tokenRefreshMargin = Duration(seconds: 60);
 }
