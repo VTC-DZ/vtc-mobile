@@ -13,7 +13,8 @@ flutter pub get                                   # install/refresh dependencies
 flutter run                                       # run on the selected device (use -d <deviceId>)
 flutter analyze                                   # static analysis (flutter_lints) — run before considering work done
 flutter test                                      # all tests
-flutter test test/notifications_cubit_test.dart   # one file
+flutter test test/features/auth                   # one folder: a feature, core/ or shared/
+flutter test test/core/utils/map_geo_test.dart    # one file
 flutter test --plain-name "passenger role"        # tests whose group/test name contains the string
 flutter build apk                                 # or: flutter build ios
 ```
@@ -129,4 +130,4 @@ Invariants that shape client code:
 - New screen: declare its path in [route_names.dart](lib/core/router/route_names.dart), add a `GoRoute` (inside the right shell) with a `BlocProvider` in [app_router.dart](lib/core/router/app_router.dart), and create the Cubit + immutable state under the feature's `presentation/cubit/`.
 - New API surface: add path (and error-code) constants under `core/constants/*_api_constants.dart`, a `const` repository method calling `DioClient`, and `fromJson`/`toJson` models under the feature's `data/models/`.
 - New WS event: add the wire type to `RideSocketEventType`, a sealed subclass of `RideSocketEvent`, and a parse branch in `tryParse`; consume it in whichever Cubit subscribes to `frameStream`.
-- Tests: plain `flutter_test` unit tests in a flat `test/` folder, with no mocking library. Fake a repository by subclassing it and overriding methods (`class _FakeRoutingRepository extends RoutingRepository`); a repository or service that tests fake is a plain `class`, not `final class`, with a "Not `final`, so tests can extend it with a fake." doc line. The static singletons can't be injected, so keep logic you want to test in pure functions (like `resolveNotificationDestination`) or in Cubits that take repositories.
+- Tests: plain `flutter_test` unit tests with no mocking library. `test/` mirrors `lib/`: a test sits in the folder of the code it covers (`lib/core/utils/map_geo.dart` → `test/core/utils/map_geo_test.dart`), and a test that covers several files sits beside its main subject. Fake a repository by subclassing it and overriding methods (`class _FakeRoutingRepository extends RoutingRepository`); a repository or service that tests fake is a plain `class`, not `final class`, with a "Not `final`, so tests can extend it with a fake." doc line. The static singletons can't be injected, so keep logic you want to test in pure functions (like `resolveNotificationDestination`) or in Cubits that take repositories.

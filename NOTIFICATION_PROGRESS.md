@@ -381,13 +381,13 @@ Beyond the list below:
 
 ## Phase 7: Tests and docs
 
-Use the flat `test/` layout of the existing tests (e.g. [date_formatter_test.dart](test/date_formatter_test.dart)).
+Tests mirror `lib/` under `test/` (e.g. [date_formatter_test.dart](test/features/ride/shared/utils/date_formatter_test.dart)).
 
-- [x] [notification_destination_test.dart](test/notification_destination_test.dart): every table row for both roles, cross-role targets → `null`, and unknown keys with and without a `notificationId`. Written in Phase 3; it also covers the `rideId` fallback and the `unknown` role.
-- [x] [app_notification_test.dart](test/app_notification_test.dart): full parse, non-string `data` values, a missing `data`, and a `null` `readAt`. Written in Phase 1; it also covers `copyWith` and a `PageResponse` row without an `id`.
-- [x] [notifications_cubit_test.dart](test/notifications_cubit_test.dart): load, optimistic `markRead` / `markAllRead` and their reloads on failure, `loadMore` dedupe and dropping stale pages, silent vs non-silent failures, `inboxChanges` refreshes, and no emit after `close`. Added in Phase 4; it wasn't in the original list.
-- [x] [notification_time_formatter_test.dart](test/notification_time_formatter_test.dart): each bucket, plus the fallback date. Written in Phase 5; it also covers a clock ahead of the phone, midnight and month boundaries, and UTC input.
-- [x] [badge_count_label_test.dart](test/badge_count_label_test.dart): the exact count up to 10, then `+10`. Added on 2026-10-13 with the count badge.
+- [x] [notification_destination_test.dart](test/core/push/notification_destination_test.dart): every table row for both roles, cross-role targets → `null`, and unknown keys with and without a `notificationId`. Written in Phase 3; it also covers the `rideId` fallback and the `unknown` role.
+- [x] [app_notification_test.dart](test/features/notifications/data/models/app_notification_test.dart): full parse, non-string `data` values, a missing `data`, and a `null` `readAt`. Written in Phase 1; it also covers `copyWith` and a `PageResponse` row without an `id`.
+- [x] [notifications_cubit_test.dart](test/features/notifications/presentation/cubit/notifications_cubit/notifications_cubit_test.dart): load, optimistic `markRead` / `markAllRead` and their reloads on failure, `loadMore` dedupe and dropping stale pages, silent vs non-silent failures, `inboxChanges` refreshes, and no emit after `close`. Added in Phase 4; it wasn't in the original list.
+- [x] [notification_time_formatter_test.dart](test/features/notifications/utils/notification_time_formatter_test.dart): each bucket, plus the fallback date. Written in Phase 5; it also covers a clock ahead of the phone, midnight and month boundaries, and UTC input.
+- [x] [badge_count_label_test.dart](test/shared/widgets/badge_count_label_test.dart): the exact count up to 10, then `+10`. Added on 2026-10-13 with the count badge.
 - [ ] [CLAUDE.md](CLAUDE.md): add a short "Push notifications" subsection covering the `PushNotificationService` singleton, the no-WS rule and the token lifecycle. Also fix the stale "test/ is currently empty" note.
 
 ## Phase 8: Manual prerequisites (outside the code)
