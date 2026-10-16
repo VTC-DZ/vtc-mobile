@@ -64,7 +64,7 @@ final class RideMapLegs {
 abstract final class RideMapStyle {
   RideMapStyle._();
 
-  static const Color _approachColor = Color(0xFF64748B);
+  static const Color _approachColor = Color(0xFF334155);
 
   /// Picks the road paths from [route] for the current stage, falling back to
   /// straight lines for any leg that has no road route (yet).
@@ -87,53 +87,68 @@ abstract final class RideMapStyle {
     );
   }
 
-  /// Before the trip starts: a dotted grey approach leg and a dashed trip
-  /// preview. Once [tripStarted]: a solid trip leg with a white casing.
+  /// Before the trip starts: a bold dark approach leg drawn over a thinner
+  /// green trip preview. Once [tripStarted]: a bold green trip leg.
+  ///
+  /// Every leg is a solid, opaque line on a white casing; stages differ by
+  /// colour and width, never by dash patterns — the plugins measure those in
+  /// unscaled pixels on Android and in metres along the path on iOS (where a
+  /// dot has no length), so they never render cleanly.
   static Set<Polyline> polylines(
     RideMapLegs legs, {
     required bool tripStarted,
   }) =>
       {
+        ..._casedLine(
+          'trip',
+          legs.trip,
+          color: AppColors.primary,
+          width: tripStarted ? 6 : 4,
+          zIndex: 1,
+        ),
         if (legs.approach case final approach?)
-          Polyline(
-            polylineId: const PolylineId('approach'),
-            points: approach,
+          ..._casedLine(
+            'approach',
+            approach,
             color: _approachColor,
-            width: 4,
-            geodesic: true,
-            jointType: JointType.round,
-            patterns: [PatternItem.dot, PatternItem.gap(8)],
-            zIndex: 1,
+            width: 6,
+            zIndex: 3,
           ),
-        if (tripStarted)
-          Polyline(
-            polylineId: const PolylineId('trip_casing'),
-            points: legs.trip,
-            color: Colors.white,
-            width: 9,
-            geodesic: true,
-            startCap: Cap.roundCap,
-            endCap: Cap.roundCap,
-            jointType: JointType.round,
-            zIndex: 2,
-          ),
+      };
+
+  /// [points] as a [color] line over a white casing that keeps it readable
+  /// on roads, parks and labels.
+  static List<Polyline> _casedLine(
+    String id,
+    List<LatLng> points, {
+    required Color color,
+    required int width,
+    required int zIndex,
+  }) =>
+      [
         Polyline(
-          polylineId: const PolylineId('trip'),
-          points: legs.trip,
-          color: tripStarted
-              ? AppColors.primary
-              : AppColors.primary.withValues(alpha: 0.75),
-          width: 5,
+          polylineId: PolylineId('${id}_casing'),
+          points: points,
+          color: Colors.white,
+          width: width + 4,
           geodesic: true,
           startCap: Cap.roundCap,
           endCap: Cap.roundCap,
           jointType: JointType.round,
-          patterns: tripStarted
-              ? const []
-              : [PatternItem.dash(18), PatternItem.gap(10)],
-          zIndex: 3,
+          zIndex: zIndex,
         ),
-      };
+        Polyline(
+          polylineId: PolylineId(id),
+          points: points,
+          color: color,
+          width: width,
+          geodesic: true,
+          startCap: Cap.roundCap,
+          endCap: Cap.roundCap,
+          jointType: JointType.round,
+          zIndex: zIndex + 1,
+        ),
+      ];
 
   /// Animates [controller] so every point in [points] is visible inside the
   /// map's padded area (see `GoogleMap.padding`).

@@ -401,7 +401,7 @@ class _Actions extends StatelessWidget {
   }
 }
 
-/// Compact route preview: pickup and drop-off pins joined by the dashed trip
+/// Compact route preview: pickup and drop-off pins joined by the trip
 /// line, the driver's own blue dot, and controls to re-frame the route, jump
 /// to the driver's position and zoom.
 class _RideRequestMap extends StatefulWidget {
